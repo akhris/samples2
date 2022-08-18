@@ -10,23 +10,29 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import com.arkivanov.decompose.DefaultComponentContext
+import com.arkivanov.essenty.lifecycle.LifecycleRegistry
+import ui.screens.nav_host.INavHost
+import ui.screens.nav_host.NavHostComponent
+import ui.screens.nav_host.NavHostUi
 
 @Composable
 @Preview
-fun App() {
-    var text by remember { mutableStateOf("Hello, World!") }
-
+fun App(rootComponent: INavHost) {
     MaterialTheme {
-        Button(onClick = {
-            text = "Hello, Desktop!"
-        }) {
-            Text(text)
-        }
+        NavHostUi(rootComponent)
     }
 }
 
-fun main() = application {
-    Window(onCloseRequest = ::exitApplication) {
-        App()
+fun main() {
+    // Create the root component before starting Compose
+    val lifecycle = LifecycleRegistry()
+    val root = NavHostComponent(componentContext = DefaultComponentContext(lifecycle))
+
+    // Start Compose
+    application {
+        Window(onCloseRequest = ::exitApplication) {
+            App(root)
+        }
     }
 }
