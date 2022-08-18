@@ -3,6 +3,7 @@ package ui.screens.nav_host
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
 import ui.screens.rooms.IRooms
+import ui.screens.workers.IWorkers
 
 /**
  * Interface for Navigation Host
@@ -25,7 +26,7 @@ interface INavHost {
     sealed class Child {
         class Rooms(val component: IRooms) : Child()
 //        class Samples(val component: ISamples) : Child()
-//        class Workers(val component: IWorkers) : Child()
+        class Workers(val component: IWorkers) : Child()
 //        class Operations(val component: IOperations) : Child()
     }
 }

@@ -8,6 +8,7 @@ import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.parcelable.Parcelable
 import com.arkivanov.essenty.parcelable.Parcelize
 import ui.screens.rooms.RoomsComponent
+import ui.screens.workers.WorkersComponent
 
 /**
  * Main navigation component that holds all destinations
@@ -33,6 +34,7 @@ class NavHostComponent constructor(
     private fun createChild(config: Config, componentContext: ComponentContext): INavHost.Child {
         return when (config) {
             Config.Rooms -> INavHost.Child.Rooms(RoomsComponent(componentContext))
+            Config.Workers -> INavHost.Child.Workers(WorkersComponent(componentContext))
         }
     }
 
@@ -40,6 +42,9 @@ class NavHostComponent constructor(
     private sealed class Config : Parcelable {
         @Parcelize
         object Rooms : Config()
+
+        @Parcelize
+        object Workers : Config()
     }
 
 }

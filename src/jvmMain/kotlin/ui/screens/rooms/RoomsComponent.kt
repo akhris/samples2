@@ -3,7 +3,7 @@ package ui.screens.rooms
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
-import ui.screens.test.Rooms
+import test.Rooms
 
 class RoomsComponent(
     componentContext: ComponentContext

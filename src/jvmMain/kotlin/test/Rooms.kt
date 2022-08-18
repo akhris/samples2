@@ -1,4 +1,4 @@
-package ui.screens.test
+package test
 
 import domain.Room
 import java.util.UUID
