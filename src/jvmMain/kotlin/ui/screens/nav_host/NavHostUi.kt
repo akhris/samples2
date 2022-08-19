@@ -5,7 +5,8 @@ import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.jetbrains.stack.Children
 import com.arkivanov.decompose.extensions.compose.jetbrains.stack.animation.fade
 import com.arkivanov.decompose.extensions.compose.jetbrains.stack.animation.stackAnimation
-import ui.screens.rooms.RoomsUi
+import ui.screens.places.PlacesUi
+import ui.screens.workers.WorkersUi
 
 
 @OptIn(ExperimentalDecomposeApi::class)
@@ -13,7 +14,8 @@ import ui.screens.rooms.RoomsUi
 fun NavHostUi(component: INavHost) {
     Children(stack = component.childStack, animation = stackAnimation(fade())) {
         when (val child = it.instance) {
-            is INavHost.Child.Rooms -> RoomsUi(child.component)
+            is INavHost.Child.Places -> PlacesUi(child.component)
+            is INavHost.Child.Workers -> WorkersUi(child.component)
         }
     }
 }

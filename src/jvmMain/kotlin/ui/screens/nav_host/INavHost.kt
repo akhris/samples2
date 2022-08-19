@@ -2,30 +2,34 @@ package ui.screens.nav_host
 
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
-import ui.screens.rooms.IRooms
+import navigation.NavItem
+import ui.screens.places.IPlaces
 import ui.screens.workers.IWorkers
 
 /**
  * Interface for Navigation Host
  */
 interface INavHost {
-//
-//    /**
-//     * Navigate to destination by route.
-//     */
-//    fun setDestination(route: String)
+    fun setDestination(navItem: NavItem)
+
+    val state: Value<State>
+
+    data class State(
+        val currentDestination: NavItem? = NavItem.homeItem
+    )
 
     /**
      * Exposes Router State
      */
-    val childStack : Value<ChildStack<*, Child>>
+    val childStack: Value<ChildStack<*, Child>>
 
     /**
      * Child classes containing child components.
      */
     sealed class Child {
-        class Rooms(val component: IRooms) : Child()
-//        class Samples(val component: ISamples) : Child()
+        class Places(val component: IPlaces) : Child()
+
+        //        class Samples(val component: ISamples) : Child()
         class Workers(val component: IWorkers) : Child()
 //        class Operations(val component: IOperations) : Child()
     }

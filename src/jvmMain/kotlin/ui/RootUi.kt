@@ -1,18 +1,16 @@
 package ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.padding
+
 import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Email
-import androidx.compose.material.icons.rounded.Person
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
+import navigation.NavItem
+import test.SampleTypes
+import ui.components.SampleTypeSelector
 import ui.screens.nav_host.INavHost
 import ui.screens.nav_host.NavHostUi
 
@@ -21,30 +19,24 @@ fun RootUi(component: INavHost) {
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed, confirmStateChange = { false })
     val scaffoldState = rememberScaffoldState(drawerState = drawerState)
+
+    val navigationItem by remember(component) { component.state }.subscribeAsState()
+    var selectedSampleType by remember { mutableStateOf(SampleTypes.type1) }
+
     Scaffold(
         scaffoldState = scaffoldState,
         topBar = {
-            TopAppBar { Text("title") }
+            TopAppBar {
+                Text(modifier = Modifier.padding(start = UiSettings.AppBar.titleStartPadding).weight(1f), text = navigationItem.currentDestination?.title?:"")
+                SampleTypeSelector(typesList = SampleTypes.list, selectedType = selectedSampleType, onSampleTypeSelected = {selectedSampleType = it}, onNewSampleTypeAdd = {})
+            }
         },
         content = {
             Row {
-                NavigationRail {
-                    NavigationRailItem(
-                        selected = true,
-                        icon = { Icons.Rounded.Person },
-                        label = { Text("item1") },
-                        onClick = {})
-                    NavigationRailItem(
-                        selected = false,
-                        icon = { Icons.Rounded.Email },
-                        label = { Text("item2") },
-                        onClick = {})
-                    NavigationRailItem(
-                        selected = false,
-                        icon = { Icons.Rounded.Check },
-                        label = { Text("item3") },
-                        onClick = {})
-                }
+                SideNavigationPanel(
+                    currentSelection = navigationItem.currentDestination,
+                    onNavigationItemSelected = { component.setDestination(it) })
+
                 Box(modifier = Modifier.weight(1f)) { NavHostUi(component = component) }
             }
         }

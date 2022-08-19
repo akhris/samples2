@@ -46,6 +46,9 @@ kotlin {
 
                 //sqlite driver:
                 implementation("org.xerial:sqlite-jdbc:3.39.2.0")
+
+                //swaydb (for properties):
+                implementation("io.swaydb:swaydb_2.13:0.16.2")
             }
         }
         val jvmTest by getting

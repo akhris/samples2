@@ -1,13 +1,14 @@
 package ui.screens.nav_host
 
 import com.arkivanov.decompose.ComponentContext
-import com.arkivanov.decompose.router.stack.ChildStack
-import com.arkivanov.decompose.router.stack.StackNavigation
-import com.arkivanov.decompose.router.stack.childStack
+import com.arkivanov.decompose.router.stack.*
+import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
+import com.arkivanov.decompose.value.reduce
 import com.arkivanov.essenty.parcelable.Parcelable
 import com.arkivanov.essenty.parcelable.Parcelize
-import ui.screens.rooms.RoomsComponent
+import navigation.NavItem
+import ui.screens.places.PlacesComponent
 import ui.screens.workers.WorkersComponent
 
 /**
@@ -18,30 +19,57 @@ class NavHostComponent constructor(
 ) :
     INavHost, ComponentContext by componentContext {
 
+    private val _state = MutableValue(INavHost.State())
+
     private val navigation = StackNavigation<Config>()
 
     private val stack =
         childStack(
             source = navigation,
-            initialConfiguration = Config.Rooms,
+            initialConfiguration = Config.Places,
             handleBackButton = true,
             childFactory = ::createChild
         )
+
+
+    override val state: Value<INavHost.State> = _state
 
     override val childStack: Value<ChildStack<*, INavHost.Child>>
         get() = stack
 
     private fun createChild(config: Config, componentContext: ComponentContext): INavHost.Child {
         return when (config) {
-            Config.Rooms -> INavHost.Child.Rooms(RoomsComponent(componentContext))
+            Config.Places -> INavHost.Child.Places(PlacesComponent(componentContext))
             Config.Workers -> INavHost.Child.Workers(WorkersComponent(componentContext))
+        }
+    }
+
+    override fun setDestination(navItem: NavItem) {
+
+        val newConf = when (navItem) {
+            NavItem.Conditions -> null
+            NavItem.Measurements -> null
+            NavItem.Norms ->null
+            NavItem.Operations -> null
+            NavItem.Parameters -> null
+            NavItem.Places -> Config.Places
+            NavItem.SampleTypes -> null
+            NavItem.Samples -> null
+            NavItem.Workers -> Config.Workers
+        }
+        if (newConf != null && navItem != _state.value.currentDestination) {
+                navigation.replaceCurrent(newConf)
+        }
+
+        _state.reduce {
+            it.copy(currentDestination = navItem)
         }
     }
 
     @Parcelize
     private sealed class Config : Parcelable {
         @Parcelize
-        object Rooms : Config()
+        object Places : Config()
 
         @Parcelize
         object Workers : Config()

@@ -7,7 +7,6 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
-import ui.screens.rooms.IRooms
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable

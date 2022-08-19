@@ -1,0 +1,58 @@
+package navigation
+
+/**
+ * Class representing navigation items for using in navigation component (such as Navigation Rail).
+ * Each Item has title, icon and route String.
+ */
+sealed class NavItem(val pathToIcon: String, val title: String) {
+
+    object Workers : NavItem(
+        pathToIcon = "vector/people_black_24dp.svg",
+        title = "Сотрудники"
+    )
+
+    object Samples : NavItem(
+        pathToIcon = "vector/category_black_24dp.svg",
+        title = "Образцы"
+    )
+
+    object Places : NavItem(
+        pathToIcon = "vector/room_black_24dp.svg",
+        title = "Места"
+    )
+
+    object Operations : NavItem(
+        pathToIcon = "vector/engineering_black_24dp.svg",
+        title = "Операции"
+    )
+
+    object Measurements : NavItem(
+        pathToIcon = "vector/speed_black_24dp.svg",
+        title = "Измерения"
+    )
+
+    object Parameters : NavItem(
+        pathToIcon = "vector/tune_black_24dp.svg",
+        title = "Параметры"
+    )
+
+    object Norms : NavItem(
+        pathToIcon = "vector/rule_black_24dp.svg",
+        title = "Нормы"
+    )
+
+    object SampleTypes : NavItem(
+        pathToIcon = "vector/memory_black_24dp.svg",
+        title = "Изделия"
+    )
+
+    object Conditions : NavItem(
+        pathToIcon = "vector/thermostat_black_24dp.svg",
+        title = "Условия"
+    )
+
+    companion object {
+        fun getMainNavigationItems() = listOf<NavItem>(Samples, Parameters, Norms, Workers, Places)
+        val homeItem = Samples
+    }
+}

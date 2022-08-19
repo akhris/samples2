@@ -1,4 +1,4 @@
-package ui.screens.rooms
+package ui.screens.places
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material.ExperimentalMaterialApi
@@ -10,12 +10,12 @@ import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun RoomsUi(component: IRooms) {
+fun PlacesUi(component: IPlaces) {
     val state by component.state.subscribeAsState()
 
     //render rooms list:
     Column {
-        state.rooms.forEach {room->
+        state.places.forEach { room->
             ListItem(overlineText = {
                 Text(room.roomNumber)
             }, text = {

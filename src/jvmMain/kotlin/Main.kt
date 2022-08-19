@@ -21,13 +21,16 @@ fun App(rootComponent: INavHost) {
 }
 
 fun main() {
+    // check settings from swaydb and initiate Database
+
+
     // Create the root component before starting Compose
     val lifecycle = LifecycleRegistry()
     val root = NavHostComponent(componentContext = DefaultComponentContext(lifecycle))
 
     // Start Compose
     application {
-        Window(onCloseRequest = ::exitApplication) {
+        Window(title = "Samples", onCloseRequest = ::exitApplication) {
             App(root)
         }
     }
