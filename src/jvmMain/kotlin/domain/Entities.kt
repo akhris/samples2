@@ -1,12 +1,13 @@
 package domain
 
+import java.time.LocalDateTime
 import java.util.*
 
 /**
  * Entity representing room (a place)
  */
-data class Room(
-    val roomID: String = UUID.randomUUID().toString(),
+data class Place(
+    val placeID: String = UUID.randomUUID().toString(),
     val roomNumber: String = "",
     val description: String = ""
 )
@@ -19,18 +20,29 @@ data class Worker(
     val name: String = "",
     val middleName: String = "",
     val surname: String = "",
-    val room: Room? = null,
+    val place: Place? = null,
     val phoneNumber: String = "",
     val email: String = ""
 )
 
 /**
- * Entity representing operation
+ * Entity representing operation type
  */
-data class Operation(
+data class OperationType(
     val operationID: String = UUID.randomUUID().toString(),
     val name: String = "",
     val description: String = ""
+)
+
+/**
+ * Entity representing actual operation
+ */
+data class Operation(
+    val sample: Sample,
+    val operationType: OperationType,
+    val dateTime: LocalDateTime?,
+    val worker: Worker,
+    val place: Place
 )
 
 /**
@@ -40,6 +52,12 @@ data class SampleType(
     val typeID: String = UUID.randomUUID().toString(),
     val name: String = "",
     val description: String = ""
+)
+
+data class Sample(
+    val sampleID: String,
+    val type: SampleType,
+    val description: String
 )
 
 /**
@@ -70,7 +88,17 @@ data class Condition(
  */
 data class Norm(
     val normID: String = UUID.randomUUID().toString(),
-    val sampleType: SampleType,
     val parameter: Parameter,
     val condition: Condition
+    // TODO: add values range for norm (min, max, avg)
+)
+
+
+/**
+ * Entity representing single measurement of the [sample].
+ * [results] is a JSON serialized string like array of { parameterID: value}
+ */
+data class Measurement(
+    val sample: Sample,
+    val results: String
 )

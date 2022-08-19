@@ -11,11 +11,12 @@ import ui.RootUi
 import ui.screens.nav_host.INavHost
 import ui.screens.nav_host.NavHostComponent
 import ui.screens.nav_host.NavHostUi
+import ui.theme.AppTheme
 
 @Composable
 @Preview
 fun App(rootComponent: INavHost) {
-    MaterialTheme {
+    AppTheme(darkTheme = false) {
         RootUi(rootComponent)
     }
 }

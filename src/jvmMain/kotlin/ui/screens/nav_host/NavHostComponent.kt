@@ -8,6 +8,9 @@ import com.arkivanov.decompose.value.reduce
 import com.arkivanov.essenty.parcelable.Parcelable
 import com.arkivanov.essenty.parcelable.Parcelize
 import navigation.NavItem
+import ui.screens.norms.NormsComponent
+import ui.screens.operationtypes.OperationTypesComponent
+import ui.screens.parameters.ParametersComponent
 import ui.screens.places.PlacesComponent
 import ui.screens.workers.WorkersComponent
 
@@ -41,6 +44,9 @@ class NavHostComponent constructor(
         return when (config) {
             Config.Places -> INavHost.Child.Places(PlacesComponent(componentContext))
             Config.Workers -> INavHost.Child.Workers(WorkersComponent(componentContext))
+            Config.Norms -> INavHost.Child.Norms(NormsComponent(componentContext))
+            Config.Parameters -> INavHost.Child.Parameters(ParametersComponent(componentContext))
+            Config.OperationsTypes -> INavHost.Child.Operations(OperationTypesComponent(componentContext))
         }
     }
 
@@ -49,16 +55,17 @@ class NavHostComponent constructor(
         val newConf = when (navItem) {
             NavItem.Conditions -> null
             NavItem.Measurements -> null
-            NavItem.Norms ->null
+            NavItem.Norms -> Config.Norms
             NavItem.Operations -> null
-            NavItem.Parameters -> null
+            NavItem.Parameters -> Config.Parameters
             NavItem.Places -> Config.Places
             NavItem.SampleTypes -> null
             NavItem.Samples -> null
             NavItem.Workers -> Config.Workers
+            NavItem.OperationTypes -> Config.OperationsTypes
         }
         if (newConf != null && navItem != _state.value.currentDestination) {
-                navigation.replaceCurrent(newConf)
+            navigation.replaceCurrent(newConf)
         }
 
         _state.reduce {
@@ -73,6 +80,15 @@ class NavHostComponent constructor(
 
         @Parcelize
         object Workers : Config()
+
+        @Parcelize
+        object Norms : Config()
+
+        @Parcelize
+        object Parameters : Config()
+
+        @Parcelize
+        object OperationsTypes : Config()
     }
 
 }

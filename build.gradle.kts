@@ -62,6 +62,7 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Exe)
             packageName = "samples2"
             packageVersion = "1.0.0"
+            modules("java.instrument", "jdk.unsupported")
         }
     }
 }

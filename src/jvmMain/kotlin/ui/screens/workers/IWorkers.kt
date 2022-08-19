@@ -1,7 +1,6 @@
 package ui.screens.workers
 
 import com.arkivanov.decompose.value.Value
-import domain.Room
 import domain.Worker
 
 interface IWorkers {

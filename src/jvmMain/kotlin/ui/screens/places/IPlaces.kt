@@ -1,13 +1,13 @@
 package ui.screens.places
 
 import com.arkivanov.decompose.value.Value
-import domain.Room
+import domain.Place
 
 interface IPlaces {
 
     val state: Value<State>
 
     data class State(
-        val places: List<Room> = listOf()
+        val places: List<Place> = listOf()
     )
 }

@@ -1,37 +1,40 @@
 package ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.ColumnScopeInstance.align
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.AddCircle
 import androidx.compose.material.icons.rounded.ArrowDropDown
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material.icons.rounded.Clear
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.unit.dp
 import domain.SampleType
 import ui.UiSettings
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun SampleTypeSelector(
+    modifier: Modifier = Modifier,
     typesList: List<SampleType>,
     selectedType: SampleType,
     onSampleTypeSelected: (SampleType) -> Unit,
-    onNewSampleTypeAdd: () -> Unit
+    onNewSampleTypeAdd: () -> Unit,
+    onSampleTypeDelete: (SampleType) -> Unit
 ) {
 
     var isMenuOpened by remember(selectedType) { mutableStateOf(false) }
     val rotation by animateFloatAsState(if (isMenuOpened) 180f else 0f)
 
-    Box(modifier = Modifier.width(UiSettings.SampleTypesSelector.selectorWidth)) {
+    Box(modifier = modifier) {
         ListItem(
             modifier = Modifier.fillMaxWidth(),
             text = {
@@ -54,22 +57,39 @@ fun SampleTypeSelector(
             DropdownMenu(
                 expanded = true,
                 onDismissRequest = {
-                    isMenuOpened = !isMenuOpened
+                    isMenuOpened = false
                 }
             ) {
                 typesList.forEach { sampleType ->
-                    DropdownMenuItem(onClick = {
-                        onSampleTypeSelected(sampleType)
-                    }) {
-                        Text(sampleType.name)
+
+                    var isHover by remember { mutableStateOf(false) }
+
+                    DropdownMenuItem(
+
+                        onClick = {
+                            onSampleTypeSelected(sampleType)
+                        }) {
+                        Text(modifier = Modifier.weight(1f), text = sampleType.name)
+
+                        Icon(
+                            modifier = Modifier.onPointerEvent(PointerEventType.Enter) { isHover = true }
+                                .onPointerEvent(PointerEventType.Exit) { isHover = false }
+                                .clickable {
+                                           onSampleTypeDelete(sampleType)
+                                },
+                            imageVector = Icons.Rounded.Clear,
+                            contentDescription = "delete ${sampleType.name}",
+                            tint = MaterialTheme.colors.error.copy(alpha = if (isHover) 1.0f else 0.2f)
+                        )
                     }
                 }
                 DropdownMenuItem(onClick = onNewSampleTypeAdd) {
                     Icon(
                         Icons.Rounded.AddCircle,
-                        modifier = Modifier.align(Alignment.Center),
+                        modifier = Modifier.padding(8.dp),
                         contentDescription = "add new sample type"
                     )
+                    Text(modifier = Modifier.weight(1f), text = "добавить тип прибора")
                 }
             }
         }

@@ -26,6 +26,11 @@ sealed class NavItem(val pathToIcon: String, val title: String) {
         title = "Операции"
     )
 
+    object OperationTypes : NavItem(
+        pathToIcon = "vector/engineering_black_24dp.svg",
+        title = "Типы операций"
+    )
+
     object Measurements : NavItem(
         pathToIcon = "vector/speed_black_24dp.svg",
         title = "Измерения"
@@ -52,7 +57,9 @@ sealed class NavItem(val pathToIcon: String, val title: String) {
     )
 
     companion object {
-        fun getMainNavigationItems() = listOf<NavItem>(Samples, Parameters, Norms, Workers, Places)
+        fun getMainNavigationItems() =
+            listOf<NavItem>(Samples, Measurements, Parameters, Norms, Operations, Workers, Places)
+
         val homeItem = Samples
     }
 }

@@ -9,7 +9,7 @@ object UiSettings {
     }
 
     object NavigationPanel {
-        val iconSize = 18.dp
+        val iconSize = 24.dp
         val widthExpanded = 240.dp
         val widthCollapsed = 72.dp
         val widthCollapsedDefault = 72.dp

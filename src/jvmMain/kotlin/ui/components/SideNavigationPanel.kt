@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
 import navigation.NavItem
 
 @Composable
@@ -59,15 +60,17 @@ fun SideNavigationPanel(
                 NavigationRailItem(
                     selected = navItem == currentSelection,
                     alwaysShowLabel = panelWidth == UiSettings.NavigationPanel.widthExpanded,
-                    icon = {
+                    icon =
+                    {
                         Icon(
                             painter = painterResource(navItem.pathToIcon),
                             contentDescription = navItem.title,
                             modifier = Modifier.size(UiSettings.NavigationPanel.iconSize)
                         )
+
                     },
                     label = if (withLabels) {
-                        { Text(navItem.title) }
+                        { Text(maxLines = 1, overflow = TextOverflow.Ellipsis, text = navItem.title) }
                     } else null,
                     onClick = {
                         onNavigationItemSelected(navItem)

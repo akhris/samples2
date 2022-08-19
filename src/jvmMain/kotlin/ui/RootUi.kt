@@ -27,13 +27,21 @@ fun RootUi(component: INavHost) {
         scaffoldState = scaffoldState,
         topBar = {
             TopAppBar {
-                Text(modifier = Modifier.padding(start = UiSettings.AppBar.titleStartPadding).weight(1f), text = navigationItem.currentDestination?.title?:"")
-                SampleTypeSelector(typesList = SampleTypes.list, selectedType = selectedSampleType, onSampleTypeSelected = {selectedSampleType = it}, onNewSampleTypeAdd = {})
+//                Text(modifier = Modifier.padding(start = UiSettings.AppBar.titleStartPadding).weight(1f), text = navigationItem.currentDestination?.title?:"")
+                SampleTypeSelector(
+                    modifier = Modifier.padding(start = UiSettings.AppBar.titleStartPadding).weight(1f),
+                    typesList = SampleTypes.list,
+                    selectedType = selectedSampleType,
+                    onSampleTypeSelected = { selectedSampleType = it },
+                    onNewSampleTypeAdd = {},
+                    onSampleTypeDelete = {})
             }
         },
         content = {
             Row {
                 SideNavigationPanel(
+                    isExpandable = false,
+                    withLabels = true,
                     currentSelection = navigationItem.currentDestination,
                     onNavigationItemSelected = { component.setDestination(it) })
 
