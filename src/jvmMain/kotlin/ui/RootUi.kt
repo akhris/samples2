@@ -1,5 +1,6 @@
 package ui
 
+import LocalSamplesType
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -21,6 +22,7 @@ fun RootUi(component: INavHost) {
     val scaffoldState = rememberScaffoldState(drawerState = drawerState)
 
     val navigationItem by remember(component) { component.state }.subscribeAsState()
+
     var selectedSampleType by remember { mutableStateOf(SampleTypes.type1) }
 
     Scaffold(
@@ -38,14 +40,16 @@ fun RootUi(component: INavHost) {
             }
         },
         content = {
-            Row {
-                SideNavigationPanel(
-                    isExpandable = false,
-                    withLabels = true,
-                    currentSelection = navigationItem.currentDestination,
-                    onNavigationItemSelected = { component.setDestination(it) })
+            CompositionLocalProvider(LocalSamplesType provides selectedSampleType) {
+                Row {
+                    SideNavigationPanel(
+                        isExpandable = false,
+                        withLabels = true,
+                        currentSelection = navigationItem.currentDestination,
+                        onNavigationItemSelected = { component.setDestination(it) })
 
-                Box(modifier = Modifier.weight(1f)) { NavHostUi(component = component) }
+                    Box(modifier = Modifier.weight(1f)) { NavHostUi(component = component) }
+                }
             }
         }
     )

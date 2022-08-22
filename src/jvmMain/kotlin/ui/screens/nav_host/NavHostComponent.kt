@@ -12,6 +12,7 @@ import ui.screens.norms.NormsComponent
 import ui.screens.operationtypes.OperationTypesComponent
 import ui.screens.parameters.ParametersComponent
 import ui.screens.places.PlacesComponent
+import ui.screens.samples.SamplesComponent
 import ui.screens.workers.WorkersComponent
 
 /**
@@ -47,6 +48,7 @@ class NavHostComponent constructor(
             Config.Norms -> INavHost.Child.Norms(NormsComponent(componentContext))
             Config.Parameters -> INavHost.Child.Parameters(ParametersComponent(componentContext))
             Config.OperationsTypes -> INavHost.Child.Operations(OperationTypesComponent(componentContext))
+            Config.Samples -> INavHost.Child.Samples(SamplesComponent(componentContext))
         }
     }
 
@@ -60,9 +62,10 @@ class NavHostComponent constructor(
             NavItem.Parameters -> Config.Parameters
             NavItem.Places -> Config.Places
             NavItem.SampleTypes -> null
-            NavItem.Samples -> null
+            NavItem.Samples -> Config.Samples
             NavItem.Workers -> Config.Workers
             NavItem.OperationTypes -> Config.OperationsTypes
+            NavItem.AppSettings -> null
         }
         if (newConf != null && navItem != _state.value.currentDestination) {
             navigation.replaceCurrent(newConf)
@@ -89,6 +92,10 @@ class NavHostComponent constructor(
 
         @Parcelize
         object OperationsTypes : Config()
+
+        @Parcelize
+        object Samples : Config()
+
     }
 
 }

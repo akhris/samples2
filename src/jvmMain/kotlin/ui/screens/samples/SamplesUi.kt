@@ -1,31 +1,28 @@
-package ui.screens.parameters
+package ui.screens.samples
 
+import LocalSamplesType
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ListItem
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
-import ui.components.ChipGroup
-import ui.components.FilterChip
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun ParametersUi(component: IParameters) {
+fun SamplesUi(component: ISamples) {
     val state by component.state.subscribeAsState()
 
-        //render norms list:
+    //render samples list:
     Column {
-        //conditions row:
-
-
         state
-            .parameters
-            .forEach { parameter ->
+            .samples
+            .filter { it.type == LocalSamplesType.current }
+            .forEach { sample ->
                 ListItem(overlineText = {
-                    Text(parameter.id)
+                    Text(sample.id)
                 }, text = {
-                    Text("${parameter.description}")
+                    Text("${sample.description}")
                 }, secondaryText = {
 
                 })

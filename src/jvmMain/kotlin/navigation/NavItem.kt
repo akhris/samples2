@@ -56,9 +56,14 @@ sealed class NavItem(val pathToIcon: String, val title: String) {
         title = "Условия"
     )
 
+    object AppSettings: NavItem(
+        pathToIcon = "vector/settings_black_24dp.svg",
+        title = "Настройки"
+    )
+
     companion object {
         fun getMainNavigationItems() =
-            listOf<NavItem>(Samples, Measurements, Parameters, Norms, Operations, Workers, Places)
+            listOf<NavItem>(Samples, Parameters, Operations, Measurements, AppSettings)
 
         val homeItem = Samples
     }

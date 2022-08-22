@@ -49,6 +49,9 @@ kotlin {
 
                 //swaydb (for properties):
                 implementation("io.swaydb:swaydb_2.13:0.16.2")
+
+                //for qualifiers
+                implementation("javax.inject:javax.inject:1")
             }
         }
         val jvmTest by getting

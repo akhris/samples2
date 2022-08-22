@@ -28,10 +28,10 @@ fun NormsUi(component: INorms) {
             conditions.forEach { condition ->
                 FilterChip(
                     text = condition.name,
-                    isSelected = condition.conditionID == selectedConditionId,
+                    isSelected = condition.id == selectedConditionId,
                     withCheckIcon = false,
                     onClick = {
-                        selectedConditionId = condition.conditionID
+                        selectedConditionId = condition.id
                     }
                 )
             }
@@ -39,12 +39,12 @@ fun NormsUi(component: INorms) {
 
         state
             .norms
-            .filter { it.condition.conditionID == selectedConditionId }
+            .filter { it.condition.id == selectedConditionId }
             .forEach { norm ->
                 ListItem(overlineText = {
                     Text(norm.condition.name)
                 }, text = {
-                    Text("${norm.parameter.parameterID}")
+                    Text("${norm.parameter.id}")
                 }, secondaryText = {
 
                 })

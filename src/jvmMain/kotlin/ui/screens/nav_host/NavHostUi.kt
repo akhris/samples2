@@ -9,6 +9,7 @@ import ui.screens.norms.NormsUi
 import ui.screens.operationtypes.OperationsTypesUi
 import ui.screens.parameters.ParametersUi
 import ui.screens.places.PlacesUi
+import ui.screens.samples.SamplesUi
 import ui.screens.workers.WorkersUi
 
 
@@ -22,6 +23,7 @@ fun NavHostUi(component: INavHost) {
             is INavHost.Child.Norms -> NormsUi(child.component)
             is INavHost.Child.Parameters -> ParametersUi(child.component)
             is INavHost.Child.Operations -> OperationsTypesUi(child.component)
+            is INavHost.Child.Samples -> SamplesUi(child.component)
         }
     }
 }
