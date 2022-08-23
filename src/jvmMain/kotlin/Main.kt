@@ -6,6 +6,8 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
+import di.di
+import org.kodein.di.compose.localDI
 import ui.RootUi
 import ui.screens.nav_host.INavHost
 import ui.screens.nav_host.NavHostComponent
@@ -16,7 +18,7 @@ import ui.theme.AppTheme
 @Preview
 fun App(rootComponent: INavHost) {
     AppTheme(darkTheme = false) {
-            RootUi(rootComponent)
+        RootUi(rootComponent)
     }
 }
 
@@ -26,7 +28,7 @@ fun main() {
 
     // Create the root component before starting Compose
     val lifecycle = LifecycleRegistry()
-    val root = NavHostComponent(componentContext = DefaultComponentContext(lifecycle))
+    val root = NavHostComponent(componentContext = DefaultComponentContext(lifecycle), di = di)
 
     // Start Compose
     application {

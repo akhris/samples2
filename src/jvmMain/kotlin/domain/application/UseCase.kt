@@ -3,6 +3,9 @@ package domain.application
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 
+/**
+ * Base UseCase class
+ */
 abstract class UseCase<out R, in P>(private val coroutineDispatcher: CoroutineDispatcher) where R : Any {
     /**
      * operator fun that runs the operation. If operation throws exception - returns [Result.Failure], otherwise

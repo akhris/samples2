@@ -18,8 +18,8 @@ class BaseRepository<ENTITY: IEntity>(private val baseDao: IBaseDao<ENTITY>) : I
         TODO("Not yet implemented")
     }
 
-    override suspend fun query(specification: ISpecification): List<ENTITY> {
-        TODO("Not yet implemented")
+    override suspend fun query(specification: ISpecification): EntitiesList<ENTITY> {
+       return baseDao.query()
     }
 
     override suspend fun insert(t: ENTITY) {

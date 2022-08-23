@@ -1,24 +1,34 @@
 package domain.application.baseUseCases
 
+import domain.EntitiesList
 import domain.IEntity
 import domain.IRepository
 import domain.ISpecification
 import domain.application.IoDispatcher
 import domain.application.UseCase
 import kotlinx.coroutines.CoroutineDispatcher
+import utils.log
 
-class GetEntities<ENTITY : IEntity>(
+open class GetEntities<ENTITY : IEntity>(
     val repo: IRepository<ENTITY>,
     @IoDispatcher
     ioDispatcher: CoroutineDispatcher
-) : UseCase<List<ENTITY>, GetEntities.Params>(ioDispatcher) {
+) : UseCase<EntitiesList<ENTITY>, GetEntities.Params>(ioDispatcher) {
 
-    override suspend fun run(params: Params): List<ENTITY> {
+    override suspend fun run(params: Params): EntitiesList<ENTITY> {
         return when (params) {
-            is GetBySpecification -> repo.query(params.specification)
+            is Params.GetWithSpecification -> getEntitiesWithSpec(params.specification)
         }
     }
 
-    sealed class Params
-    data class GetBySpecification(val specification: ISpecification) : Params()
+    private suspend fun getEntitiesWithSpec(specification: ISpecification): EntitiesList<ENTITY> {
+        return repo.query(specification)
+    }
+
+
+    sealed class Params {
+
+        class GetWithSpecification(val specification: ISpecification) : Params()
+    }
+
 }

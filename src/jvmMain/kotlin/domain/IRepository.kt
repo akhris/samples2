@@ -13,8 +13,9 @@ interface IRepository<ENTITY: IEntity> {
     suspend fun update(t: ENTITY)
     suspend fun insert(t: ENTITY)
     suspend fun remove(specification: ISpecification)
-    suspend fun query(specification: ISpecification): List<ENTITY>
+    suspend fun query(specification: ISpecification): EntitiesList<ENTITY>
 }
+
 
 /**
  * Marker interface for querying list of data from repository

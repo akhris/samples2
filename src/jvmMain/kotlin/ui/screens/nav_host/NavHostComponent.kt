@@ -8,6 +8,7 @@ import com.arkivanov.decompose.value.reduce
 import com.arkivanov.essenty.parcelable.Parcelable
 import com.arkivanov.essenty.parcelable.Parcelize
 import navigation.NavItem
+import org.kodein.di.DI
 import ui.screens.norms.NormsComponent
 import ui.screens.operationtypes.OperationTypesComponent
 import ui.screens.parameters.ParametersComponent
@@ -19,6 +20,7 @@ import ui.screens.workers.WorkersComponent
  * Main navigation component that holds all destinations
  */
 class NavHostComponent constructor(
+    private val di: DI,
     componentContext: ComponentContext,
 ) :
     INavHost, ComponentContext by componentContext {
@@ -48,7 +50,12 @@ class NavHostComponent constructor(
             Config.Norms -> INavHost.Child.Norms(NormsComponent(componentContext))
             Config.Parameters -> INavHost.Child.Parameters(ParametersComponent(componentContext))
             Config.OperationsTypes -> INavHost.Child.Operations(OperationTypesComponent(componentContext))
-            Config.Samples -> INavHost.Child.Samples(SamplesComponent(componentContext))
+            Config.Samples -> INavHost.Child.Samples(
+                SamplesComponent(
+                    di = di,
+                    componentContext
+                )
+            )
         }
     }
 

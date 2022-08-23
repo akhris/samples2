@@ -3,7 +3,6 @@ package domain
 /**
  * Class for storing query result.
  */
-
 sealed class EntitiesList<T> {
     /**
      * Grouped query result
