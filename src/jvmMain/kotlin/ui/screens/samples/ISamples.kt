@@ -7,6 +7,7 @@ interface ISamples {
 
     val state: Value<State>
 
+    fun insertNewSample(sample: Sample)
     data class State(
         val samples: List<Sample> = listOf()
     )

@@ -7,8 +7,19 @@ import com.arkivanov.decompose.value.Value
 import com.arkivanov.decompose.value.reduce
 import com.arkivanov.essenty.parcelable.Parcelable
 import com.arkivanov.essenty.parcelable.Parcelize
+import domain.*
+import domain.application.Result
+import domain.application.baseUseCases.GetEntities
+import domain.application.baseUseCases.GetEntity
+import domain.application.baseUseCases.InsertEntity
+import domain.application.baseUseCases.RemoveEntity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import navigation.NavItem
 import org.kodein.di.DI
+import org.kodein.di.instance
 import ui.screens.norms.NormsComponent
 import ui.screens.operationtypes.OperationTypesComponent
 import ui.screens.parameters.ParametersComponent
@@ -25,8 +36,18 @@ class NavHostComponent constructor(
 ) :
     INavHost, ComponentContext by componentContext {
 
-    private val _state = MutableValue(INavHost.State())
+    private val scope =
+        CoroutineScope(Dispatchers.Default + SupervisorJob())
 
+    private val _state = MutableValue(INavHost.State())
+    private val _sampleTypesState = MutableValue(listOf<SampleType>())
+
+
+    private val getSampleTypes: GetEntities<SampleType> by di.instance()
+    private val insertSampleType: InsertEntity<SampleType> by di.instance()
+    private val removeSampleType: RemoveEntity<SampleType> by di.instance()
+
+    private val samplesCallback: IRepositoryCallback<SampleType> by di.instance()
     private val navigation = StackNavigation<Config>()
 
     private val stack =
@@ -39,6 +60,8 @@ class NavHostComponent constructor(
 
 
     override val state: Value<INavHost.State> = _state
+
+    override val sampleTypes: Value<List<SampleType>> = _sampleTypesState
 
     override val childStack: Value<ChildStack<*, INavHost.Child>>
         get() = stack
@@ -103,6 +126,54 @@ class NavHostComponent constructor(
         @Parcelize
         object Samples : Config()
 
+    }
+
+    override fun addSampleType(type: SampleType) {
+        scope.launch {
+            insertSampleType(InsertEntity.Insert(type))
+        }
+    }
+
+    override fun removeSampleType(type: SampleType) {
+        scope.launch {
+            removeSampleType(RemoveEntity.Remove(type))
+        }
+    }
+
+    private suspend fun invalidateSampleTypes() {
+        val types = getSampleTypes(GetEntities.Params.GetWithSpecification(Specification.QueryAll))
+        when (types) {
+            is Result.Failure -> {}
+            is Result.Success -> {
+                when (types.value) {
+                    is EntitiesList.Grouped -> {}
+                    is EntitiesList.NotGrouped -> {
+                        _sampleTypesState.reduce { types.value.items }
+                    }
+                }
+
+            }
+        }
+    }
+
+    init {
+        scope.launch {
+            invalidateSampleTypes()
+        }
+
+        scope.launch {
+            samplesCallback
+                .updates
+                .collect {
+                    when (it) {
+                        is RepoResult.ItemInserted,
+                        is RepoResult.ItemRemoved,
+                        is RepoResult.ItemUpdated -> {
+                            invalidateSampleTypes()
+                        }
+                    }
+                }
+        }
     }
 
 }

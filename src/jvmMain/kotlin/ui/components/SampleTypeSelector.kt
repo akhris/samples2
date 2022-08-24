@@ -17,6 +17,8 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.rememberDialogState
 import domain.SampleType
 import ui.UiSettings
 
@@ -27,12 +29,14 @@ fun SampleTypeSelector(
     typesList: List<SampleType>,
     selectedType: SampleType,
     onSampleTypeSelected: (SampleType) -> Unit,
-    onNewSampleTypeAdd: () -> Unit,
+    onNewSampleTypeAdd: (SampleType) -> Unit,
     onSampleTypeDelete: (SampleType) -> Unit
 ) {
 
     var isMenuOpened by remember(selectedType) { mutableStateOf(false) }
     val rotation by animateFloatAsState(if (isMenuOpened) 180f else 0f)
+
+    var showNewSampleTypeDialog by remember(selectedType) { mutableStateOf(false) }
 
     Box(modifier = modifier) {
         ListItem(
@@ -75,7 +79,7 @@ fun SampleTypeSelector(
                             modifier = Modifier.onPointerEvent(PointerEventType.Enter) { isHover = true }
                                 .onPointerEvent(PointerEventType.Exit) { isHover = false }
                                 .clickable {
-                                           onSampleTypeDelete(sampleType)
+                                    onSampleTypeDelete(sampleType)
                                 },
                             imageVector = Icons.Rounded.Clear,
                             contentDescription = "delete ${sampleType.name}",
@@ -83,7 +87,7 @@ fun SampleTypeSelector(
                         )
                     }
                 }
-                DropdownMenuItem(onClick = onNewSampleTypeAdd) {
+                DropdownMenuItem(onClick = { showNewSampleTypeDialog = true }) {
                     Icon(
                         Icons.Rounded.AddCircle,
                         modifier = Modifier.padding(8.dp),
@@ -93,6 +97,31 @@ fun SampleTypeSelector(
                 }
             }
         }
+    }
+
+    if (showNewSampleTypeDialog) {
+
+        var newSampleTypeName by remember { mutableStateOf("") }
+
+        Dialog(
+            state = rememberDialogState(),
+            onCloseRequest = { showNewSampleTypeDialog = false },
+            content = {
+                Column {
+                    TextField(
+                        value = newSampleTypeName,
+                        onValueChange = { newSampleTypeName = it },
+                        label = { Text("Имя типа образцов") })
+                    Button(onClick = {
+                        if (newSampleTypeName.isNotEmpty()) {
+                            onNewSampleTypeAdd(
+                                SampleType(name = newSampleTypeName)
+                            )
+                            showNewSampleTypeDialog = false
+                        }
+                    }, content = { Text("Добавить") })
+                }
+            })
     }
 
 }

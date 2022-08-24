@@ -7,7 +7,17 @@ import androidx.compose.ui.window.application
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import di.di
+import domain.Sample
+import domain.SampleType
+import domain.application.baseUseCases.InsertEntity
+import kotlinx.coroutines.*
 import org.kodein.di.compose.localDI
+import org.kodein.di.instance
+import persistence.DbSettings
+import persistence.dto.EntitySampleType
+import persistence.dto.Tables
+import test.SampleTypes
+import test.Samples
 import ui.RootUi
 import ui.screens.nav_host.INavHost
 import ui.screens.nav_host.NavHostComponent
@@ -24,8 +34,8 @@ fun App(rootComponent: INavHost) {
 
 fun main() {
     // check settings from swaydb and initiate Database
-
-
+    DbSettings.db
+    //    prepopulateDB()
     // Create the root component before starting Compose
     val lifecycle = LifecycleRegistry()
     val root = NavHostComponent(componentContext = DefaultComponentContext(lifecycle), di = di)
@@ -34,6 +44,16 @@ fun main() {
     application {
         Window(title = "Samples", onCloseRequest = ::exitApplication) {
             App(root)
+        }
+    }
+}
+
+
+private fun prepopulateDB() {
+    val insertSampleType by di.instance<InsertEntity<SampleType>>()
+    CoroutineScope(Dispatchers.Default + SupervisorJob()).launch {
+        SampleTypes.list.forEach {
+            insertSampleType(InsertEntity.Insert(it))
         }
     }
 }

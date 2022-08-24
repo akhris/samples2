@@ -4,16 +4,30 @@ import domain.EntitiesList
 import domain.IBaseDao
 import domain.ISpecification
 import domain.Sample
-import test.Samples
-import utils.log
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import persistence.dto.EntitySample
+import persistence.dto.Tables
+import persistence.toSample
+import utils.toUUID
 
 class SamplesDao : IBaseDao<Sample> {
+
+    private val table = Tables.Samples
     override suspend fun getByID(id: String): Sample? {
-        TODO("Not yet implemented")
+        return newSuspendedTransaction {
+            EntitySample
+                .find { table.sampleID eq id }
+                .singleOrNull()
+                ?.toSample()
+        }
     }
 
     override suspend fun removeById(id: String) {
-        TODO("Not yet implemented")
+        newSuspendedTransaction {
+            table.deleteWhere { table.sampleID eq id }
+            commit()
+        }
     }
 
     override suspend fun query(
@@ -23,8 +37,14 @@ class SamplesDao : IBaseDao<Sample> {
         searchSpec: ISpecification?,
         groupingSpec: ISpecification?
     ): EntitiesList<Sample> {
-        log("querying samples in $this")
-        return EntitiesList.NotGrouped(Samples.samples)
+        //query all:
+        return newSuspendedTransaction {
+            val types = EntitySample
+                .all()
+                .map { it.toSample() }
+
+            EntitiesList.NotGrouped(types)
+        }
     }
 
     override suspend fun getItemsCount(
@@ -38,10 +58,29 @@ class SamplesDao : IBaseDao<Sample> {
     }
 
     override suspend fun update(entity: Sample) {
-        TODO("Not yet implemented")
+        newSuspendedTransaction {
+            table.update({ table.sampleID eq entity.id }) {
+                it[sampleID] = entity.id
+                it[comment] = entity.comment
+                it[orderID] = entity.orderID
+                it[description] = entity.description
+                it[type] = entity.type.id.toUUID()
+            }
+            commit()
+        }
     }
 
     override suspend fun insert(entity: Sample) {
-        TODO("Not yet implemented")
+        newSuspendedTransaction {
+            addLogger(StdOutSqlLogger)
+            table.insert {
+                it[sampleID] = entity.id
+                it[comment] = entity.comment
+                it[orderID] = entity.orderID
+                it[description] = entity.description
+                it[type] = entity.type.id.toUUID()
+            }
+            commit()
+        }
     }
 }

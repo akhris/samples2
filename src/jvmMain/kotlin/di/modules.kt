@@ -7,6 +7,7 @@ import org.kodein.di.DI
 import org.kodein.di.DirectDI
 import org.kodein.di.bindSingleton
 import org.kodein.di.instance
+import persistence.dao.SampleTypesDao
 import persistence.dao.SamplesDao
 import persistence.repositories.BaseRepository
 
@@ -18,8 +19,10 @@ inline fun <reified ENTITY : IEntity> getEntityModule(
     crossinline getDao: DirectDI.() -> IBaseDao<ENTITY>,
     crossinline additionalBindings: DI.Builder.() -> Unit = {}
 ): DI.Module = DI.Module(name) {
-    bindSingleton<IRepository<ENTITY>> { BaseRepository(getDao()) }
-    bindSingleton<IRepositoryCallback<ENTITY>> { BaseRepository(getDao()) }
+    bindSingleton<IBaseDao<ENTITY>> { getDao() }
+    bindSingleton<BaseRepository<ENTITY>> { BaseRepository(instance()) }
+    bindSingleton<IRepository<ENTITY>> { instance<BaseRepository<ENTITY>>() }
+    bindSingleton<IRepositoryCallback<ENTITY>> { instance<BaseRepository<ENTITY>>() }
     bindSingleton<GetEntity<ENTITY>> { GetEntity(repo = instance(), ioDispatcher = Dispatchers.IO) }
     bindSingleton<GetEntities<ENTITY>> { GetEntities(repo = instance(), ioDispatcher = Dispatchers.IO) }
     bindSingleton<RemoveEntity<ENTITY>> { RemoveEntity(repo = instance(), ioDispatcher = Dispatchers.IO) }
@@ -29,3 +32,4 @@ inline fun <reified ENTITY : IEntity> getEntityModule(
 }
 
 val samplesModule = getEntityModule<Sample>(name = "samples module", getDao = { SamplesDao() })
+val sampleTypesModule = getEntityModule<SampleType>(name = "sample types module", getDao = { SampleTypesDao() })

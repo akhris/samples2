@@ -5,11 +5,10 @@ import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.decompose.value.reduce
 import com.arkivanov.essenty.lifecycle.subscribe
-import domain.EntitiesList
-import domain.Sample
-import domain.Specification
+import domain.*
 import domain.application.Result
 import domain.application.baseUseCases.GetEntities
+import domain.application.baseUseCases.InsertEntity
 import kotlinx.coroutines.*
 import org.kodein.di.DI
 import org.kodein.di.instance
@@ -22,6 +21,9 @@ class SamplesComponent(
 ) : ISamples, ComponentContext by componentContext {
 
     private val getSamples: GetEntities<Sample> by di.instance()
+    private val insertSample: InsertEntity<Sample> by di.instance()
+
+    private val repositoryCallbacks: IRepositoryCallback<Sample> by di.instance()
 
     private val scope =
         CoroutineScope(Dispatchers.Default + SupervisorJob())
@@ -29,6 +31,12 @@ class SamplesComponent(
 
     private val _state = MutableValue(ISamples.State())
     override val state: Value<ISamples.State> = _state
+
+    override fun insertNewSample(sample: Sample) {
+        scope.launch {
+            insertSample(InsertEntity.Insert(sample))
+        }
+    }
 
     private suspend fun invalidateSamples() {
         //get all samples
@@ -60,6 +68,19 @@ class SamplesComponent(
 
         scope.launch {
             invalidateSamples()
+        }
+
+        //subscribe to repository callbacks:
+        scope.launch {
+            repositoryCallbacks.updates.collect {
+                when (it) {
+                    is RepoResult.ItemInserted,
+                    is RepoResult.ItemRemoved,
+                    is RepoResult.ItemUpdated -> {
+                        invalidateSamples()
+                    }
+                }
+            }
         }
 
     }

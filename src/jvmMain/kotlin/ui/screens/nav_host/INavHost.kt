@@ -2,6 +2,7 @@ package ui.screens.nav_host
 
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
+import domain.SampleType
 import navigation.NavItem
 import ui.screens.norms.INorms
 import ui.screens.parameters.IParameters
@@ -17,6 +18,13 @@ interface INavHost {
     fun setDestination(navItem: NavItem)
 
     val state: Value<State>
+
+
+    //fixme move sampletypes to special selector component
+
+    val sampleTypes: Value<List<SampleType>>
+    fun addSampleType(type: SampleType)
+    fun removeSampleType(type: SampleType)
 
     data class State(
         val currentDestination: NavItem? = NavItem.homeItem

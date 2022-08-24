@@ -9,7 +9,6 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
-import navigation.NavItem
 import test.SampleTypes
 import ui.components.SampleTypeSelector
 import ui.screens.nav_host.INavHost
@@ -35,8 +34,12 @@ fun RootUi(component: INavHost) {
                     typesList = SampleTypes.list,
                     selectedType = selectedSampleType,
                     onSampleTypeSelected = { selectedSampleType = it },
-                    onNewSampleTypeAdd = {},
-                    onSampleTypeDelete = {})
+                    onNewSampleTypeAdd = {
+                        component.addSampleType(it)
+                    },
+                    onSampleTypeDelete = {
+                        component.removeSampleType(it)
+                    })
             }
         },
         content = {
