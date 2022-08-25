@@ -1,10 +1,9 @@
 package persistence.dto
 
+import org.jetbrains.exposed.dao.*
 import org.jetbrains.exposed.dao.IntEntity
-import org.jetbrains.exposed.dao.IntEntityClass
-import org.jetbrains.exposed.dao.UUIDEntity
-import org.jetbrains.exposed.dao.UUIDEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.dao.id.IdTable
 import java.util.UUID
 
 class EntitySampleType(id: EntityID<UUID>) : UUIDEntity(id) {
@@ -22,4 +21,13 @@ class EntitySample(id: EntityID<Int>) : IntEntity(id) {
     var description by Tables.Samples.description
     var comment by Tables.Samples.comment
     var orderID by Tables.Samples.orderID
+}
+
+class EntityParameter(id: EntityID<UUID>) : UUIDEntity(id) {
+    companion object : UUIDEntityClass<EntityParameter>(Tables.Parameters)
+
+    val name by Tables.Parameters.name
+    val sampleType by EntitySampleType referencedOn Tables.Parameters.sampleType
+    val description by Tables.Parameters.description
+    val position by Tables.Parameters.position
 }

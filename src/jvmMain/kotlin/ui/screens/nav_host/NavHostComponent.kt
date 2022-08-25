@@ -42,7 +42,6 @@ class NavHostComponent constructor(
     private val _state = MutableValue(INavHost.State())
     private val _sampleTypesState = MutableValue(listOf<SampleType>())
 
-
     private val getSampleTypes: GetEntities<SampleType> by di.instance()
     private val insertSampleType: InsertEntity<SampleType> by di.instance()
     private val removeSampleType: RemoveEntity<SampleType> by di.instance()
@@ -71,7 +70,7 @@ class NavHostComponent constructor(
             Config.Places -> INavHost.Child.Places(PlacesComponent(componentContext))
             Config.Workers -> INavHost.Child.Workers(WorkersComponent(componentContext))
             Config.Norms -> INavHost.Child.Norms(NormsComponent(componentContext))
-            Config.Parameters -> INavHost.Child.Parameters(ParametersComponent(componentContext))
+            Config.Parameters -> INavHost.Child.Parameters(ParametersComponent(di = di, componentContext))
             Config.OperationsTypes -> INavHost.Child.Operations(OperationTypesComponent(componentContext))
             Config.Samples -> INavHost.Child.Samples(
                 SamplesComponent(

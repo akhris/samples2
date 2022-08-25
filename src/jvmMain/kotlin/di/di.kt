@@ -6,4 +6,5 @@ val di = DI {
 
     import(samplesModule)
     import(sampleTypesModule)
+    import(parametersModule)
 }

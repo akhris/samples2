@@ -70,15 +70,13 @@ data class Sample(
 
 /**
  * Entity representing sample parameter
- *
- * [parameterID] here is human-readable id which makes a composite key with [sampleType]
- *
- * there must be no two equal parameterIDs for a sampleType.
  */
 data class Parameter(
-    override val id: String = "",
+    override val id: String = UUID.randomUUID().toString(),
+    val name: String = "",
     val sampleType: SampleType,
-    val description: String = ""
+    val description: String = "",
+    val position: Int? = null
 ) : IEntity
 
 /**

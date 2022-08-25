@@ -7,6 +7,12 @@ interface IParameters {
 
     val state: Value<State>
 
+    fun addNewParameter(parameter: Parameter)
+
+    fun removeParameter(parameter: Parameter)
+
+    fun updateParameter(parameter: Parameter)
+
     data class State(
         val parameters: List<Parameter> = listOf()
     )

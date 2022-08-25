@@ -3,23 +3,21 @@ package persistence.dao
 import domain.EntitiesList
 import domain.IBaseDao
 import domain.ISpecification
-import domain.SampleType
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import domain.Parameter
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import persistence.dto.EntitySample
-import persistence.dto.EntitySampleType
+import org.jetbrains.exposed.sql.update
+import persistence.dto.EntityParameter
 import persistence.dto.Tables
-import persistence.toSample
-import persistence.toSampleType
+import persistence.toParameter
 import utils.toUUID
 
-class SampleTypesDao : IBaseDao<SampleType> {
+class ParametersDao : IBaseDao<Parameter> {
 
-    private val table = Tables.SampleTypes
+    private val table = Tables.Parameters
 
-    override suspend fun getByID(id: String): SampleType? {
+    override suspend fun getByID(id: String): Parameter? {
         TODO("Not yet implemented")
     }
 
@@ -36,14 +34,13 @@ class SampleTypesDao : IBaseDao<SampleType> {
         pagingSpec: ISpecification?,
         searchSpec: ISpecification?,
         groupingSpec: ISpecification?
-    ): EntitiesList<SampleType> {
+    ): EntitiesList<Parameter> {
         //query all:
         return newSuspendedTransaction {
-            val types = EntitySampleType
+            val parameters = EntityParameter
                 .all()
-                .map { it.toSampleType() }
-
-            EntitiesList.NotGrouped(types)
+                .map { it.toParameter() }
+            EntitiesList.NotGrouped(parameters)
         }
     }
 
@@ -57,19 +54,28 @@ class SampleTypesDao : IBaseDao<SampleType> {
         TODO("Not yet implemented")
     }
 
-    override suspend fun update(entity: SampleType) {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun insert(entity: SampleType) {
+    override suspend fun update(entity: Parameter) {
         newSuspendedTransaction {
-            table.insert {
-                it[id] = entity.id.toUUID()
+            table.update({ table.id eq entity.id.toUUID() }) {
                 it[name] = entity.name
                 it[description] = entity.description
+                it[position] = entity.position
+                it[sampleType] = entity.sampleType.id.toUUID()
             }
             commit()
         }
     }
 
+    override suspend fun insert(entity: Parameter) {
+        newSuspendedTransaction {
+            table.insert {
+                it[id] = entity.id.toUUID()
+                it[name] = entity.name
+                it[description] = entity.description
+                it[position] = entity.position
+                it[sampleType] = entity.sampleType.id.toUUID()
+            }
+            commit()
+        }
+    }
 }

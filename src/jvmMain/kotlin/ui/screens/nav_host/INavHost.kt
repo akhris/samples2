@@ -19,7 +19,6 @@ interface INavHost {
 
     val state: Value<State>
 
-
     //fixme move sampletypes to special selector component
 
     val sampleTypes: Value<List<SampleType>>

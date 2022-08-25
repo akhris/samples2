@@ -19,6 +19,7 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.rememberDialogState
+import domain.Sample
 import domain.SampleType
 import ui.UiSettings
 
@@ -36,8 +37,8 @@ fun SampleTypeSelector(
     var isMenuOpened by remember(selectedType) { mutableStateOf(false) }
     val rotation by animateFloatAsState(if (isMenuOpened) 180f else 0f)
 
-    var showNewSampleTypeDialog by remember(selectedType) { mutableStateOf(false) }
-
+    var showNewSampleTypeDialog by remember { mutableStateOf(false) }
+    var showDeleteConfirmDialog by remember { mutableStateOf<SampleType?>(null) }
     Box(modifier = modifier) {
         ListItem(
             modifier = Modifier.fillMaxWidth(),
@@ -79,7 +80,7 @@ fun SampleTypeSelector(
                             modifier = Modifier.onPointerEvent(PointerEventType.Enter) { isHover = true }
                                 .onPointerEvent(PointerEventType.Exit) { isHover = false }
                                 .clickable {
-                                    onSampleTypeDelete(sampleType)
+                                    showDeleteConfirmDialog = sampleType
                                 },
                             imageVector = Icons.Rounded.Clear,
                             contentDescription = "delete ${sampleType.name}",
@@ -122,6 +123,30 @@ fun SampleTypeSelector(
                     }, content = { Text("Добавить") })
                 }
             })
+    }
+
+    showDeleteConfirmDialog?.let { sampleType ->
+        AlertDialog(onDismissRequest = {
+            showDeleteConfirmDialog = null
+        }, confirmButton = {
+            Button(
+                colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.error),
+                onClick = {
+                onSampleTypeDelete(sampleType)
+                showDeleteConfirmDialog = null
+            }) {
+                Text(text = "Удалить", color = MaterialTheme.colors.onError)
+            }
+        }, text = {
+            Text(text = "Удалить тип образцов ${sampleType.name}?")
+        }, dismissButton = {
+            OutlinedButton(onClick = {
+                showDeleteConfirmDialog = null
+            }){
+                Text(text = "Отмена")
+            }
+
+        })
     }
 
 }

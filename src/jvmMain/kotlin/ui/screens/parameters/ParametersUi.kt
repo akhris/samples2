@@ -1,34 +1,75 @@
 package ui.screens.parameters
 
+import LocalSamplesType
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.ListItem
-import androidx.compose.material.Text
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
+import domain.Parameter
 import ui.components.ChipGroup
 import ui.components.FilterChip
+import ui.components.tables.ParametersTable
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun ParametersUi(component: IParameters) {
-    val state by component.state.subscribeAsState()
+    val state by remember(component) { component.state }.subscribeAsState()
 
-        //render norms list:
-    Column {
-        //conditions row:
+    var showAddParameterDialog by remember { mutableStateOf(false) }
+
+    val currentType = LocalSamplesType.current
+
+    Box(modifier = Modifier.fillMaxSize()) {
 
 
-        state
-            .parameters
-            .forEach { parameter ->
-                ListItem(overlineText = {
-                    Text(parameter.id)
-                }, text = {
-                    Text("${parameter.description}")
-                }, secondaryText = {
+        //parameters table:
+        ParametersTable(state.parameters)
 
-                })
+        FloatingActionButton(
+            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
+            onClick = { showAddParameterDialog = true },
+            content = { Icon(Icons.Rounded.Add, contentDescription = "add parameter") })
+    }
+
+
+    if (showAddParameterDialog) {
+
+        var paramName by remember { mutableStateOf("") }
+
+        AlertDialog(onDismissRequest = {
+            showAddParameterDialog = false
+        },
+            text = {
+                BasicTextField(value = paramName, onValueChange = { paramName = it })
+            },
+            confirmButton = {
+                Button(
+                    enabled = paramName.isNotEmpty() && currentType != null,
+                    onClick = {
+                        currentType?.let { st ->
+                            component.addNewParameter(Parameter(name = paramName, sampleType = st))
+                            showAddParameterDialog = false
+                        }
+                    }
+                ) {
+                    Text(text = "Добавить")
+                }
+            }, dismissButton = {
+                Button(onClick = { showAddParameterDialog = false }) {
+                    Text("Отмена")
+                }
             }
+        )
     }
 }

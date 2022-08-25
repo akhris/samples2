@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
@@ -21,7 +23,7 @@ fun RootUi(component: INavHost) {
     val scaffoldState = rememberScaffoldState(drawerState = drawerState)
 
     val navigationItem by remember(component) { component.state }.subscribeAsState()
-
+    val sampleTypes by remember(component) { component.sampleTypes }.subscribeAsState()
     var selectedSampleType by remember { mutableStateOf(SampleTypes.type1) }
 
     Scaffold(
@@ -31,7 +33,7 @@ fun RootUi(component: INavHost) {
 //                Text(modifier = Modifier.padding(start = UiSettings.AppBar.titleStartPadding).weight(1f), text = navigationItem.currentDestination?.title?:"")
                 SampleTypeSelector(
                     modifier = Modifier.padding(start = UiSettings.AppBar.titleStartPadding).weight(1f),
-                    typesList = SampleTypes.list,
+                    typesList = sampleTypes,
                     selectedType = selectedSampleType,
                     onSampleTypeSelected = { selectedSampleType = it },
                     onNewSampleTypeAdd = {

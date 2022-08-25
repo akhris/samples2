@@ -25,7 +25,8 @@ object DbSettings {
 
             SchemaUtils.create(
                 Tables.SampleTypes,
-                Tables.Samples
+                Tables.Samples,
+                Tables.Parameters
             )
         }
         db
