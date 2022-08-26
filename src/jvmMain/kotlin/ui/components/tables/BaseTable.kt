@@ -2,46 +2,92 @@ package ui.components.tables
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+
+import androidx.compose.material.Text
+import androidx.compose.material.TextField
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
+import ui.UiSettings
+import ui.components.ScrollableBox
+import utils.log
 
 @Composable
 fun BaseTable(
-    maxColumns: Int,
-    getHeader: (@Composable ColumnScope.(column: Int) -> Unit)? = null,
-    getCell: @Composable (x: Int, y: Int) -> Unit,
-    maxRowsOnPage: (page: Int) -> Int = { 20 },
-    totalItems: Long
+    adapter: ITableAdapter
 ) {
-    var currentPage by remember { mutableStateOf(1) }
+//    var currentPage by remember { mutableStateOf(1) }
 
-    Column(modifier = Modifier.fillMaxWidth()) {
-        getHeader?.let { getH ->
-            Row(modifier = Modifier.fillMaxWidth()) {
-                //render header:
-                for (column in 1..maxColumns) {
-                    Box(modifier = Modifier.weight(1f))
-                    this@Column.getH(column)
-                }
-            }
-        }
+    val totalRows = remember(adapter) { adapter.getTotalRows() }
+    val columnCount = remember(adapter) { adapter.getColumnCount() }
+    val withHeader = remember(adapter) { adapter.withHeader() }
 
-        //render rows:
-        for (row in 0..maxRowsOnPage(currentPage)) {
-            Row {
-                for (column in 1..maxColumns) {
-                    Box(modifier = Modifier.weight(1f).border(width = 1.dp, color = Color.Gray).padding(8.dp)) {
-                        getCell.invoke(column, row)
+    ScrollableBox(
+        modifier = Modifier.fillMaxWidth(),
+        innerHorizontalPadding = 80.dp,
+        header = if (withHeader) {
+            {
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    //render header:
+                    for (column in 0 until columnCount) {
+                        Box(
+                            modifier = Modifier.weight(1f)
+                                .border(color = UiSettings.DataTable.gridLinesColor, width = UiSettings.DataTable.gridLinesWidth)
+                        ) {
+                            Text(modifier = Modifier.align(Alignment.Center), text = adapter.getHeader(column))
+                        }
+
                     }
                 }
             }
-        }
+        } else null
+    ) {
+//        Column {
 
-    }
+
+            Column {
+                //render rows:
+                for (row in 0 until totalRows) {
+                    Row {
+                        for (column in 0 until columnCount) {
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .border(
+                                        color = UiSettings.DataTable.gridLinesColor,
+                                        width = UiSettings.DataTable.gridLinesWidth
+                                    )
+                                    .padding(UiSettings.DataTable.cellPadding)
+                            ) {
+
+                                val initialValue =
+                                    remember(adapter, column, row) { adapter.getCellValue(column, row) }
+
+                                var cellValue by remember(initialValue) { mutableStateOf(initialValue) }
+
+                                TextField(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    value = cellValue,
+                                    onValueChange = { cellValue = it })
+
+                                //debounce logic:
+                                LaunchedEffect(cellValue) {
+                                    if (cellValue == initialValue) {
+                                        return@LaunchedEffect
+                                    }
+                                    delay(UiSettings.Debounce.debounceTime)
+                                    log("changing value in adapter:")
+                                    adapter.setCellValue(column, row, cellValue)
+                                }
+                            }
+                        }
+                    }
+                }
+
+            }
+        }
+//    }
+
 }

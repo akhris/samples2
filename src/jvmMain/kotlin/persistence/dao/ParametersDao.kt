@@ -4,10 +4,8 @@ import domain.EntitiesList
 import domain.IBaseDao
 import domain.ISpecification
 import domain.Parameter
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import org.jetbrains.exposed.sql.update
 import persistence.dto.EntityParameter
 import persistence.dto.Tables
 import persistence.toParameter
@@ -56,6 +54,7 @@ class ParametersDao : IBaseDao<Parameter> {
 
     override suspend fun update(entity: Parameter) {
         newSuspendedTransaction {
+            addLogger(StdOutSqlLogger)
             table.update({ table.id eq entity.id.toUUID() }) {
                 it[name] = entity.name
                 it[description] = entity.description

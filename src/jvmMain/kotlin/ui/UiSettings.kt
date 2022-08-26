@@ -1,10 +1,15 @@
 package ui
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 object UiSettings {
 
-    object AppBar{
+    object Debounce {
+        val debounceTime: Long = 1000L
+    }
+    object AppBar {
         val titleStartPadding = 32.dp
     }
 
@@ -19,6 +24,12 @@ object UiSettings {
     object SampleTypesSelector {
         val selectorWidth = 320.dp
         val dropDownIconSize = 32.dp
+    }
+
+    object DataTable {
+        val gridLinesColor = Color.LightGray
+        val gridLinesWidth = 2.dp
+        val cellPadding: Dp = 8.dp
     }
 
 

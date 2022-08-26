@@ -1,9 +1,7 @@
 package ui.screens.parameters
 
 import LocalSamplesType
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
@@ -13,13 +11,11 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import domain.Parameter
-import ui.components.ChipGroup
-import ui.components.FilterChip
-import ui.components.tables.ParametersTable
+import ui.components.tables.BaseTable
+import ui.components.tables.ParametersAdapter
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
@@ -30,11 +26,18 @@ fun ParametersUi(component: IParameters) {
 
     val currentType = LocalSamplesType.current
 
+    val adapter = remember(state.parameters) {
+        ParametersAdapter(state.parameters,
+            onEntityChanged = {
+                component.updateParameter(it)
+            })
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
 
 
         //parameters table:
-        ParametersTable(state.parameters)
+        BaseTable(adapter)
 
         FloatingActionButton(
             modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
