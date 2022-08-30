@@ -5,19 +5,25 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import domain.Parameter
 import ui.components.tables.BaseTable
 import ui.components.tables.ParametersAdapter
+import utils.log
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun ParametersUi(component: IParameters) {
     val state by remember(component) { component.state }.subscribeAsState()
@@ -50,11 +56,26 @@ fun ParametersUi(component: IParameters) {
 
         var paramName by remember { mutableStateOf("") }
 
-        AlertDialog(onDismissRequest = {
-            showAddParameterDialog = false
-        },
+        AlertDialog(
+            modifier = Modifier.onKeyEvent {
+                if (it.key == Key.Enter && (paramName.isNotEmpty() && currentType != null)) {
+                        component.addNewParameter(Parameter(name = paramName, sampleType = currentType))
+                        showAddParameterDialog = false
+
+                    true
+                } else {
+                    false
+                }
+            },
+            onDismissRequest = {
+                showAddParameterDialog = false
+            },
             text = {
-                BasicTextField(value = paramName, onValueChange = { paramName = it })
+                OutlinedTextField(
+                    value = paramName,
+                    onValueChange = { paramName = it },
+                    singleLine = true
+                )
             },
             confirmButton = {
                 Button(
@@ -69,7 +90,7 @@ fun ParametersUi(component: IParameters) {
                     Text(text = "Добавить")
                 }
             }, dismissButton = {
-                Button(onClick = { showAddParameterDialog = false }) {
+                TextButton(onClick = { showAddParameterDialog = false }) {
                     Text("Отмена")
                 }
             }

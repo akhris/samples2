@@ -52,7 +52,7 @@ class NavHostComponent constructor(
     private val stack =
         childStack(
             source = navigation,
-            initialConfiguration = Config.Places,
+            initialConfiguration = Config.Samples,
             handleBackButton = true,
             childFactory = ::createChild
         )

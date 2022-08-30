@@ -11,6 +11,7 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
+import domain.SampleType
 import test.SampleTypes
 import ui.components.SampleTypeSelector
 import ui.screens.nav_host.INavHost
@@ -24,7 +25,7 @@ fun RootUi(component: INavHost) {
 
     val navigationItem by remember(component) { component.state }.subscribeAsState()
     val sampleTypes by remember(component) { component.sampleTypes }.subscribeAsState()
-    var selectedSampleType by remember { mutableStateOf(SampleTypes.type1) }
+    var selectedSampleType by remember { mutableStateOf<SampleType?>(sampleTypes.firstOrNull()) }
 
     Scaffold(
         scaffoldState = scaffoldState,
@@ -38,8 +39,22 @@ fun RootUi(component: INavHost) {
                     onSampleTypeSelected = { selectedSampleType = it },
                     onNewSampleTypeAdd = {
                         component.addSampleType(it)
+                        selectedSampleType = it
                     },
                     onSampleTypeDelete = {
+                        if (selectedSampleType == it) {
+                            //change selection:
+                            val removedIndex = sampleTypes.indexOf(it)
+                            selectedSampleType = if (sampleTypes.size > 1) {
+                                if (removedIndex == 0) {
+                                    sampleTypes[1]
+                                } else {
+                                    sampleTypes.getOrNull(removedIndex - 1)
+                                }
+                            } else {
+                                null
+                            }
+                        }
                         component.removeSampleType(it)
                     })
             }

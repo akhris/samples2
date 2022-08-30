@@ -28,7 +28,7 @@ import ui.UiSettings
 fun SampleTypeSelector(
     modifier: Modifier = Modifier,
     typesList: List<SampleType>,
-    selectedType: SampleType,
+    selectedType: SampleType?,
     onSampleTypeSelected: (SampleType) -> Unit,
     onNewSampleTypeAdd: (SampleType) -> Unit,
     onSampleTypeDelete: (SampleType) -> Unit
@@ -40,23 +40,42 @@ fun SampleTypeSelector(
     var showNewSampleTypeDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf<SampleType?>(null) }
     Box(modifier = modifier) {
-        ListItem(
-            modifier = Modifier.fillMaxWidth(),
-            text = {
-                Text(text = selectedType.name)
-            }, secondaryText = {
-                Text(text = selectedType.description)
-            }, trailing = {
-                IconButton(onClick = {
-                    isMenuOpened = !isMenuOpened
-                }) {
-                    Icon(
-                        imageVector = Icons.Rounded.ArrowDropDown,
-                        modifier = Modifier.size(UiSettings.SampleTypesSelector.dropDownIconSize).rotate(rotation),
-                        contentDescription = "open drop-down"
-                    )
-                }
-            })
+        if (selectedType != null) {
+            ListItem(
+                modifier = Modifier.fillMaxWidth(),
+                text = {
+                    Text(text = selectedType.name)
+                }, secondaryText = {
+                    Text(text = selectedType.description)
+                }, trailing = {
+                    IconButton(onClick = {
+                        isMenuOpened = !isMenuOpened
+                    }) {
+                        Icon(
+                            imageVector = Icons.Rounded.ArrowDropDown,
+                            modifier = Modifier.size(UiSettings.SampleTypesSelector.dropDownIconSize).rotate(rotation),
+                            contentDescription = "open drop-down"
+                        )
+                    }
+                })
+        } else {
+            //selected type == null
+            ListItem(
+                modifier = Modifier.fillMaxWidth(),
+                text = {
+                    Text(text = "добавить тип прибора")
+                }, trailing = {
+                    IconButton(onClick = {
+                       showNewSampleTypeDialog = true
+                    }) {
+                        Icon(
+                            Icons.Rounded.AddCircle,
+                            modifier = Modifier.padding(8.dp),
+                            contentDescription = "add new sample type"
+                        )
+                    }
+                })
+        }
 
         if (isMenuOpened) {
             DropdownMenu(
@@ -132,9 +151,9 @@ fun SampleTypeSelector(
             Button(
                 colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.error),
                 onClick = {
-                onSampleTypeDelete(sampleType)
-                showDeleteConfirmDialog = null
-            }) {
+                    onSampleTypeDelete(sampleType)
+                    showDeleteConfirmDialog = null
+                }) {
                 Text(text = "Удалить", color = MaterialTheme.colors.onError)
             }
         }, text = {
@@ -142,7 +161,7 @@ fun SampleTypeSelector(
         }, dismissButton = {
             OutlinedButton(onClick = {
                 showDeleteConfirmDialog = null
-            }){
+            }) {
                 Text(text = "Отмена")
             }
 

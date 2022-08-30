@@ -9,6 +9,7 @@ import domain.*
 import domain.application.Result
 import domain.application.baseUseCases.GetEntities
 import domain.application.baseUseCases.InsertEntity
+import domain.application.baseUseCases.UpdateEntity
 import kotlinx.coroutines.*
 import org.kodein.di.DI
 import org.kodein.di.instance
@@ -22,6 +23,7 @@ class SamplesComponent(
 
     private val getSamples: GetEntities<Sample> by di.instance()
     private val insertSample: InsertEntity<Sample> by di.instance()
+    private val updateSample: UpdateEntity<Sample> by di.instance()
 
     private val repositoryCallbacks: IRepositoryCallback<Sample> by di.instance()
 
@@ -35,6 +37,12 @@ class SamplesComponent(
     override fun insertNewSample(sample: Sample) {
         scope.launch {
             insertSample(InsertEntity.Insert(sample))
+        }
+    }
+
+    override fun updateSample(sample: Sample) {
+        scope.launch {
+            updateSample(UpdateEntity.Update(sample))
         }
     }
 

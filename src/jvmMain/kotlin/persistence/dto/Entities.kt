@@ -3,7 +3,6 @@ package persistence.dto
 import org.jetbrains.exposed.dao.*
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.dao.id.IdTable
 import java.util.UUID
 
 class EntitySampleType(id: EntityID<UUID>) : UUIDEntity(id) {
@@ -30,4 +29,41 @@ class EntityParameter(id: EntityID<UUID>) : UUIDEntity(id) {
     val sampleType by EntitySampleType referencedOn Tables.Parameters.sampleType
     val description by Tables.Parameters.description
     val position by Tables.Parameters.position
+}
+
+class EntityPlace(id: EntityID<UUID>) : UUIDEntity(id) {
+    companion object : UUIDEntityClass<EntityPlace>(Tables.Places)
+
+    val name by Tables.Places.name
+    val roomNumber by Tables.Places.roomNumber
+    val description by Tables.Places.description
+}
+
+class EntityWorker(id: EntityID<UUID>) : UUIDEntity(id) {
+    companion object : UUIDEntityClass<EntityWorker>(Tables.Workers)
+
+    val name by Tables.Workers.name
+    val middleName by Tables.Workers.middleName
+    val surname by Tables.Workers.surname
+    val room by EntityPlace optionalReferencedOn Tables.Workers.room
+    val phoneNumber by Tables.Workers.phoneNumber
+    val email by Tables.Workers.email
+}
+
+class EntityOperationType(id: EntityID<UUID>) : UUIDEntity(id) {
+    companion object : UUIDEntityClass<EntityOperationType>(Tables.OperationTypes)
+
+    val name by Tables.OperationTypes.name
+    val description by Tables.OperationTypes.description
+}
+
+class EntityOperation(id: EntityID<UUID>) : UUIDEntity(id) {
+
+    companion object : UUIDEntityClass<EntityOperation>(Tables.Operations)
+
+    val sample by EntitySample referencedOn Tables.Operations.sample
+    val operationType by EntityOperationType referencedOn Tables.Operations.operationType
+    val dateTime by Tables.Operations.dateTime
+    val worker by EntityWorker referencedOn Tables.Operations.worker
+    val place by EntityPlace referencedOn Tables.Operations.place
 }

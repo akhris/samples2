@@ -1,11 +1,7 @@
 package persistence
 
-import domain.Parameter
-import domain.Sample
-import domain.SampleType
-import persistence.dto.EntityParameter
-import persistence.dto.EntitySample
-import persistence.dto.EntitySampleType
+import domain.*
+import persistence.dto.*
 
 fun EntitySampleType.toSampleType(): SampleType {
     return SampleType(
@@ -32,5 +28,36 @@ fun EntityParameter.toParameter(): Parameter {
         sampleType = this.sampleType.toSampleType(),
         description = this.description ?: "",
         position = this.position
+    )
+}
+
+fun EntityOperationType.toOperationType(): OperationType {
+    return OperationType(id = this.id.value.toString(), name = this.name, description = this.description ?: "")
+}
+
+fun EntityPlace.toPlace(): Place {
+    return Place(id = this.id.value.toString(), roomNumber = this.roomNumber, description = this.description ?: "")
+}
+
+fun EntityWorker.toWorker(): Worker {
+    return Worker(
+        id = this.id.value.toString(),
+        name = this.name,
+        middleName = this.middleName,
+        surname = this.surname,
+        place = this.room?.toPlace(),
+        phoneNumber = this.phoneNumber,
+        email = this.email
+    )
+}
+
+fun EntityOperation.toOperation(): Operation {
+    return Operation(
+        id = this.id.value.toString(),
+        sample = this.sample.toSample(),
+        operationType = this.operationType.toOperationType(),
+        dateTime = this.dateTime,
+        worker = this.worker.toWorker(),
+        place = this.place.toPlace()
     )
 }
