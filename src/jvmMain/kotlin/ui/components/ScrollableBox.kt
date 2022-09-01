@@ -14,6 +14,7 @@ fun ScrollableBox(
     innerHorizontalPadding: Dp = 0.dp,
     scrollState: ScrollState = rememberScrollState(),
     header: (@Composable BoxScope.() -> Unit)? = null,
+    footer: (@Composable BoxScope.() -> Unit)? = null,
     additionalContent: (@Composable BoxScope.() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
@@ -32,6 +33,9 @@ fun ScrollableBox(
                 modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
                 adapter = rememberScrollbarAdapter(scrollState)
             )
+        }
+        Box(modifier.padding(horizontal = innerHorizontalPadding)) {
+            footer?.invoke(this)
         }
     }
 }
