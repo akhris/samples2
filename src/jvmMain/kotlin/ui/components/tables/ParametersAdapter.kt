@@ -48,6 +48,5 @@ class ParametersAdapter(list: List<Parameter>, onEntityChanged: (Parameter) -> U
     companion object {
         private const val COLUMN_NAME = 0
         private const val COLUMN_DESCRIPTION = 1
-
     }
 }

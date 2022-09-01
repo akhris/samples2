@@ -1,5 +1,7 @@
 package ui.components.tables
 
+import domain.IEntity
+
 interface ITableAdapter {
     fun getColumnCount(): Int
     fun withHeader(): Boolean
@@ -12,5 +14,12 @@ interface ITableAdapter {
 sealed class Cell {
     data class TextCell(val text: String) : Cell()
 
-    data class ReferenceCell<T>(val items: List<T>, val selectedItem: T) : Cell()
+    data class ReferenceCell(
+        val entityID: String,
+        val referenceID: String,
+        val refClass: Class<out IEntity>,
+        val text: String
+    ) : Cell()
 }
+
+data class ReferenceCellValue(val id: String, val text: String)

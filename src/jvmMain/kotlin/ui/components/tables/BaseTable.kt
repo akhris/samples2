@@ -1,20 +1,24 @@
 package ui.components.tables
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.*
 
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.unit.dp
+import domain.IEntity
 import kotlinx.coroutines.delay
 import ui.UiSettings
-import ui.components.ListSelector
 import ui.components.ScrollableBox
 import utils.log
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun BaseTable(
     adapter: ITableAdapter
@@ -24,6 +28,8 @@ fun BaseTable(
     val totalRows = remember(adapter) { adapter.getTotalRows() }
     val columnCount = remember(adapter) { adapter.getColumnCount() }
     val withHeader = remember(adapter) { adapter.withHeader() }
+
+    var showRefPicker by remember { mutableStateOf<Class<out IEntity>?>(null) }
 
     ScrollableBox(
         modifier = Modifier.fillMaxWidth(),
@@ -72,7 +78,10 @@ fun BaseTable(
                             var cellValue by remember(initialValue) { mutableStateOf(initialValue) }
 
                             when (val cv = cellValue) {
-                                is Cell.ReferenceCell<*> -> RenderReferenceListCell(cv)
+                                is Cell.ReferenceCell -> RenderReferenceListCell(cv, onSelectReferenceClicked = {
+
+                                })
+
                                 is Cell.TextCell -> RenderTextCell(cv, onCellChange = {
                                     cellValue = it
                                 })
@@ -97,6 +106,20 @@ fun BaseTable(
     }
 //    }
 
+
+    showRefPicker?.let { c ->
+        AlertDialog(
+            onDismissRequest = {
+                showRefPicker = null
+            },
+            confirmButton = {},
+            dismissButton = {},
+            text = {
+
+            }
+        )
+    }
+
 }
 
 @Composable
@@ -108,6 +131,22 @@ private fun BoxScope.RenderTextCell(cell: Cell.TextCell, onCellChange: (Cell.Tex
 }
 
 @Composable
-private fun BoxScope.RenderReferenceListCell(cell: Cell.ReferenceCell<*>) {
-    ListSelector(items = cell.items, onAddNewClicked = {}, onItemSelected = {}, onItemDelete = {}, itemName = { "" })
+private fun BoxScope.RenderReferenceListCell(
+    cell: Cell.ReferenceCell,
+    onSelectReferenceClicked: () -> Unit
+) {
+    TextField(
+        modifier = Modifier.fillMaxWidth(),
+        value = cell.text,
+        trailingIcon = {
+            Icon(
+                Icons.Rounded.MoreVert,
+                modifier = Modifier.rotate(90f).clickable {
+                    //show select reference dialog here
+                    onSelectReferenceClicked()
+                },
+                contentDescription = "select reference"
+            )
+        }, onValueChange = {}
+    )
 }
