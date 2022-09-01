@@ -1,26 +1,27 @@
 package ui.screens.nav_host
 
 import com.arkivanov.decompose.ComponentContext
-import com.arkivanov.decompose.router.stack.*
+import com.arkivanov.decompose.router.stack.ChildStack
+import com.arkivanov.decompose.router.stack.StackNavigation
+import com.arkivanov.decompose.router.stack.childStack
+import com.arkivanov.decompose.router.stack.replaceCurrent
 import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.decompose.value.reduce
+import com.arkivanov.essenty.lifecycle.subscribe
 import com.arkivanov.essenty.parcelable.Parcelable
 import com.arkivanov.essenty.parcelable.Parcelize
 import domain.*
 import domain.application.Result
 import domain.application.baseUseCases.GetEntities
-import domain.application.baseUseCases.GetEntity
 import domain.application.baseUseCases.InsertEntity
 import domain.application.baseUseCases.RemoveEntity
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import navigation.NavItem
 import org.kodein.di.DI
 import org.kodein.di.instance
 import ui.screens.norms.NormsComponent
+import ui.screens.operations.OperationsComponent
 import ui.screens.operationtypes.OperationTypesComponent
 import ui.screens.parameters.ParametersComponent
 import ui.screens.places.PlacesComponent
@@ -32,7 +33,7 @@ import ui.screens.workers.WorkersComponent
  */
 class NavHostComponent constructor(
     private val di: DI,
-    componentContext: ComponentContext,
+    componentContext: ComponentContext
 ) :
     INavHost, ComponentContext by componentContext {
 
@@ -71,13 +72,15 @@ class NavHostComponent constructor(
             Config.Workers -> INavHost.Child.Workers(WorkersComponent(componentContext))
             Config.Norms -> INavHost.Child.Norms(NormsComponent(componentContext))
             Config.Parameters -> INavHost.Child.Parameters(ParametersComponent(di = di, componentContext))
-            Config.OperationsTypes -> INavHost.Child.Operations(OperationTypesComponent(componentContext))
+            Config.Operations -> INavHost.Child.Operations(OperationsComponent(di = di, componentContext))
             Config.Samples -> INavHost.Child.Samples(
                 SamplesComponent(
                     di = di,
                     componentContext
                 )
             )
+
+            Config.OperationTypes -> INavHost.Child.OperationTypes(OperationTypesComponent(componentContext))
         }
     }
 
@@ -87,13 +90,13 @@ class NavHostComponent constructor(
             NavItem.Conditions -> null
             NavItem.Measurements -> null
             NavItem.Norms -> Config.Norms
-            NavItem.Operations -> null
+            NavItem.Operations -> Config.Operations
             NavItem.Parameters -> Config.Parameters
             NavItem.Places -> Config.Places
             NavItem.SampleTypes -> null
             NavItem.Samples -> Config.Samples
             NavItem.Workers -> Config.Workers
-            NavItem.OperationTypes -> Config.OperationsTypes
+            NavItem.OperationTypes -> Config.OperationTypes
             NavItem.AppSettings -> null
         }
         if (newConf != null && navItem != _state.value.currentDestination) {
@@ -120,7 +123,10 @@ class NavHostComponent constructor(
         object Parameters : Config()
 
         @Parcelize
-        object OperationsTypes : Config()
+        object Operations : Config()
+
+        @Parcelize
+        object OperationTypes : Config()
 
         @Parcelize
         object Samples : Config()
@@ -156,6 +162,10 @@ class NavHostComponent constructor(
     }
 
     init {
+        lifecycle.subscribe(onDestroy = {
+            scope.coroutineContext.cancelChildren()
+        })
+
         scope.launch {
             invalidateSampleTypes()
         }

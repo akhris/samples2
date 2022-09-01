@@ -60,7 +60,8 @@ class SamplesDao : IBaseDao<Sample> {
     override suspend fun update(entity: Sample) {
         newSuspendedTransaction {
             table.update({ table.sampleID eq entity.id }) {
-                it[sampleID] = entity.id
+                it[id] = entity.id.toUUID()
+                it[sampleID] = entity.identifier
                 it[comment] = entity.comment
                 it[orderID] = entity.orderID
                 it[description] = entity.description
@@ -74,7 +75,8 @@ class SamplesDao : IBaseDao<Sample> {
         newSuspendedTransaction {
             addLogger(StdOutSqlLogger)
             table.insert {
-                it[sampleID] = entity.id
+                it[id] = entity.id.toUUID()
+                it[sampleID] = entity.identifier
                 it[comment] = entity.comment
                 it[orderID] = entity.orderID
                 it[description] = entity.description

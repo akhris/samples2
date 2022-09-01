@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import ui.UiSettings
+import ui.components.ListSelector
 import ui.components.ScrollableBox
 import utils.log
 
@@ -34,7 +35,10 @@ fun BaseTable(
                     for (column in 0 until columnCount) {
                         Box(
                             modifier = Modifier.weight(1f)
-                                .border(color = UiSettings.DataTable.gridLinesColor, width = UiSettings.DataTable.gridLinesWidth)
+                                .border(
+                                    color = UiSettings.DataTable.gridLinesColor,
+                                    width = UiSettings.DataTable.gridLinesWidth
+                                )
                         ) {
                             Text(modifier = Modifier.align(Alignment.Center), text = adapter.getHeader(column))
                         }
@@ -47,47 +51,63 @@ fun BaseTable(
 //        Column {
 
 
-            Column {
-                //render rows:
-                for (row in 0 until totalRows) {
-                    Row {
-                        for (column in 0 until columnCount) {
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .border(
-                                        color = UiSettings.DataTable.gridLinesColor,
-                                        width = UiSettings.DataTable.gridLinesWidth
-                                    )
-                                    .padding(UiSettings.DataTable.cellPadding)
-                            ) {
+        Column {
+            //render rows:
+            for (row in 0 until totalRows) {
+                Row {
+                    for (column in 0 until columnCount) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .border(
+                                    color = UiSettings.DataTable.gridLinesColor,
+                                    width = UiSettings.DataTable.gridLinesWidth
+                                )
+                                .padding(UiSettings.DataTable.cellPadding)
+                        ) {
 
-                                val initialValue =
-                                    remember(adapter, column, row) { adapter.getCellValue(column, row) }
+                            val initialValue =
+                                remember(adapter, column, row) { adapter.getCellValue(column, row) }
 
-                                var cellValue by remember(initialValue) { mutableStateOf(initialValue) }
+                            var cellValue by remember(initialValue) { mutableStateOf(initialValue) }
 
-                                TextField(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    value = cellValue,
-                                    onValueChange = { cellValue = it })
+                            when (val cv = cellValue) {
+                                is Cell.ReferenceCell<*> -> RenderReferenceListCell(cv)
+                                is Cell.TextCell -> RenderTextCell(cv, onCellChange = {
+                                    cellValue = it
+                                })
+                            }
 
-                                //debounce logic:
-                                LaunchedEffect(cellValue) {
-                                    if (cellValue == initialValue) {
-                                        return@LaunchedEffect
-                                    }
-                                    delay(UiSettings.Debounce.debounceTime)
-                                    log("changing value in adapter:")
-                                    adapter.setCellValue(column, row, cellValue)
+
+                            //debounce logic:
+                            LaunchedEffect(cellValue) {
+                                if (cellValue == initialValue) {
+                                    return@LaunchedEffect
                                 }
+                                delay(UiSettings.Debounce.debounceTime)
+                                log("changing value in adapter:")
+                                adapter.setCellValue(column, row, cellValue)
                             }
                         }
                     }
                 }
-
             }
+
         }
+    }
 //    }
 
+}
+
+@Composable
+private fun BoxScope.RenderTextCell(cell: Cell.TextCell, onCellChange: (Cell.TextCell) -> Unit) {
+    TextField(
+        modifier = Modifier.fillMaxWidth(),
+        value = cell.text,
+        onValueChange = { onCellChange(cell.copy(text = it)) })
+}
+
+@Composable
+private fun BoxScope.RenderReferenceListCell(cell: Cell.ReferenceCell<*>) {
+    ListSelector(items = cell.items, onAddNewClicked = {}, onItemSelected = {}, onItemDelete = {}, itemName = { "" })
 }

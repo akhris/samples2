@@ -61,7 +61,8 @@ data class SampleType(
 ) : IEntity
 
 data class Sample(
-    override val id: String,
+    override val id: String = UUID.randomUUID().toString(), //id for database
+    val identifier: String? = null, //id written on the sample
     val type: SampleType,
     val description: String? = null,
     val comment: String? = null,

@@ -5,8 +5,9 @@ import com.arkivanov.decompose.value.Value
 import domain.SampleType
 import navigation.NavItem
 import ui.screens.norms.INorms
-import ui.screens.parameters.IParameters
+import ui.screens.operations.IOperations
 import ui.screens.operationtypes.IOperationTypes
+import ui.screens.parameters.IParameters
 import ui.screens.places.IPlaces
 import ui.screens.samples.ISamples
 import ui.screens.workers.IWorkers
@@ -42,7 +43,8 @@ interface INavHost {
 
         //        class Samples(val component: ISamples) : Child()
         class Workers(val component: IWorkers) : Child()
-        class Operations(val component: IOperationTypes) : Child()
+        class Operations(val component: IOperations) : Child()
+        class OperationTypes(val component: IOperationTypes) : Child()
         class Norms(val component: INorms) : Child()
         class Parameters(val component: IParameters) : Child()
         class Samples(val component: ISamples) : Child()

@@ -13,7 +13,8 @@ fun EntitySampleType.toSampleType(): SampleType {
 
 fun EntitySample.toSample(): Sample {
     return Sample(
-        id = this.sampleID,
+        id = this.id.value.toString(),
+        identifier = this.sampleID,
         description = this.description,
         orderID = this.orderID,
         comment = this.comment,

@@ -16,9 +16,9 @@ object DbSettings {
 
         val db =
             Database.connect(
-            "jdbc:sqlite:${AppFoldersManager.getAppPath().pathString}/data.db?foreign_keys=on",
-            "org.sqlite.JDBC"
-        )
+                "jdbc:sqlite:${AppFoldersManager.getAppPath().pathString}/data.db?foreign_keys=on",
+                "org.sqlite.JDBC"
+            )
 //            Database.connect("jdbc:sqlite:file:test?mode=memory&cache=shared&foreign_keys=on", "org.sqlite.JDBC")
         transaction {
             addLogger(StdOutSqlLogger)
@@ -26,7 +26,11 @@ object DbSettings {
             SchemaUtils.create(
                 Tables.SampleTypes,
                 Tables.Samples,
-                Tables.Parameters
+                Tables.Parameters,
+                Tables.OperationTypes,
+                Tables.Places,
+                Tables.Workers,
+                Tables.Operations
             )
         }
         db

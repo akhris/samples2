@@ -2,18 +2,17 @@ package ui
 
 import LocalSamplesType
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-
 import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.rememberDialogState
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import domain.SampleType
-import test.SampleTypes
-import ui.components.SampleTypeSelector
+import ui.components.ListSelector
 import ui.screens.nav_host.INavHost
 import ui.screens.nav_host.NavHostUi
 
@@ -27,36 +26,49 @@ fun RootUi(component: INavHost) {
     val sampleTypes by remember(component) { component.sampleTypes }.subscribeAsState()
     var selectedSampleType by remember { mutableStateOf<SampleType?>(sampleTypes.firstOrNull()) }
 
+    var showNewSampleTypeDialog by remember { mutableStateOf(false) }
     Scaffold(
         scaffoldState = scaffoldState,
         topBar = {
             TopAppBar {
 //                Text(modifier = Modifier.padding(start = UiSettings.AppBar.titleStartPadding).weight(1f), text = navigationItem.currentDestination?.title?:"")
-                SampleTypeSelector(
+                ListSelector(
                     modifier = Modifier.padding(start = UiSettings.AppBar.titleStartPadding).weight(1f),
-                    typesList = sampleTypes,
-                    selectedType = selectedSampleType,
-                    onSampleTypeSelected = { selectedSampleType = it },
-                    onNewSampleTypeAdd = {
-                        component.addSampleType(it)
-                        selectedSampleType = it
-                    },
-                    onSampleTypeDelete = {
-                        if (selectedSampleType == it) {
-                            //change selection:
-                            val removedIndex = sampleTypes.indexOf(it)
-                            selectedSampleType = if (sampleTypes.size > 1) {
-                                if (removedIndex == 0) {
-                                    sampleTypes[1]
-                                } else {
-                                    sampleTypes.getOrNull(removedIndex - 1)
-                                }
-                            } else {
-                                null
-                            }
-                        }
-                        component.removeSampleType(it)
-                    })
+                    currentSelection = selectedSampleType,
+                    items = sampleTypes,
+                    onAddNewClicked = { showNewSampleTypeDialog = true },
+                    onItemDelete = { component.removeSampleType(it) },
+                    onItemSelected = { selectedSampleType = it },
+                    itemName = { it.name },
+                    title = "Тип образцов"
+                )
+
+
+//                SampleTypeSelector(
+//                    modifier = Modifier.padding(start = UiSettings.AppBar.titleStartPadding).weight(1f),
+//                    typesList = sampleTypes,
+//                    selectedType = selectedSampleType,
+//                    onSampleTypeSelected = { selectedSampleType = it },
+//                    onNewSampleTypeAdd = {
+//                        component.addSampleType(it)
+//                        selectedSampleType = it
+//                    },
+//                    onSampleTypeDelete = {
+//                        if (selectedSampleType == it) {
+//                            //change selection:
+//                            val removedIndex = sampleTypes.indexOf(it)
+//                            selectedSampleType = if (sampleTypes.size > 1) {
+//                                if (removedIndex == 0) {
+//                                    sampleTypes[1]
+//                                } else {
+//                                    sampleTypes.getOrNull(removedIndex - 1)
+//                                }
+//                            } else {
+//                                null
+//                            }
+//                        }
+//                        component.removeSampleType(it)
+//                    })
             }
         },
         content = {
@@ -73,6 +85,33 @@ fun RootUi(component: INavHost) {
             }
         }
     )
+
+    if (showNewSampleTypeDialog) {
+
+        var newSampleTypeName by remember { mutableStateOf("") }
+
+        Dialog(
+            state = rememberDialogState(),
+            onCloseRequest = { showNewSampleTypeDialog = false },
+            content = {
+                Column {
+                    TextField(
+                        value = newSampleTypeName,
+                        onValueChange = { newSampleTypeName = it },
+                        label = { Text("Имя типа образцов") })
+                    Button(onClick = {
+                        if (newSampleTypeName.isNotEmpty()) {
+                            val newSampleType = SampleType(name = newSampleTypeName)
+                            component.addSampleType(
+                                newSampleType
+                            )
+                            selectedSampleType = newSampleType
+                            showNewSampleTypeDialog = false
+                        }
+                    }, content = { Text("Добавить") })
+                }
+            })
+    }
 
 //    Row(modifier = Modifier.background(MaterialTheme.colors.background)) {
 //

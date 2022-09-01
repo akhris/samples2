@@ -1,6 +1,5 @@
 package ui.components.tables
 
-import domain.Parameter
 import domain.Sample
 
 class SamplesAdapter(list: List<Sample>, onEntityChanged: (Sample) -> Unit) :
@@ -11,7 +10,7 @@ class SamplesAdapter(list: List<Sample>, onEntityChanged: (Sample) -> Unit) :
 
     override fun getHeader(column: Int): String {
         return when (column) {
-            COLUMN_ID -> "ID"
+            COLUMN_ID -> "Идентификатор"
             COLUMN_COMMENT -> "Комментарий"
             COLUMN_DESCRIPTION -> "Описание"
             COLUMN_ORDER_ID -> "Партия"
@@ -20,22 +19,44 @@ class SamplesAdapter(list: List<Sample>, onEntityChanged: (Sample) -> Unit) :
     }
 
 
-    override fun getEntityField(entity: Sample, column: Int): String {
-        return when (column) {
-            COLUMN_ID -> entity.id
-            COLUMN_COMMENT -> entity.comment ?: ""
-            COLUMN_DESCRIPTION -> entity.description ?: ""
-            COLUMN_ORDER_ID -> entity.orderID ?: ""
-            else -> throw IllegalStateException("column with position: $column was not found in $this")
-        }
+    override fun getEntityField(entity: Sample, column: Int): Cell {
+        return Cell.TextCell(
+            text = when (column) {
+                COLUMN_ID -> entity.identifier ?: ""
+                COLUMN_COMMENT -> entity.comment ?: ""
+                COLUMN_DESCRIPTION -> entity.description ?: ""
+                COLUMN_ORDER_ID -> entity.orderID ?: ""
+                else -> throw IllegalStateException("column with position: $column was not found in $this")
+            }
+        )
     }
 
-    override fun setEntityField(entity: Sample, column: Int, value: String): Sample {
+    override fun setEntityField(entity: Sample, column: Int, value: Cell): Sample {
         return when (column) {
-            COLUMN_ID -> entity.copy(id = value)
-            COLUMN_COMMENT -> entity.copy(comment = value)
-            COLUMN_DESCRIPTION -> entity.copy(description = value)
-            COLUMN_ORDER_ID -> entity.copy(orderID = value)
+            COLUMN_ID -> {
+                (value as? Cell.TextCell)?.let {
+                    entity.copy(identifier = it.text)
+                } ?: entity
+            }
+
+            COLUMN_COMMENT -> {
+                (value as? Cell.TextCell)?.let {
+                    entity.copy(comment = it.text)
+                } ?: entity
+            }
+
+            COLUMN_DESCRIPTION -> {
+                (value as? Cell.TextCell)?.let {
+                    entity.copy(description = it.text)
+                } ?: entity
+            }
+
+            COLUMN_ORDER_ID -> {
+                (value as? Cell.TextCell)?.let {
+                    entity.copy(orderID = it.text)
+                } ?: entity
+            }
+
             else -> throw IllegalStateException("column with position: $column was not found in $this")
         }
     }

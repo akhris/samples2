@@ -1,6 +1,6 @@
 package persistence.dto
 
-import org.jetbrains.exposed.dao.id.*
+import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.javatime.datetime
 
@@ -17,8 +17,8 @@ object Tables {
     /**
      * Samples table: base information about samples.
      */
-    object Samples : IntIdTable() {
-        val sampleID = text(name = "sampleID")
+    object Samples : UUIDTable() {
+        val sampleID = text(name = "sampleID").nullable()
         val type = reference(name = "type", foreign = SampleTypes, onDelete = ReferenceOption.CASCADE)
         val description = text(name = "description").nullable()
         val comment = text(name = "comment").nullable()

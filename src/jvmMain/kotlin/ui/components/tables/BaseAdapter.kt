@@ -15,15 +15,15 @@ abstract class BaseAdapter<ENTITY : IEntity>(
         return list.size
     }
 
-    override fun getCellValue(column: Int, row: Int): String {
+    override fun getCellValue(column: Int, row: Int): Cell {
         val entity = requireEntity(row)
         return getEntityField(entity, column)
     }
 
-    abstract fun setEntityField(entity: ENTITY, column: Int, value: String) : ENTITY
-    abstract fun getEntityField(entity: ENTITY, column: Int): String
+    abstract fun setEntityField(entity: ENTITY, column: Int, value: Cell): ENTITY
+    abstract fun getEntityField(entity: ENTITY, column: Int): Cell
 
-    override fun setCellValue(column: Int, row: Int, newValue: String) {
+    override fun setCellValue(column: Int, row: Int, newValue: Cell) {
         val entity = requireEntity(row)
         val changedEntity = setEntityField(entity, column, newValue)
         onEntityChanged?.invoke(changedEntity)

@@ -17,18 +17,30 @@ class ParametersAdapter(list: List<Parameter>, onEntityChanged: (Parameter) -> U
     }
 
 
-    override fun getEntityField(entity: Parameter, column: Int): String {
-        return when (column) {
-            COLUMN_NAME -> entity.name
-            COLUMN_DESCRIPTION -> entity.description
-            else -> throw IllegalStateException("column with position: $column was not found in $this")
-        }
+    override fun getEntityField(entity: Parameter, column: Int): Cell {
+        return Cell.TextCell(
+            text = when (column) {
+                COLUMN_NAME -> entity.name
+                COLUMN_DESCRIPTION -> entity.description
+                else -> throw IllegalStateException("column with position: $column was not found in $this")
+            }
+        )
     }
 
-    override fun setEntityField(entity: Parameter, column: Int, value: String): Parameter {
+    override fun setEntityField(entity: Parameter, column: Int, value: Cell): Parameter {
         return when (column) {
-            COLUMN_NAME -> entity.copy(name = value)
-            COLUMN_DESCRIPTION -> entity.copy(description = value)
+            COLUMN_NAME -> {
+                (value as? Cell.TextCell)?.let {
+                    entity.copy(name = it.text)
+                } ?: entity
+            }
+
+            COLUMN_DESCRIPTION -> {
+                (value as? Cell.TextCell)?.let {
+                    entity.copy(description = it.text)
+                } ?: entity
+            }
+
             else -> throw IllegalStateException("column with position: $column was not found in $this")
         }
     }
