@@ -1,6 +1,7 @@
 package ui.components.tables
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -8,8 +9,10 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -18,7 +21,7 @@ import domain.IEntity
 import kotlinx.coroutines.delay
 import ui.UiSettings
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun <T> DataTable(
     modifier: Modifier = Modifier,
@@ -48,7 +51,6 @@ fun <T> DataTable(
 
     Surface(
         modifier = modifier.padding(start = 16.dp, top = 16.dp),
-        color = Color.White,
         shape = MaterialTheme.shapes.medium
     ) {
         LazyColumn {
@@ -100,11 +102,19 @@ fun <T> DataTable(
                     mapper.getId(it)
                 }) { item ->
 
+                    var isHover by remember { mutableStateOf(false) }
 
                     //render cells row:
 
                     Row(
-                        modifier = Modifier.height(UiSettings.DataTable.rowHeight),
+                        modifier = Modifier.height(UiSettings.DataTable.rowHeight)
+                            .onPointerEvent(PointerEventType.Enter) { isHover = true }
+                            .onPointerEvent(PointerEventType.Exit) { isHover = false }
+                            .background(
+                                color = if (isHover) {
+                                    MaterialTheme.colors.primary.copy(alpha = 0.1f)
+                                } else MaterialTheme.colors.surface
+                            ),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         if (isSelectable) {
@@ -149,6 +159,7 @@ private fun BoxScope.RenderCell(modifier: Modifier = Modifier, cell: Cell, onCel
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun BoxScope.RenderEditTextCell(
     modifier: Modifier = Modifier,
@@ -157,10 +168,13 @@ private fun BoxScope.RenderEditTextCell(
 ) {
 
     var value by remember(cell) { mutableStateOf(cell.value) }
+    var isHover by remember { mutableStateOf(false) }
 
     BasicTextField(
-        modifier = modifier,
-//        modifier = modifier.background(color = MaterialTheme.colors.primary.copy(alpha = 0.05f)).padding(4.dp),
+        modifier = modifier
+            .onPointerEvent(PointerEventType.Enter) { isHover = true }
+            .onPointerEvent(PointerEventType.Exit) { isHover = false }
+            .background(color = MaterialTheme.colors.primary.copy(alpha = if (isHover) 0.05f else 0f)).padding(4.dp),
         value = value,
         onValueChange = { value = it },
         singleLine = true

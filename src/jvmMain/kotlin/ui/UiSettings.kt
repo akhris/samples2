@@ -6,9 +6,14 @@ import androidx.compose.ui.unit.dp
 
 object UiSettings {
 
+    object Window {
+        val minWidth = 640.dp
+    }
+
     object Debounce {
         val debounceTime: Long = 1000L
     }
+
     object AppBar {
         val titleStartPadding = 32.dp
     }

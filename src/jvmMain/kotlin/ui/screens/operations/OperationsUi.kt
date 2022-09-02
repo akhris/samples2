@@ -15,15 +15,12 @@ import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import domain.Operation
 import ui.components.tables.DataTable
 import ui.components.tables.mappers.OperationsDataMapper
-import utils.log
 
 @Composable
 fun OperationsUi(component: IOperations) {
     val state by remember(component) { component.state }.subscribeAsState()
 
     var showAddOperationDialog by remember { mutableStateOf(false) }
-
-    log("operations: ${state.operations}")
 
     val mapper = remember { OperationsDataMapper() }
 

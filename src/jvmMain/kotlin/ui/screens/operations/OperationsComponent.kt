@@ -50,7 +50,6 @@ class OperationsComponent(
 
     private suspend fun invalidateOperations() {
         val ops = getOperations(GetEntities.Params.GetWithSpecification(Specification.QueryAll))
-        log("invalidateOperations: $ops")
         when (ops) {
             is Result.Success -> {
                 _state.reduce {

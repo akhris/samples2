@@ -1,13 +1,11 @@
 package ui
 
 import LocalSamplesType
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.rememberDialogState
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
@@ -32,8 +30,9 @@ fun RootUi(component: INavHost) {
         topBar = {
             TopAppBar {
 //                Text(modifier = Modifier.padding(start = UiSettings.AppBar.titleStartPadding).weight(1f), text = navigationItem.currentDestination?.title?:"")
+                Spacer(modifier = Modifier.weight(1f))
                 ListSelector(
-                    modifier = Modifier.padding(start = UiSettings.AppBar.titleStartPadding).weight(1f),
+                    modifier = Modifier.width(320.dp),
                     currentSelection = selectedSampleType,
                     items = sampleTypes,
                     onAddNewClicked = { showNewSampleTypeDialog = true },
@@ -42,33 +41,7 @@ fun RootUi(component: INavHost) {
                     itemName = { it.name },
                     title = "Тип образцов"
                 )
-
-
-//                SampleTypeSelector(
-//                    modifier = Modifier.padding(start = UiSettings.AppBar.titleStartPadding).weight(1f),
-//                    typesList = sampleTypes,
-//                    selectedType = selectedSampleType,
-//                    onSampleTypeSelected = { selectedSampleType = it },
-//                    onNewSampleTypeAdd = {
-//                        component.addSampleType(it)
-//                        selectedSampleType = it
-//                    },
-//                    onSampleTypeDelete = {
-//                        if (selectedSampleType == it) {
-//                            //change selection:
-//                            val removedIndex = sampleTypes.indexOf(it)
-//                            selectedSampleType = if (sampleTypes.size > 1) {
-//                                if (removedIndex == 0) {
-//                                    sampleTypes[1]
-//                                } else {
-//                                    sampleTypes.getOrNull(removedIndex - 1)
-//                                }
-//                            } else {
-//                                null
-//                            }
-//                        }
-//                        component.removeSampleType(it)
-//                    })
+                Spacer(modifier = Modifier.weight(1f))
             }
         },
         content = {
@@ -80,7 +53,9 @@ fun RootUi(component: INavHost) {
                         currentSelection = navigationItem.currentDestination,
                         onNavigationItemSelected = { component.setDestination(it) })
 
-                    Box(modifier = Modifier.weight(1f)) { NavHostUi(component = component) }
+                    Box(
+                        modifier = Modifier.weight(1f)
+                    ) { NavHostUi(component = component) }
                 }
             }
         }

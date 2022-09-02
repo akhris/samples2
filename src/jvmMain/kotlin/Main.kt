@@ -7,17 +7,15 @@ import androidx.compose.ui.window.application
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import di.di
-import domain.Sample
 import domain.SampleType
 import domain.application.baseUseCases.InsertEntity
-import kotlinx.coroutines.*
-import org.kodein.di.compose.localDI
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import org.kodein.di.instance
 import persistence.DbSettings
-import persistence.dto.EntitySampleType
-import persistence.dto.Tables
 import test.SampleTypes
-import test.Samples
 import ui.RootUi
 import ui.screens.nav_host.INavHost
 import ui.screens.nav_host.NavHostComponent
@@ -42,7 +40,11 @@ fun main() {
 
     // Start Compose
     application {
-        Window(title = "Samples", onCloseRequest = ::exitApplication) {
+        Window(
+            title = "Samples",
+            onCloseRequest = ::exitApplication,
+            undecorated = false
+        ) {
             App(root)
         }
     }
