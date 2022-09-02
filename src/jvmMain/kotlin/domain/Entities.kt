@@ -43,12 +43,12 @@ data class OperationType(
  * Entity representing actual operation
  */
 data class Operation(
-    override val id: String,
-    val sample: Sample,
-    val operationType: OperationType,
-    val dateTime: LocalDateTime?,
-    val worker: Worker,
-    val place: Place
+    override val id: String = UUID.randomUUID().toString(),
+    val sample: Sample? = null,
+    val operationType: OperationType? = null,
+    val dateTime: LocalDateTime? = null,
+    val worker: Worker? = null,
+    val place: Place? = null
 ) : IEntity
 
 /**

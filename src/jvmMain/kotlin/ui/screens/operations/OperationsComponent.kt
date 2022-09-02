@@ -8,6 +8,8 @@ import com.arkivanov.essenty.lifecycle.subscribe
 import domain.*
 import domain.application.Result
 import domain.application.baseUseCases.GetEntities
+import domain.application.baseUseCases.InsertEntity
+import domain.application.baseUseCases.UpdateEntity
 import kotlinx.coroutines.*
 import org.kodein.di.DI
 import org.kodein.di.instance
@@ -23,6 +25,8 @@ class OperationsComponent(
 
 
     private val getOperations: GetEntities<Operation> by di.instance()
+    private val updateOperation: UpdateEntity<Operation> by di.instance()
+    private val insertOperation: InsertEntity<Operation> by di.instance()
 
     private val repositoryCallbacks: IRepositoryCallback<Operation> by di.instance()
 
@@ -31,8 +35,22 @@ class OperationsComponent(
     override val state: Value<IOperations.State> = _state
 
 
+    override fun insertOperation(operation: Operation) {
+        scope.launch {
+            insertOperation(InsertEntity.Insert(operation))
+        }
+    }
+
+    override fun updateOperation(operation: Operation) {
+        scope.launch {
+            updateOperation(UpdateEntity.Update(operation))
+        }
+    }
+
+
     private suspend fun invalidateOperations() {
         val ops = getOperations(GetEntities.Params.GetWithSpecification(Specification.QueryAll))
+        log("invalidateOperations: $ops")
         when (ops) {
             is Result.Success -> {
                 _state.reduce {

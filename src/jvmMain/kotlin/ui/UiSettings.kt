@@ -27,9 +27,15 @@ object UiSettings {
     }
 
     object DataTable {
-        val gridLinesColor = Color.LightGray
-        val gridLinesWidth = 2.dp
-        val cellPadding: Dp = 8.dp
+        val minCellWidth: Dp = 180.dp
+        val gridLinesColor = Color.LightGray.copy(alpha = 0.5f)
+        val gridLinesWidth = 1.dp
+        val cellPadding: Dp = 4.dp
+
+        //material specs: https://material.io/components/data-tables#specs
+        val rowHeight: Dp = 52.dp
+        val headerRowHeight: Dp = 56.dp
+        val columnPadding: Dp = 16.dp
     }
 
 

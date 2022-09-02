@@ -59,8 +59,7 @@ class SamplesDao : IBaseDao<Sample> {
 
     override suspend fun update(entity: Sample) {
         newSuspendedTransaction {
-            table.update({ table.sampleID eq entity.id }) {
-                it[id] = entity.id.toUUID()
+            table.update({ table.id eq entity.id.toUUID() }) {
                 it[sampleID] = entity.identifier
                 it[comment] = entity.comment
                 it[orderID] = entity.orderID

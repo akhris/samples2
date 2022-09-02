@@ -55,10 +55,10 @@ class OperationsDao : IBaseDao<Operation> {
         newSuspendedTransaction {
             addLogger(StdOutSqlLogger)
             table.update({ table.id eq entity.id.toUUID() }) {
-                it[table.operationType] = entity.operationType.id.toUUID()
-                it[table.sample] = entity.sample.id.toUUID()
-                it[table.place] = entity.place.id.toUUID()
-                it[table.worker] = entity.worker.id.toUUID()
+                it[table.operationType] = entity.operationType?.id?.toUUID()
+                it[table.sample] = entity.sample?.id?.toUUID()
+                it[table.place] = entity.place?.id?.toUUID()
+                it[table.worker] = entity.worker?.id?.toUUID()
                 it[table.dateTime] = entity.dateTime
             }
             commit()
@@ -69,10 +69,11 @@ class OperationsDao : IBaseDao<Operation> {
         newSuspendedTransaction {
             addLogger(StdOutSqlLogger)
             table.insert {
-                it[table.operationType] = entity.operationType.id.toUUID()
-                it[table.sample] = entity.sample.id.toUUID()
-                it[table.place] = entity.place.id.toUUID()
-                it[table.worker] = entity.worker.id.toUUID()
+                it[table.id] = entity.id.toUUID()
+                it[table.operationType] = entity.operationType?.id?.toUUID()
+                it[table.sample] = entity.sample?.id?.toUUID()
+                it[table.place] = entity.place?.id?.toUUID()
+                it[table.worker] = entity.worker?.id?.toUUID()
                 it[table.dateTime] = entity.dateTime
             }
             commit()

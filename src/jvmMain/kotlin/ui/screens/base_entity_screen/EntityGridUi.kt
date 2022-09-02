@@ -16,8 +16,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import domain.IEntity
-import ui.components.tables.BaseAdapter
-import ui.components.tables.BaseTable
 
 @Composable
 fun <T : IEntity> EntityGridUi(component: IEntityComponent<T>) {
@@ -26,21 +24,21 @@ fun <T : IEntity> EntityGridUi(component: IEntityComponent<T>) {
     val currentType = LocalSamplesType.current
     //render samples list:
     val entities = remember(state) { state.entities }
-    val adapter = remember<BaseAdapter<T>?>(entities) {
-        null
-        // FIXME: getadapter from di or factory
-//        SamplesAdapter(samples, onEntityChanged = {
-//            component.updateSample(it)
-//        })
-    }
+//    val adapter = remember<BaseAdapter<T>?>(entities) {
+//        null
+//        // FIXME: getadapter from di or factory
+////        SamplesAdapter(samples, onEntityChanged = {
+////            component.updateSample(it)
+////        })
+//    }
 
     Box(modifier = Modifier.fillMaxSize()) {
 
 
         //parameters table:
-        adapter?.let {
-            BaseTable(it)
-        }
+//        adapter?.let {
+////            BaseTable(it)
+//        }
 
         FloatingActionButton(
             modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),

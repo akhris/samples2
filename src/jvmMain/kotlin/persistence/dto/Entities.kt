@@ -61,9 +61,9 @@ class EntityOperation(id: EntityID<UUID>) : UUIDEntity(id) {
 
     companion object : UUIDEntityClass<EntityOperation>(Tables.Operations)
 
-    val sample by EntitySample referencedOn Tables.Operations.sample
-    val operationType by EntityOperationType referencedOn Tables.Operations.operationType
+    val sample by EntitySample optionalReferencedOn Tables.Operations.sample
+    val operationType by EntityOperationType optionalReferencedOn Tables.Operations.operationType
     val dateTime by Tables.Operations.dateTime
-    val worker by EntityWorker referencedOn Tables.Operations.worker
-    val place by EntityPlace referencedOn Tables.Operations.place
+    val worker by EntityWorker optionalReferencedOn Tables.Operations.worker
+    val place by EntityPlace optionalReferencedOn Tables.Operations.place
 }

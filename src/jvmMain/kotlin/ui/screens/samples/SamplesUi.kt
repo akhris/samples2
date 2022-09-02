@@ -15,8 +15,8 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import domain.Sample
-import ui.components.tables.BaseTable
-import ui.components.tables.SamplesAdapter
+import ui.components.tables.DataTable
+import ui.components.tables.mappers.SamplesDataMapper
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class)
 @Composable
@@ -26,11 +26,7 @@ fun SamplesUi(component: ISamples) {
     val currentType = LocalSamplesType.current
     //render samples list:
     val samples = remember(state) { state.samples }
-    val adapter = remember(samples) {
-        SamplesAdapter(samples, onEntityChanged = {
-            component.updateSample(it)
-        })
-    }
+    val mapper = remember { SamplesDataMapper() }
 
     var showAddSampleDialog by remember { mutableStateOf(false) }
 
@@ -38,7 +34,11 @@ fun SamplesUi(component: ISamples) {
 
 
         //parameters table:
-        BaseTable(adapter)
+        DataTable(
+            modifier = Modifier.align(Alignment.TopCenter).padding(end = 80.dp),
+            items = samples, mapper = mapper, onItemChanged = {
+                component.updateSample(it)
+            })
 
         FloatingActionButton(
             modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),

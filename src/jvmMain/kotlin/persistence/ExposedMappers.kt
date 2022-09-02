@@ -55,10 +55,10 @@ fun EntityWorker.toWorker(): Worker {
 fun EntityOperation.toOperation(): Operation {
     return Operation(
         id = this.id.value.toString(),
-        sample = this.sample.toSample(),
-        operationType = this.operationType.toOperationType(),
+        sample = this.sample?.toSample(),
+        operationType = this.operationType?.toOperationType(),
         dateTime = this.dateTime,
-        worker = this.worker.toWorker(),
-        place = this.place.toPlace()
+        worker = this.worker?.toWorker(),
+        place = this.place?.toPlace()
     )
 }
