@@ -17,8 +17,11 @@ import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import di.di
 import domain.IEntity
+import domain.application.baseUseCases.GetEntity
 import kotlinx.coroutines.delay
+import org.kodein.di.instance
 import ui.UiSettings
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
@@ -198,8 +201,15 @@ private fun BoxScope.RenderEntityCell(
     cell: Cell.EntityCell,
     onCellChanged: (Cell) -> Unit
 ) {
-    Text(text = cell.entity?.toString() ?: "")
+
+
+    val getEntity: GetEntity<out IEntity> by di.instance(arg = cell.entityClass)
+
+
+    Text(text = getEntity.toString())
+
 }
+
 
 data class ColumnId(val key: String, val title: String)
 
@@ -212,6 +222,6 @@ interface IDataTableMapper<T> {
 
 sealed class Cell {
     data class EditTextCell(val value: String) : Cell()
-    data class EntityCell(val entity: IEntity?) : Cell()
+    data class EntityCell(val entity: IEntity?, val entityClass: Class<out IEntity>) : Cell()
 //    data class ReferenceCell() : Cell()
 }

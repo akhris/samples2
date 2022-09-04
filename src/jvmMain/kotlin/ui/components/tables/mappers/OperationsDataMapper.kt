@@ -50,10 +50,10 @@ class OperationsDataMapper : IDataTableMapper<Operation> {
     override fun getCell(item: Operation, columnId: ColumnId): Cell {
         return when (Column.requireColumn(columnId)) {
             Column.DateTime -> Cell.EditTextCell(value = item.dateTime?.toString() ?: "")
-            Column.OperationType -> Cell.EntityCell(entity = item.operationType)
-            Column.Place -> Cell.EntityCell(entity = item.place)
-            Column.Sample -> Cell.EntityCell(entity = item.sample)
-            Column.Worker -> Cell.EntityCell(entity = item.worker)
+            Column.OperationType -> Cell.EntityCell(entity = item.operationType, OperationType::class.java)
+            Column.Place -> Cell.EntityCell(entity = item.place, Place::class.java)
+            Column.Sample -> Cell.EntityCell(entity = item.sample, Sample::class.java)
+            Column.Worker -> Cell.EntityCell(entity = item.worker, Worker::class.java)
         }
     }
 
