@@ -103,7 +103,6 @@ class EntityComponent<T : IEntity>(
 
     private suspend fun invalidateEntities() {
         //get all samples
-        log("getEntities: $getEntities")
         val entities = getEntities(GetEntities.Params.GetWithSpecification(Specification.QueryAll))
 
         when (entities) {
@@ -126,7 +125,6 @@ class EntityComponent<T : IEntity>(
     }
 
     init {
-        log("EntityComponent for $type")
 
         lifecycle.subscribe(onDestroy = {
             scope.coroutineContext.cancelChildren()

@@ -7,17 +7,42 @@ import ui.components.tables.IDataTableMapper
 
 class PlacesDataMapper : IDataTableMapper<Place> {
     override val columns: List<ColumnId>
-        get() = TODO("Not yet implemented")
+        get() = listOf(Column.RoomNumber.id, Column.Description.id)
 
     override fun getId(item: Place): String {
-        TODO("Not yet implemented")
+        return item.id
     }
 
     override fun updateItem(item: Place, columnId: ColumnId, cell: Cell): Place {
-        TODO("Not yet implemented")
+        return when (Column.requireColumn(columnId)) {
+            Column.Description -> (cell as? Cell.EditTextCell)?.let {
+                item.copy(description = it.value)
+            }
+
+            Column.RoomNumber -> (cell as? Cell.EditTextCell)?.let {
+                item.copy(roomNumber = it.value)
+            }
+        } ?: item
     }
 
     override fun getCell(item: Place, columnId: ColumnId): Cell {
-        TODO("Not yet implemented")
+        return when (Column.requireColumn(columnId)) {
+            Column.Description -> Cell.EditTextCell(value = item.description)
+            Column.RoomNumber -> Cell.EditTextCell(value = item.roomNumber)
+        }
+    }
+
+    private sealed class Column(val id: ColumnId) {
+        object RoomNumber : Column(ColumnId("column_room_number", "Номер комнаты"))
+        object Description : Column(ColumnId("column_description", "Описание"))
+        companion object {
+            fun requireColumn(id: ColumnId): Column {
+                return when (id.key) {
+                    Description.id.key -> Description
+                    RoomNumber.id.key -> RoomNumber
+                    else -> throw IllegalStateException("column with id: $id was not found in $this")
+                }
+            }
+        }
     }
 }
