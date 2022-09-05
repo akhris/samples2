@@ -1,6 +1,5 @@
 import org.jetbrains.compose.compose
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("multiplatform")
@@ -32,7 +31,8 @@ kotlin {
                 implementation(compose.desktop.currentOs)
 
                 //dependency injection:
-                implementation("org.kodein.di:kodein-di-framework-compose:7.14.0")
+                implementation("org.kodein.di:kodein-di:7.14.0")
+//                implementation("org.kodein.di:kodein-di-framework-compose:7.14.0")
 
                 //decompose:
                 implementation("com.arkivanov.decompose:decompose:0.8.0")

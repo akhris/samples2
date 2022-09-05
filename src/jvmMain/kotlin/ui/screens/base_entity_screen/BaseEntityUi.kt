@@ -1,6 +1,5 @@
 package ui.screens.base_entity_screen
 
-import LocalSamplesType
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -16,15 +15,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import domain.IEntity
-import ui.components.tables.Cell
 import ui.components.tables.DataTable
-import kotlin.reflect.KClass
+import ui.components.tables.SelectionMode
 
 @Composable
-fun <T : IEntity> BaseEntityUi(component: IEntityComponent<T>, onPickNewEntity: ((T, KClass<*>) -> Unit)? = null) {
+fun <T : IEntity> BaseEntityUi(
+    component: IEntityComponent<T>,
+    selectionMode: SelectionMode = SelectionMode.Multiple,
+    onSelectionChanged: ((List<String>) -> Unit)? = null
+) {
     val state by component.state.subscribeAsState()
 
-    val currentType = LocalSamplesType.current
     //render samples list:
     val entities = remember(state) { state.entities }
 
@@ -40,15 +41,12 @@ fun <T : IEntity> BaseEntityUi(component: IEntityComponent<T>, onPickNewEntity: 
                 component.updateEntity(it)
             },
             onCellClicked = { item, cell ->
-                when (cell) {
-                    is Cell.EditTextCell -> {}
-                    is Cell.EntityCell -> {
-                        onPickNewEntity?.invoke(
-                            item,
-                            cell.entityClass
-                        )
-                    }
-                }
+
+            },
+            selectionMode = selectionMode,
+            onSelectionChanged = onSelectionChanged,
+            onEntityPickerClicked = {
+
             }
         )
 
@@ -57,7 +55,6 @@ fun <T : IEntity> BaseEntityUi(component: IEntityComponent<T>, onPickNewEntity: 
             modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
             onClick = {
                 //todo show add sample dialog
-//                showAddSampleDialog = true
             },
             content = { Icon(Icons.Rounded.Add, contentDescription = "add parameter") })
     }

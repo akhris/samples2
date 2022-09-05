@@ -2,14 +2,16 @@ package ui.screens.nav_host
 
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
-import domain.*
+import domain.Operation
+import domain.Parameter
+import domain.Sample
+import domain.SampleType
 import navigation.NavItem
 import ui.screens.base_entity_screen.IEntityComponent
 import ui.screens.norms.INorms
 import ui.screens.operationtypes.IOperationTypes
 import ui.screens.places.IPlaces
 import ui.screens.workers.IWorkers
-import kotlin.reflect.KClass
 
 /**
  * Interface for Navigation Host
@@ -25,10 +27,6 @@ interface INavHost {
     fun addSampleType(type: SampleType)
     fun removeSampleType(type: SampleType)
 
-    fun showEntityPicker(eClass: KClass<out IEntity>)
-
-    fun dismissDialog()
-
     data class State(
         val currentDestination: NavItem? = NavItem.homeItem
     )
@@ -38,8 +36,6 @@ interface INavHost {
      */
     val childStack: Value<ChildStack<*, Child>>
 
-
-    val dialogStack: Value<ChildStack<*, Dialog>>
 
     /**
      * Child classes containing child components.
@@ -57,8 +53,4 @@ interface INavHost {
 
     }
 
-    sealed class Dialog {
-        object None : Dialog()
-        class EntityPickerDialog<T : IEntity>(val component: IEntityComponent<T>) : Dialog()
-    }
 }

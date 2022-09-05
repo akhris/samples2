@@ -52,7 +52,7 @@ class EntityComponent<T : IEntity>(
         else -> throw IllegalArgumentException("unsupported type: $type")
     } as LazyDelegate<InsertEntity<T>>
 
-    private val updatEntity: UpdateEntity<T> by when (type) {
+    private val updateEntity: UpdateEntity<T> by when (type) {
         Sample::class -> di.instance<UpdateEntity<Sample>>()
         SampleType::class -> di.instance<UpdateEntity<SampleType>>()
         Parameter::class -> di.instance<UpdateEntity<Parameter>>()
@@ -96,7 +96,7 @@ class EntityComponent<T : IEntity>(
 
     override fun updateEntity(entity: T) {
         scope.launch {
-            updatEntity(UpdateEntity.Update(entity))
+            updateEntity(UpdateEntity.Update(entity))
         }
     }
 

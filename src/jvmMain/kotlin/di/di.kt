@@ -10,7 +10,5 @@ val di = DI {
     import(operationTypesModule)
     import(workersModule)
     import(placesModule)
-
-
 }
 

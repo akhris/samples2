@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import domain.IEntity
 import kotlinx.coroutines.delay
 import ui.UiSettings
+import ui.dialogs.EntityPickerDialog
 import kotlin.reflect.KClass
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
@@ -29,12 +30,25 @@ fun <T> DataTable(
     modifier: Modifier = Modifier,
     items: List<T>,
     mapper: IDataTableMapper<T>,
-    onItemChanged: (T) -> Unit,
-    isSelectable: Boolean = true,
-    onCellClicked: ((T, Cell) -> Unit)? = null
+    onItemChanged: ((T) -> Unit)? = null,
+    selectionMode: SelectionMode = SelectionMode.Multiple,
+    onCellClicked: ((T, Cell) -> Unit)? = null,
+    onSelectionChanged: ((List<String>) -> Unit)? = null,
+    onEntityPickerClicked: ((EntityCellPickerParams<T>) -> Unit)? = null
 ) {
 
-    val selectionMap = remember { mutableStateMapOf<String, Boolean>() }
+    val selectionMap = remember {
+        mutableStateMapOf<String, Boolean>()
+    }
+
+    LaunchedEffect(selectionMode) {
+        val initialSelection: Map<String, Boolean> = when (selectionMode) {
+            SelectionMode.Multiple -> mapOf()
+            SelectionMode.None -> mapOf()
+            is SelectionMode.Single -> listOfNotNull(selectionMode.initialSelection?.let { it to true }).toMap()
+        }
+        selectionMap.putAll(initialSelection)
+    }
 
     //all items are selected:
     val checks = items
@@ -49,6 +63,8 @@ fun <T> DataTable(
             ToggleableState.Indeterminate
         }
     }
+
+    var showEntityPickerDialog by remember { mutableStateOf<EntityCellPickerParams<T>?>(null) }
 
 
 
@@ -65,18 +81,25 @@ fun <T> DataTable(
                 ) {
                     //render header:
                     //selection box:
-                    if (isSelectable) {
-                        TriStateCheckbox(state = checkState, onClick = {
-                            when (checkState) {
-                                ToggleableState.On -> selectionMap.clear()
-                                ToggleableState.Off,
-                                ToggleableState.Indeterminate -> {
-                                    items.forEach {
-                                        selectionMap[mapper.getId(it)] = true
+                    Box(modifier = Modifier.width(UiSettings.DataTable.selectionRowWidth)) {
+                        if (selectionMode == SelectionMode.Multiple) {
+                            TriStateCheckbox(state = checkState, onClick = {
+                                when (checkState) {
+                                    ToggleableState.On -> {
+                                        selectionMap.clear()
+                                        onSelectionChanged?.invoke(listOf())
+                                    }
+
+                                    ToggleableState.Off,
+                                    ToggleableState.Indeterminate -> {
+                                        items.forEach {
+                                            selectionMap[mapper.getId(it)] = true
+                                        }
+                                        onSelectionChanged?.invoke(selectionMap.filterValues { it }.keys.toList())
                                     }
                                 }
-                            }
-                        })
+                            }, modifier = Modifier.align(Alignment.Center))
+                        }
                     }
 
                     for (column in mapper.columns) {
@@ -120,16 +143,41 @@ fun <T> DataTable(
                             ),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        if (isSelectable) {
-                            Checkbox(checked = selectionMap[mapper.getId(item)] == true, onCheckedChange = {
-                                selectionMap[mapper.getId(item)] = it
-                            })
+                        when (selectionMode) {
+                            SelectionMode.Multiple -> {
+                                Checkbox(checked = selectionMap[mapper.getId(item)] == true, onCheckedChange = {
+                                    selectionMap[mapper.getId(item)] = it
+                                    onSelectionChanged?.invoke(selectionMap.filterValues { it }.keys.toList())
+                                })
+                            }
+
+                            is SelectionMode.Single -> {
+                                RadioButton(selected = selectionMap[mapper.getId(item)] == true, onClick = {
+                                    val prevValue = selectionMap[mapper.getId(item)] ?: false
+                                    selectionMap.clear()
+                                    selectionMap[mapper.getId(item)] = !prevValue
+                                    onSelectionChanged?.invoke(selectionMap.filterValues { it }.keys.toList())
+                                })
+                            }
                         }
                         for (column in mapper.columns) {
                             //render cell:
+                            val cell = remember(mapper, item, column) {
+                                mapper.getCell(item, column)
+                            }
+
                             Box(
                                 modifier = Modifier.width(UiSettings.DataTable.minCellWidth)
                                     .padding(horizontal = UiSettings.DataTable.columnPadding)
+                                    .clickable {
+                                        onCellClicked?.invoke(item, cell)
+                                        if (cell is Cell.EntityCell) {
+                                            onEntityPickerClicked?.invoke(
+//                                            showEntityPickerDialog =
+                                                EntityCellPickerParams(item = item, columnId = column, cell = cell)
+                                            )
+                                        }
+                                    }
                             ) {
 
                                 RenderCell(
@@ -137,12 +185,9 @@ fun <T> DataTable(
                                     Modifier
                                         .padding(all = UiSettings.DataTable.cellPadding),
 
-                                    cell = mapper.getCell(item, column),
+                                    cell = cell,
                                     onCellChanged = { changedCell ->
-                                        onItemChanged(mapper.updateItem(item, column, changedCell))
-                                    },
-                                    onCellClicked = {
-                                        onCellClicked?.invoke(item, it)
+                                        onItemChanged?.invoke(mapper.updateItem(item, column, changedCell))
                                     }
                                 )
                             }
@@ -155,18 +200,38 @@ fun <T> DataTable(
 
         }
     }
+
+
+
+
+    showEntityPickerDialog?.let { pickerParams ->
+
+        EntityPickerDialog(
+            entityClass = pickerParams.cell.entityClass,
+            onDismiss = {
+                showEntityPickerDialog = null
+            },
+            initialSelection = pickerParams.cell.entity?.id,
+            onSelectionChanged = {
+                val changedCell = pickerParams.cell.copy(entity = it)
+                onItemChanged?.invoke(mapper.updateItem(pickerParams.item, pickerParams.columnId, changedCell))
+            }
+        )
+
+    }
 }
+
+data class EntityCellPickerParams<T>(val item: T, val columnId: ColumnId, val cell: Cell.EntityCell)
 
 @Composable
 private fun BoxScope.RenderCell(
     modifier: Modifier = Modifier,
     cell: Cell,
-    onCellChanged: (Cell) -> Unit,
-    onCellClicked: (Cell) -> Unit
+    onCellChanged: (Cell) -> Unit
 ) {
     when (cell) {
         is Cell.EditTextCell -> RenderEditTextCell(modifier, cell, onCellChanged)
-        is Cell.EntityCell -> RenderEntityCell(modifier, cell, onCellChanged, onCellClicked)
+        is Cell.EntityCell -> RenderEntityCell(modifier, cell, onCellChanged)
     }
 }
 
@@ -207,12 +272,12 @@ private fun BoxScope.RenderEditTextCell(
 private fun BoxScope.RenderEntityCell(
     modifier: Modifier = Modifier,
     cell: Cell.EntityCell,
-    onCellChanged: (Cell) -> Unit,
-    onCellClicked: (Cell) -> Unit
+    onCellChanged: (Cell) -> Unit
 ) {
+//    var showEntityPickerDialog by remember { mutableStateOf<KClass<out IEntity>?>(null) }
+//    Text(text = cell.entityClass.simpleName ?: "", modifier = Modifier.clickable { onCellClicked(cell) })
+    Text(text = cell.entity?.toString() ?: "")
 
-
-    Text(text = cell.entityClass.simpleName ?: "", modifier = Modifier.clickable { onCellClicked(cell) })
 
 }
 
@@ -230,4 +295,10 @@ sealed class Cell {
     data class EditTextCell(val value: String) : Cell()
     data class EntityCell(val entity: IEntity?, val entityClass: KClass<out IEntity>) : Cell()
 //    data class ReferenceCell() : Cell()
+}
+
+sealed class SelectionMode {
+    data class Single(val initialSelection: String? = null) : SelectionMode()
+    object Multiple : SelectionMode()
+    object None : SelectionMode()
 }

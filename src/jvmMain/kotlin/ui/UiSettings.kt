@@ -36,11 +36,19 @@ object UiSettings {
         val gridLinesColor = Color.LightGray.copy(alpha = 0.5f)
         val gridLinesWidth = 1.dp
         val cellPadding: Dp = 4.dp
+        val selectionRowWidth: Dp = 48.dp
 
         //material specs: https://material.io/components/data-tables#specs
         val rowHeight: Dp = 52.dp
         val headerRowHeight: Dp = 56.dp
         val columnPadding: Dp = 16.dp
+    }
+
+    object Dialogs {
+        val defaultWideDialogWidth = 480.dp
+        val defaultWideDialogHeight = 640.dp
+        val defaultAlertDialogWidth = 280.dp
+
     }
 
 

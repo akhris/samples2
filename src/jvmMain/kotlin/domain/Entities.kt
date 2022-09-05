@@ -14,7 +14,9 @@ data class Place(
     override val id: String = UUID.randomUUID().toString(),
     val roomNumber: String = "",
     val description: String = ""
-) : IEntity
+) : IEntity {
+    override fun toString() = roomNumber
+}
 
 /**
  * Entity representing a person
@@ -27,7 +29,9 @@ data class Worker(
     val place: Place? = null,
     val phoneNumber: String = "",
     val email: String = ""
-) : IEntity
+) : IEntity {
+    override fun toString() = "$name $surname"
+}
 
 
 /**
@@ -37,7 +41,9 @@ data class OperationType(
     override val id: String = UUID.randomUUID().toString(),
     val name: String = "",
     val description: String = ""
-) : IEntity
+) : IEntity {
+    override fun toString() = name
+}
 
 /**
  * Entity representing actual operation
@@ -58,7 +64,9 @@ data class SampleType(
     override val id: String = UUID.randomUUID().toString(),
     val name: String = "",
     val description: String = ""
-) : IEntity
+) : IEntity {
+    override fun toString() = name
+}
 
 data class Sample(
     override val id: String = UUID.randomUUID().toString(), //id for database
@@ -67,7 +75,9 @@ data class Sample(
     val description: String? = null,
     val comment: String? = null,
     val orderID: String? = null
-) : IEntity
+) : IEntity {
+    override fun toString() = identifier ?: "<нет ID>"
+}
 
 /**
  * Entity representing sample parameter
@@ -78,7 +88,9 @@ data class Parameter(
     val sampleType: SampleType,
     val description: String = "",
     val position: Int? = null
-) : IEntity
+) : IEntity {
+    override fun toString() = name
+}
 
 /**
  * Entity representing certain conditions at which measurements take place.
@@ -88,7 +100,9 @@ data class Condition(
     override val id: String = UUID.randomUUID().toString(),
     val name: String = "",
     val description: String = ""
-) : IEntity
+) : IEntity {
+    override fun toString() = name
+}
 
 /**
  * Entity representing [parameter] norms for given [condition]
