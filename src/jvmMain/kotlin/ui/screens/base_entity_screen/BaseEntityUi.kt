@@ -16,29 +16,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import domain.IEntity
+import ui.components.tables.DataTable
 
 @Composable
-fun <T : IEntity> EntityGridUi(component: IEntityComponent<T>) {
+fun <T : IEntity> BaseEntityUi(component: IEntityComponent<T>) {
     val state by component.state.subscribeAsState()
 
     val currentType = LocalSamplesType.current
     //render samples list:
     val entities = remember(state) { state.entities }
-//    val adapter = remember<BaseAdapter<T>?>(entities) {
-//        null
-//        // FIXME: getadapter from di or factory
-////        SamplesAdapter(samples, onEntityChanged = {
-////            component.updateSample(it)
-////        })
-//    }
+
 
     Box(modifier = Modifier.fillMaxSize()) {
 
-
         //parameters table:
-//        adapter?.let {
-////            BaseTable(it)
-//        }
+        DataTable(
+            modifier = Modifier.align(Alignment.TopCenter).padding(end = 80.dp),
+            items = entities,
+            mapper = component.dataMapper,
+            onItemChanged = {
+                component.updateEntity(it)
+            }
+        )
+
 
         FloatingActionButton(
             modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),

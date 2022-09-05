@@ -20,12 +20,10 @@ import kotlinx.coroutines.*
 import navigation.NavItem
 import org.kodein.di.DI
 import org.kodein.di.instance
+import ui.screens.base_entity_screen.EntityComponent
 import ui.screens.norms.NormsComponent
-import ui.screens.operations.OperationsComponent
 import ui.screens.operationtypes.OperationTypesComponent
-import ui.screens.parameters.ParametersComponent
 import ui.screens.places.PlacesComponent
-import ui.screens.samples.SamplesComponent
 import ui.screens.workers.WorkersComponent
 
 /**
@@ -71,15 +69,9 @@ class NavHostComponent constructor(
             Config.Places -> INavHost.Child.Places(PlacesComponent(componentContext))
             Config.Workers -> INavHost.Child.Workers(WorkersComponent(componentContext))
             Config.Norms -> INavHost.Child.Norms(NormsComponent(componentContext))
-            Config.Parameters -> INavHost.Child.Parameters(ParametersComponent(di = di, componentContext))
-            Config.Operations -> INavHost.Child.Operations(OperationsComponent(di = di, componentContext))
-            Config.Samples -> INavHost.Child.Samples(
-                SamplesComponent(
-                    di = di,
-                    componentContext
-                )
-            )
-
+            Config.Parameters -> INavHost.Child.Parameters(EntityComponent(di = di, componentContext))
+            Config.Operations -> INavHost.Child.Operations(EntityComponent(di = di, componentContext))
+            Config.Samples -> INavHost.Child.Samples(EntityComponent(di = di, componentContext))
             Config.OperationTypes -> INavHost.Child.OperationTypes(OperationTypesComponent(componentContext))
         }
     }

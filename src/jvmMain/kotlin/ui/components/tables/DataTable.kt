@@ -17,11 +17,8 @@ import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import di.di
 import domain.IEntity
-import domain.application.baseUseCases.GetEntity
 import kotlinx.coroutines.delay
-import org.kodein.di.instance
 import ui.UiSettings
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
@@ -203,10 +200,7 @@ private fun BoxScope.RenderEntityCell(
 ) {
 
 
-    val getEntity: GetEntity<out IEntity> by di.instance(arg = cell.entityClass)
-
-
-    Text(text = getEntity.toString())
+    Text(text = cell.entityClass.name)
 
 }
 

@@ -2,14 +2,15 @@ package ui.screens.nav_host
 
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
+import domain.Operation
+import domain.Parameter
+import domain.Sample
 import domain.SampleType
 import navigation.NavItem
+import ui.screens.base_entity_screen.IEntityComponent
 import ui.screens.norms.INorms
-import ui.screens.operations.IOperations
 import ui.screens.operationtypes.IOperationTypes
-import ui.screens.parameters.IParameters
 import ui.screens.places.IPlaces
-import ui.screens.samples.ISamples
 import ui.screens.workers.IWorkers
 
 /**
@@ -43,11 +44,11 @@ interface INavHost {
 
         //        class Samples(val component: ISamples) : Child()
         class Workers(val component: IWorkers) : Child()
-        class Operations(val component: IOperations) : Child()
+        class Operations(val component: IEntityComponent<Operation>) : Child()
         class OperationTypes(val component: IOperationTypes) : Child()
         class Norms(val component: INorms) : Child()
-        class Parameters(val component: IParameters) : Child()
-        class Samples(val component: ISamples) : Child()
+        class Parameters(val component: IEntityComponent<Parameter>) : Child()
+        class Samples(val component: IEntityComponent<Sample>) : Child()
 
     }
 }
