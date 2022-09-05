@@ -56,7 +56,7 @@ class WorkersDataMapper : IDataTableMapper<Worker> {
             Column.Surname -> Cell.EditTextCell(value = item.surname)
             Column.Email -> Cell.EditTextCell(value = item.email)
             Column.PhoneNumber -> Cell.EditTextCell(value = item.phoneNumber)
-            Column.Place -> Cell.EntityCell(entity = item.place, entityClass = Place::class.java)
+            Column.Place -> Cell.EntityCell(entity = item.place, entityClass = Place::class)
         }
     }
 

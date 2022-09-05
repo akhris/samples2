@@ -16,10 +16,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import domain.IEntity
+import ui.components.tables.Cell
 import ui.components.tables.DataTable
+import kotlin.reflect.KClass
 
 @Composable
-fun <T : IEntity> BaseEntityUi(component: IEntityComponent<T>) {
+fun <T : IEntity> BaseEntityUi(component: IEntityComponent<T>, onPickNewEntity: ((T, KClass<*>) -> Unit)? = null) {
     val state by component.state.subscribeAsState()
 
     val currentType = LocalSamplesType.current
@@ -36,6 +38,17 @@ fun <T : IEntity> BaseEntityUi(component: IEntityComponent<T>) {
             mapper = component.dataMapper,
             onItemChanged = {
                 component.updateEntity(it)
+            },
+            onCellClicked = { item, cell ->
+                when (cell) {
+                    is Cell.EditTextCell -> {}
+                    is Cell.EntityCell -> {
+                        onPickNewEntity?.invoke(
+                            item,
+                            cell.entityClass
+                        )
+                    }
+                }
             }
         )
 

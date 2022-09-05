@@ -25,6 +25,7 @@ import ui.screens.norms.NormsComponent
 import ui.screens.operationtypes.OperationTypesComponent
 import ui.screens.places.PlacesComponent
 import ui.screens.workers.WorkersComponent
+import kotlin.reflect.KClass
 
 /**
  * Main navigation component that holds all destinations
@@ -48,12 +49,24 @@ class NavHostComponent constructor(
     private val samplesCallback: IRepositoryCallback<SampleType> by di.instance()
     private val navigation = StackNavigation<Config>()
 
+    private val dialogNavigation = StackNavigation<DialogConfig>()
+
     private val stack =
         childStack(
             source = navigation,
             initialConfiguration = Config.Samples,
             handleBackButton = true,
-            childFactory = ::createChild
+            childFactory = ::createChild,
+            key = "nav host stack"
+        )
+
+    private val _dialogStack =
+        childStack(
+            source = dialogNavigation,
+            initialConfiguration = DialogConfig.None,
+            handleBackButton = true,
+            childFactory = ::createDialog,
+            key = "dialog stack"
         )
 
 
@@ -63,6 +76,11 @@ class NavHostComponent constructor(
 
     override val childStack: Value<ChildStack<*, INavHost.Child>>
         get() = stack
+
+
+    override val dialogStack: Value<ChildStack<*, INavHost.Dialog>>
+        get() = _dialogStack
+
 
     private fun createChild(config: Config, componentContext: ComponentContext): INavHost.Child {
         return when (config) {
@@ -75,6 +93,20 @@ class NavHostComponent constructor(
             Config.OperationTypes -> INavHost.Child.OperationTypes(OperationTypesComponent(componentContext))
         }
     }
+
+    private fun createDialog(config: DialogConfig, componentContext: ComponentContext): INavHost.Dialog {
+        return when (config) {
+            DialogConfig.None -> INavHost.Dialog.None
+            is DialogConfig.PickEntityDialog -> INavHost.Dialog.EntityPickerDialog(
+                EntityComponent(
+                    type = config.entityClass,
+                    di = di,
+                    componentContext = componentContext
+                )
+            )
+        }
+    }
+
 
     override fun setDestination(navItem: NavItem) {
 
@@ -125,10 +157,27 @@ class NavHostComponent constructor(
 
     }
 
+    @Parcelize
+    private sealed class DialogConfig : Parcelable {
+        @Parcelize
+        object None : DialogConfig()
+
+        @Parcelize
+        data class PickEntityDialog(val entityClass: KClass<out IEntity>) : DialogConfig()
+    }
+
     override fun addSampleType(type: SampleType) {
         scope.launch {
             insertSampleType(InsertEntity.Insert(type))
         }
+    }
+
+    override fun showEntityPicker(eClass: KClass<out IEntity>) {
+        dialogNavigation.replaceCurrent(DialogConfig.PickEntityDialog(eClass))
+    }
+
+    override fun dismissDialog() {
+        dialogNavigation.replaceCurrent(DialogConfig.None)
     }
 
     override fun removeSampleType(type: SampleType) {

@@ -2,6 +2,7 @@ package ui.components.tables
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -20,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import domain.IEntity
 import kotlinx.coroutines.delay
 import ui.UiSettings
+import kotlin.reflect.KClass
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
@@ -28,7 +30,8 @@ fun <T> DataTable(
     items: List<T>,
     mapper: IDataTableMapper<T>,
     onItemChanged: (T) -> Unit,
-    isSelectable: Boolean = true
+    isSelectable: Boolean = true,
+    onCellClicked: ((T, Cell) -> Unit)? = null
 ) {
 
     val selectionMap = remember { mutableStateMapOf<String, Boolean>() }
@@ -137,6 +140,9 @@ fun <T> DataTable(
                                     cell = mapper.getCell(item, column),
                                     onCellChanged = { changedCell ->
                                         onItemChanged(mapper.updateItem(item, column, changedCell))
+                                    },
+                                    onCellClicked = {
+                                        onCellClicked?.invoke(item, it)
                                     }
                                 )
                             }
@@ -152,10 +158,15 @@ fun <T> DataTable(
 }
 
 @Composable
-private fun BoxScope.RenderCell(modifier: Modifier = Modifier, cell: Cell, onCellChanged: (Cell) -> Unit) {
+private fun BoxScope.RenderCell(
+    modifier: Modifier = Modifier,
+    cell: Cell,
+    onCellChanged: (Cell) -> Unit,
+    onCellClicked: (Cell) -> Unit
+) {
     when (cell) {
         is Cell.EditTextCell -> RenderEditTextCell(modifier, cell, onCellChanged)
-        is Cell.EntityCell -> RenderEntityCell(modifier, cell, onCellChanged)
+        is Cell.EntityCell -> RenderEntityCell(modifier, cell, onCellChanged, onCellClicked)
     }
 }
 
@@ -196,11 +207,12 @@ private fun BoxScope.RenderEditTextCell(
 private fun BoxScope.RenderEntityCell(
     modifier: Modifier = Modifier,
     cell: Cell.EntityCell,
-    onCellChanged: (Cell) -> Unit
+    onCellChanged: (Cell) -> Unit,
+    onCellClicked: (Cell) -> Unit
 ) {
 
 
-    Text(text = cell.entityClass.name)
+    Text(text = cell.entityClass.simpleName ?: "", modifier = Modifier.clickable { onCellClicked(cell) })
 
 }
 
@@ -216,6 +228,6 @@ interface IDataTableMapper<T> {
 
 sealed class Cell {
     data class EditTextCell(val value: String) : Cell()
-    data class EntityCell(val entity: IEntity?, val entityClass: Class<out IEntity>) : Cell()
+    data class EntityCell(val entity: IEntity?, val entityClass: KClass<out IEntity>) : Cell()
 //    data class ReferenceCell() : Cell()
 }
