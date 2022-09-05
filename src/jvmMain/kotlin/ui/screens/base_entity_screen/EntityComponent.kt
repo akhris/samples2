@@ -5,6 +5,8 @@ import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.decompose.value.reduce
 import com.arkivanov.essenty.lifecycle.subscribe
+import com.arkivanov.essenty.parcelable.Parcelable
+import com.arkivanov.essenty.parcelable.Parcelize
 import domain.*
 import domain.application.Result
 import domain.application.baseUseCases.GetEntities
@@ -15,6 +17,8 @@ import org.kodein.di.DI
 import org.kodein.di.LazyDelegate
 import org.kodein.di.instance
 import ui.components.tables.IDataTableMapper
+import ui.screens.nav_host.INavHost
+import ui.screens.nav_host.NavHostComponent
 import utils.log
 import kotlin.reflect.KClass
 
@@ -124,6 +128,13 @@ class EntityComponent<T : IEntity>(
         }
     }
 
+    private fun createChild(config: Config, componentContext: ComponentContext): IEntityComponent.Dialog {
+        return when (config) {
+            Config.EntityPickerDialog -> IEntityComponent.Dialog.EntityPicker()
+            Config.None -> IEntityComponent.Dialog.None
+        }
+    }
+
     init {
 
         lifecycle.subscribe(onDestroy = {
@@ -147,6 +158,15 @@ class EntityComponent<T : IEntity>(
             }
         }
 
+    }
+
+    @Parcelize
+    private sealed class Config : Parcelable {
+        @Parcelize
+        object None : Config()
+
+        @Parcelize
+        object EntityPickerDialog : Config()
     }
 
 
