@@ -8,6 +8,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -64,149 +66,201 @@ fun <T> DataTable(
         }
     }
 
-    Surface(
-        modifier = modifier.padding(start = 16.dp, top = 16.dp),
-        shape = MaterialTheme.shapes.medium
-    ) {
-        LazyColumn {
 
-            stickyHeader {
-                Row(
-                    modifier = Modifier.height(UiSettings.DataTable.headerRowHeight),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    //render header:
-                    //selection box:
-                    Box(modifier = Modifier.width(UiSettings.DataTable.selectionRowWidth)) {
-                        if (selectionMode == SelectionMode.Multiple) {
-                            TriStateCheckbox(state = checkState, onClick = {
-                                when (checkState) {
-                                    ToggleableState.On -> {
-                                        selectionMap.clear()
-                                        onSelectionChanged?.invoke(listOf())
-                                    }
+    Box(modifier = modifier.fillMaxHeight()) {
 
-                                    ToggleableState.Off,
-                                    ToggleableState.Indeterminate -> {
-                                        items.forEach {
-                                            selectionMap[mapper.getId(it)] = true
-                                        }
-                                        onSelectionChanged?.invoke(selectionMap.filterValues { it }.keys.mapNotNull { key ->
-                                            items.find {
-                                                mapper.getId(
-                                                    it
-                                                ) == key
-                                            }
-                                        })
-                                    }
-                                }
-                            }, modifier = Modifier.align(Alignment.Center))
-                        }
-                    }
+        Surface(
+            modifier = modifier.padding(start = 16.dp, top = 16.dp),
+            shape = MaterialTheme.shapes.medium
+        ) {
+            LazyColumn {
 
-                    for (column in mapper.columns) {
-                        Box(
-                            modifier = Modifier
-                                .width(UiSettings.DataTable.minCellWidth)
-                                .padding(horizontal = UiSettings.DataTable.columnPadding)
-                        ) {
-                            Text(
-                                modifier = Modifier.align(Alignment.CenterStart)
-                                    .padding(all = UiSettings.DataTable.cellPadding),
-                                text = column.title,
-                                style = MaterialTheme.typography.subtitle2,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-
-                    }
-                }
-            }
-
-            this
-                .items(items, key = {
-                    mapper.getId(it)
-                }) { item ->
-
-                    var isHover by remember { mutableStateOf(false) }
-
-                    //render cells row:
-
+                stickyHeader {
                     Row(
-                        modifier = Modifier.height(UiSettings.DataTable.rowHeight)
-                            .onPointerEvent(PointerEventType.Enter) { isHover = true }
-                            .onPointerEvent(PointerEventType.Exit) { isHover = false }
-                            .background(
-                                color = if (isHover) {
-                                    MaterialTheme.colors.primary.copy(alpha = 0.1f)
-                                } else MaterialTheme.colors.surface
-                            ),
+                        modifier = Modifier.height(UiSettings.DataTable.headerRowHeight),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        when (selectionMode) {
-                            SelectionMode.Multiple -> {
-                                Checkbox(checked = selectionMap[mapper.getId(item)] == true, onCheckedChange = {
-                                    selectionMap[mapper.getId(item)] = it
-                                    onSelectionChanged?.invoke(selectionMap.filterValues { it }.keys.mapNotNull { key ->
-                                        items.find {
-                                            mapper.getId(
-                                                it
-                                            ) == key
+                        //render header:
+                        //selection box:
+                        Box(modifier = Modifier.width(UiSettings.DataTable.selectionRowWidth)) {
+                            if (selectionMode == SelectionMode.Multiple) {
+                                TriStateCheckbox(state = checkState, onClick = {
+                                    when (checkState) {
+                                        ToggleableState.On -> {
+                                            selectionMap.clear()
+                                            onSelectionChanged?.invoke(listOf())
                                         }
-                                    })
-                                })
-                            }
 
-                            is SelectionMode.Single -> {
-                                RadioButton(selected = selectionMap[mapper.getId(item)] == true, onClick = {
-                                    val prevValue = selectionMap[mapper.getId(item)] ?: false
-                                    selectionMap.clear()
-                                    selectionMap[mapper.getId(item)] = !prevValue
-                                    onSelectionChanged?.invoke(selectionMap.filterValues { it }.keys.mapNotNull { key ->
-                                        items.find {
-                                            mapper.getId(
-                                                it
-                                            ) == key
+                                        ToggleableState.Off,
+                                        ToggleableState.Indeterminate -> {
+                                            items.forEach {
+                                                selectionMap[mapper.getId(it)] = true
+                                            }
+                                            onSelectionChanged?.invoke(selectionMap.filterValues { it }.keys.mapNotNull { key ->
+                                                items.find {
+                                                    mapper.getId(
+                                                        it
+                                                    ) == key
+                                                }
+                                            })
                                         }
-                                    })
-                                })
+                                    }
+                                }, modifier = Modifier.align(Alignment.Center))
                             }
                         }
+
                         for (column in mapper.columns) {
-                            //render cell:
-                            val cell = remember(mapper, item, column) {
-                                mapper.getCell(item, column)
-                            }
-
                             Box(
-                                modifier = Modifier.width(UiSettings.DataTable.minCellWidth)
+                                modifier = Modifier
+                                    .width(UiSettings.DataTable.minCellWidth)
                                     .padding(horizontal = UiSettings.DataTable.columnPadding)
-                                    .clickable {
-                                        onCellClicked?.invoke(item, cell, column)
-                                    }
                             ) {
-
-                                RenderCell(
-                                    modifier =
-                                    Modifier
+                                Text(
+                                    modifier = Modifier.align(Alignment.CenterStart)
                                         .padding(all = UiSettings.DataTable.cellPadding),
-
-                                    cell = cell,
-                                    onCellChanged = { changedCell ->
-                                        onItemChanged?.invoke(mapper.updateItem(item, column, changedCell))
-                                    }
+                                    text = column.title,
+                                    style = MaterialTheme.typography.subtitle2,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
+
                         }
+                    }
+                }
+
+                this
+                    .items(items, key = {
+                        mapper.getId(it)
+                    }) { item ->
+
+                        var isHover by remember { mutableStateOf(false) }
+
+                        //render cells row:
+
+                        Row(
+                            modifier = Modifier.height(UiSettings.DataTable.rowHeight)
+                                .onPointerEvent(PointerEventType.Enter) { isHover = true }
+                                .onPointerEvent(PointerEventType.Exit) { isHover = false }
+                                .background(
+                                    color = if (isHover) {
+                                        MaterialTheme.colors.primary.copy(alpha = 0.1f)
+                                    } else MaterialTheme.colors.surface
+                                )
+                                .clickable {
+                                    when (selectionMode) {
+                                        SelectionMode.Multiple -> {
+                                            selectionMap[mapper.getId(item)] =
+                                                !(selectionMap[mapper.getId(item)] ?: false)
+                                            onSelectionChanged?.invoke(selectionMap.filterValues { it }.keys.mapNotNull { key ->
+                                                items.find {
+                                                    mapper.getId(
+                                                        it
+                                                    ) == key
+                                                }
+                                            })
+                                        }
+
+                                        SelectionMode.None -> {}
+                                        is SelectionMode.Single -> {
+                                            val prevValue = selectionMap[mapper.getId(item)] ?: false
+                                            selectionMap.clear()
+                                            selectionMap[mapper.getId(item)] = !prevValue
+                                            onSelectionChanged?.invoke(selectionMap.filterValues { it }.keys.mapNotNull { key ->
+                                                items.find {
+                                                    mapper.getId(
+                                                        it
+                                                    ) == key
+                                                }
+                                            })
+                                        }
+                                    }
+                                },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // selection control:
+                            Box(
+                                modifier = Modifier.width(UiSettings.DataTable.selectionRowWidth),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                when (selectionMode) {
+                                    SelectionMode.Multiple -> {
+                                        Checkbox(
+                                            checked = selectionMap[mapper.getId(item)] == true,
+                                            onCheckedChange = null
+                                        )
+                                    }
+
+                                    is SelectionMode.Single -> {
+                                        RadioButton(selected = selectionMap[mapper.getId(item)] == true, onClick = null)
+                                    }
+                                }
+                            }
+                            for (column in mapper.columns) {
+                                //render cell:
+                                val cell = remember(mapper, item, column) {
+                                    mapper.getCell(item, column)
+                                }
+
+                                Box(
+                                    modifier = Modifier.width(UiSettings.DataTable.minCellWidth)
+                                        .padding(horizontal = UiSettings.DataTable.columnPadding)
+                                        .clickable {
+                                            onCellClicked?.invoke(item, cell, column)
+                                        }
+                                ) {
+
+                                    RenderCell(
+                                        modifier =
+                                        Modifier
+                                            .padding(all = UiSettings.DataTable.cellPadding),
+
+                                        cell = cell,
+                                        onCellChanged = { changedCell ->
+                                            onItemChanged?.invoke(mapper.updateItem(item, column, changedCell))
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+
                     }
 
 
-                }
+            }
 
 
         }
+
+        if (selectionMode == SelectionMode.Multiple && selectionMap.any { it.value }) {
+            //show control buttons:
+            Surface(modifier = Modifier.align(Alignment.BottomCenter)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+
+                    ) {
+                    Button(onClick = {
+
+                    }) {
+                        Text(text = "Дублировать")
+                    }
+                    TextButton(onClick = {
+
+                    }) {
+                        Text(text = "Удалить", color = MaterialTheme.colors.error)
+                        Icon(
+                            Icons.Rounded.Delete,
+                            contentDescription = "Удалить записи",
+                            tint = MaterialTheme.colors.error
+                        )
+                    }
+                }
+            }
+        }
+
     }
 }
 
