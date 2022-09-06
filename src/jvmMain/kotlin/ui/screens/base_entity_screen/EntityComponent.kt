@@ -1,6 +1,10 @@
 package ui.screens.base_entity_screen
 
 import com.arkivanov.decompose.ComponentContext
+import com.arkivanov.decompose.router.stack.ChildStack
+import com.arkivanov.decompose.router.stack.StackNavigation
+import com.arkivanov.decompose.router.stack.childStack
+import com.arkivanov.decompose.router.stack.replaceCurrent
 import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.decompose.value.reduce
@@ -17,8 +21,6 @@ import org.kodein.di.DI
 import org.kodein.di.LazyDelegate
 import org.kodein.di.instance
 import ui.components.tables.IDataTableMapper
-import ui.screens.nav_host.INavHost
-import ui.screens.nav_host.NavHostComponent
 import utils.log
 import kotlin.reflect.KClass
 
@@ -31,6 +33,21 @@ class EntityComponent<T : IEntity>(
 
     private val scope =
         CoroutineScope(Dispatchers.Default + SupervisorJob())
+
+
+    private val navigation = StackNavigation<Config>()
+
+
+    private val _dialogStack =
+        childStack(
+            source = navigation,
+            initialConfiguration = Config.None,
+            handleBackButton = true,
+            childFactory = ::createChild,
+            key = "nav host stack"
+        )
+
+    override val dialogStack: Value<ChildStack<*, IEntityComponent.Dialog>> = _dialogStack
 
 
     private val getEntities: GetEntities<T> by when (type) {
@@ -130,9 +147,30 @@ class EntityComponent<T : IEntity>(
 
     private fun createChild(config: Config, componentContext: ComponentContext): IEntityComponent.Dialog {
         return when (config) {
-            Config.EntityPickerDialog -> IEntityComponent.Dialog.EntityPicker()
+            is Config.EntityPickerDialog -> IEntityComponent.Dialog.EntityPicker(
+                EntityComponent(
+                    type = config.entityClass,
+                    di = di,
+                    componentContext = componentContext
+                ),
+                initialSelection = config.entity?.id,
+                onSelectionChanged = config.onSelectionChanged
+            )
+
             Config.None -> IEntityComponent.Dialog.None
         }
+    }
+
+    override fun dismissDialog() {
+        navigation.replaceCurrent(Config.None)
+    }
+
+    override fun showEntityPickerDialog(
+        entity: IEntity?,
+        entityClass: KClass<out IEntity>,
+        onSelectionChanged: (IEntity?) -> Unit
+    ) {
+        navigation.replaceCurrent(Config.EntityPickerDialog(entity, entityClass, onSelectionChanged))
     }
 
     init {
@@ -166,7 +204,11 @@ class EntityComponent<T : IEntity>(
         object None : Config()
 
         @Parcelize
-        object EntityPickerDialog : Config()
+        class EntityPickerDialog(
+            val entity: IEntity?,
+            val entityClass: KClass<out IEntity>,
+            val onSelectionChanged: (IEntity?) -> Unit
+        ) : Config()
     }
 
 

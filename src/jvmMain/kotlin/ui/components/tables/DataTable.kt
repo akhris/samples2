@@ -21,7 +21,6 @@ import androidx.compose.ui.unit.dp
 import domain.IEntity
 import kotlinx.coroutines.delay
 import ui.UiSettings
-import ui.dialogs.EntityPickerDialog
 import kotlin.reflect.KClass
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
@@ -32,9 +31,8 @@ fun <T> DataTable(
     mapper: IDataTableMapper<T>,
     onItemChanged: ((T) -> Unit)? = null,
     selectionMode: SelectionMode = SelectionMode.Multiple,
-    onCellClicked: ((T, Cell) -> Unit)? = null,
-    onSelectionChanged: ((List<String>) -> Unit)? = null,
-    onEntityPickerClicked: ((EntityCellPickerParams<T>) -> Unit)? = null
+    onCellClicked: ((T, Cell, ColumnId) -> Unit)? = null,
+    onSelectionChanged: ((List<T>) -> Unit)? = null
 ) {
 
     val selectionMap = remember {
@@ -64,10 +62,6 @@ fun <T> DataTable(
         }
     }
 
-    var showEntityPickerDialog by remember { mutableStateOf<EntityCellPickerParams<T>?>(null) }
-
-
-
     Surface(
         modifier = modifier.padding(start = 16.dp, top = 16.dp),
         shape = MaterialTheme.shapes.medium
@@ -95,7 +89,13 @@ fun <T> DataTable(
                                         items.forEach {
                                             selectionMap[mapper.getId(it)] = true
                                         }
-                                        onSelectionChanged?.invoke(selectionMap.filterValues { it }.keys.toList())
+                                        onSelectionChanged?.invoke(selectionMap.filterValues { it }.keys.mapNotNull { key ->
+                                            items.find {
+                                                mapper.getId(
+                                                    it
+                                                ) == key
+                                            }
+                                        })
                                     }
                                 }
                             }, modifier = Modifier.align(Alignment.Center))
@@ -147,7 +147,13 @@ fun <T> DataTable(
                             SelectionMode.Multiple -> {
                                 Checkbox(checked = selectionMap[mapper.getId(item)] == true, onCheckedChange = {
                                     selectionMap[mapper.getId(item)] = it
-                                    onSelectionChanged?.invoke(selectionMap.filterValues { it }.keys.toList())
+                                    onSelectionChanged?.invoke(selectionMap.filterValues { it }.keys.mapNotNull { key ->
+                                        items.find {
+                                            mapper.getId(
+                                                it
+                                            ) == key
+                                        }
+                                    })
                                 })
                             }
 
@@ -156,7 +162,13 @@ fun <T> DataTable(
                                     val prevValue = selectionMap[mapper.getId(item)] ?: false
                                     selectionMap.clear()
                                     selectionMap[mapper.getId(item)] = !prevValue
-                                    onSelectionChanged?.invoke(selectionMap.filterValues { it }.keys.toList())
+                                    onSelectionChanged?.invoke(selectionMap.filterValues { it }.keys.mapNotNull { key ->
+                                        items.find {
+                                            mapper.getId(
+                                                it
+                                            ) == key
+                                        }
+                                    })
                                 })
                             }
                         }
@@ -170,13 +182,7 @@ fun <T> DataTable(
                                 modifier = Modifier.width(UiSettings.DataTable.minCellWidth)
                                     .padding(horizontal = UiSettings.DataTable.columnPadding)
                                     .clickable {
-                                        onCellClicked?.invoke(item, cell)
-                                        if (cell is Cell.EntityCell) {
-                                            onEntityPickerClicked?.invoke(
-//                                            showEntityPickerDialog =
-                                                EntityCellPickerParams(item = item, columnId = column, cell = cell)
-                                            )
-                                        }
+                                        onCellClicked?.invoke(item, cell, column)
                                     }
                             ) {
 
@@ -200,28 +206,7 @@ fun <T> DataTable(
 
         }
     }
-
-
-
-
-    showEntityPickerDialog?.let { pickerParams ->
-
-        EntityPickerDialog(
-            entityClass = pickerParams.cell.entityClass,
-            onDismiss = {
-                showEntityPickerDialog = null
-            },
-            initialSelection = pickerParams.cell.entity?.id,
-            onSelectionChanged = {
-                val changedCell = pickerParams.cell.copy(entity = it)
-                onItemChanged?.invoke(mapper.updateItem(pickerParams.item, pickerParams.columnId, changedCell))
-            }
-        )
-
-    }
 }
-
-data class EntityCellPickerParams<T>(val item: T, val columnId: ColumnId, val cell: Cell.EntityCell)
 
 @Composable
 private fun BoxScope.RenderCell(
