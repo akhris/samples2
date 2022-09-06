@@ -21,6 +21,8 @@ import androidx.compose.ui.unit.dp
 import domain.IEntity
 import kotlinx.coroutines.delay
 import ui.UiSettings
+import utils.DateTimeConverter
+import java.time.LocalDateTime
 import kotlin.reflect.KClass
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
@@ -217,6 +219,7 @@ private fun BoxScope.RenderCell(
     when (cell) {
         is Cell.EditTextCell -> RenderEditTextCell(modifier, cell, onCellChanged)
         is Cell.EntityCell -> RenderEntityCell(modifier, cell, onCellChanged)
+        is Cell.DateTimeCell -> RenderDateTimeCell(modifier, cell)
     }
 }
 
@@ -252,6 +255,25 @@ private fun BoxScope.RenderEditTextCell(
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun BoxScope.RenderDateTimeCell(
+    modifier: Modifier = Modifier,
+    cell: Cell.DateTimeCell
+) {
+    var isHover by remember { mutableStateOf(false) }
+
+    Text(
+        modifier = modifier
+            .onPointerEvent(PointerEventType.Enter) { isHover = true }
+            .onPointerEvent(PointerEventType.Exit) { isHover = false }
+            .background(color = MaterialTheme.colors.primary.copy(alpha = if (isHover) 0.05f else 0f)).padding(4.dp),
+        text = cell.value?.let { DateTimeConverter.dateTimeToString(it) } ?: ""
+    )
+
+
+}
+
 
 @Composable
 private fun BoxScope.RenderEntityCell(
@@ -279,6 +301,8 @@ interface IDataTableMapper<T> {
 sealed class Cell {
     data class EditTextCell(val value: String) : Cell()
     data class EntityCell(val entity: IEntity?, val entityClass: KClass<out IEntity>) : Cell()
+
+    data class DateTimeCell(val value: LocalDateTime?) : Cell()
 //    data class ReferenceCell() : Cell()
 }
 

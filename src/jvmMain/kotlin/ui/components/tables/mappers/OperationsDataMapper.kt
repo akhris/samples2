@@ -4,7 +4,6 @@ import domain.*
 import ui.components.tables.Cell
 import ui.components.tables.ColumnId
 import ui.components.tables.IDataTableMapper
-import java.time.LocalDateTime
 
 class OperationsDataMapper : IDataTableMapper<Operation> {
     override val columns: List<ColumnId> = listOf(
@@ -20,7 +19,7 @@ class OperationsDataMapper : IDataTableMapper<Operation> {
 
     override fun updateItem(item: Operation, columnId: ColumnId, cell: Cell): Operation {
         return when (Column.requireColumn(columnId)) {
-            Column.DateTime -> (cell as? Cell.EditTextCell)?.let { item.copy(dateTime = LocalDateTime.parse(it.value)) }
+            Column.DateTime -> (cell as? Cell.DateTimeCell)?.let { item.copy(dateTime = it.value) }
             Column.OperationType -> (cell as? Cell.EntityCell)?.let {
                 (it.entity as? OperationType)?.let { e ->
                     item.copy(operationType = e)
@@ -49,7 +48,7 @@ class OperationsDataMapper : IDataTableMapper<Operation> {
 
     override fun getCell(item: Operation, columnId: ColumnId): Cell {
         return when (Column.requireColumn(columnId)) {
-            Column.DateTime -> Cell.EditTextCell(value = item.dateTime?.toString() ?: "")
+            Column.DateTime -> Cell.DateTimeCell(value = item.dateTime)
             Column.OperationType -> Cell.EntityCell(entity = item.operationType, OperationType::class)
             Column.Place -> Cell.EntityCell(entity = item.place, Place::class)
             Column.Sample -> Cell.EntityCell(entity = item.sample, Sample::class)

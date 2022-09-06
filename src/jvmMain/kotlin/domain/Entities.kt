@@ -12,6 +12,7 @@ interface IEntity {
  */
 data class Place(
     override val id: String = UUID.randomUUID().toString(),
+    val name: String = "",
     val roomNumber: String = "",
     val description: String = ""
 ) : IEntity {

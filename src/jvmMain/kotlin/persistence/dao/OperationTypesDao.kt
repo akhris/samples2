@@ -1,14 +1,32 @@
 package persistence.dao
 
-import domain.*
+import domain.EntitiesList
+import domain.IBaseDao
+import domain.ISpecification
+import domain.OperationType
+import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.sql.update
+import persistence.dto.EntityOperationType
+import persistence.dto.Tables
+import persistence.toOperationType
+import utils.toUUID
 
-class OperationTypesDao: IBaseDao<OperationType> {
+class OperationTypesDao : IBaseDao<OperationType> {
+
+    private val table = Tables.OperationTypes
+
+
     override suspend fun getByID(id: String): OperationType? {
         TODO("Not yet implemented")
     }
 
     override suspend fun removeById(id: String) {
-        TODO("Not yet implemented")
+        newSuspendedTransaction {
+            table.deleteWhere { table.id eq id.toUUID() }
+            commit()
+        }
     }
 
     override suspend fun query(
@@ -18,7 +36,14 @@ class OperationTypesDao: IBaseDao<OperationType> {
         searchSpec: ISpecification?,
         groupingSpec: ISpecification?
     ): EntitiesList<OperationType> {
-        TODO("Not yet implemented")
+        //query all:
+        return newSuspendedTransaction {
+            val types = EntityOperationType
+                .all()
+                .map { it.toOperationType() }
+
+            EntitiesList.NotGrouped(types)
+        }
     }
 
     override suspend fun getItemsCount(
@@ -32,10 +57,23 @@ class OperationTypesDao: IBaseDao<OperationType> {
     }
 
     override suspend fun update(entity: OperationType) {
-        TODO("Not yet implemented")
+        newSuspendedTransaction {
+            table.update({ table.id eq entity.id.toUUID() }) {
+                it[table.name] = entity.name
+                it[table.description] = entity.description
+            }
+            commit()
+        }
     }
 
     override suspend fun insert(entity: OperationType) {
-        TODO("Not yet implemented")
+        newSuspendedTransaction {
+            table.insert {
+                it[table.id] = entity.id.toUUID()
+                it[table.name] = entity.name
+                it[table.description] = entity.description
+            }
+            commit()
+        }
     }
 }

@@ -4,14 +4,12 @@ import domain.EntitiesList
 import domain.IBaseDao
 import domain.ISpecification
 import domain.SampleType
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import persistence.dto.EntitySample
+import org.jetbrains.exposed.sql.update
 import persistence.dto.EntitySampleType
 import persistence.dto.Tables
-import persistence.toSample
 import persistence.toSampleType
 import utils.toUUID
 
@@ -58,7 +56,13 @@ class SampleTypesDao : IBaseDao<SampleType> {
     }
 
     override suspend fun update(entity: SampleType) {
-        TODO("Not yet implemented")
+        newSuspendedTransaction {
+            table.update({ table.id eq entity.id.toUUID() }) {
+                it[name] = entity.name
+                it[description] = entity.description
+            }
+            commit()
+        }
     }
 
     override suspend fun insert(entity: SampleType) {

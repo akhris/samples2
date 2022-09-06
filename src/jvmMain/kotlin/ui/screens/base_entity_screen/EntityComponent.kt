@@ -109,6 +109,24 @@ class EntityComponent<T : IEntity>(
     private val _state = MutableValue(IEntityComponent.State<T>())
     override val state: Value<IEntityComponent.State<T>> = _state
 
+    override fun insertNewEntity(sampleType: SampleType) {
+
+        val entity = when (type) {
+            Sample::class -> Sample(type = sampleType)
+            SampleType::class -> SampleType()
+            Parameter::class -> Parameter(sampleType = sampleType)
+            Operation::class -> Operation()
+            OperationType::class -> OperationType()
+            Worker::class -> Worker()
+            Place::class -> Place()
+            else -> throw IllegalArgumentException("cannot get data table mapper!")
+        } as? T
+
+        entity?.let {
+            insertNewEntity(it)
+        }
+    }
+
     override fun insertNewEntity(entity: T) {
         scope.launch {
             insertEntity(InsertEntity.Insert(entity))
@@ -154,7 +172,8 @@ class EntityComponent<T : IEntity>(
                     componentContext = componentContext
                 ),
                 initialSelection = config.entity?.id,
-                onSelectionChanged = config.onSelectionChanged
+                onSelectionChanged = config.onSelectionChanged,
+                columnName = config.columnName
             )
 
             Config.None -> IEntityComponent.Dialog.None
@@ -168,9 +187,10 @@ class EntityComponent<T : IEntity>(
     override fun showEntityPickerDialog(
         entity: IEntity?,
         entityClass: KClass<out IEntity>,
-        onSelectionChanged: (IEntity?) -> Unit
+        onSelectionChanged: (IEntity?) -> Unit,
+        columnName: String
     ) {
-        navigation.replaceCurrent(Config.EntityPickerDialog(entity, entityClass, onSelectionChanged))
+        navigation.replaceCurrent(Config.EntityPickerDialog(entity, entityClass, onSelectionChanged, columnName))
     }
 
     init {
@@ -207,7 +227,8 @@ class EntityComponent<T : IEntity>(
         class EntityPickerDialog(
             val entity: IEntity?,
             val entityClass: KClass<out IEntity>,
-            val onSelectionChanged: (IEntity?) -> Unit
+            val onSelectionChanged: (IEntity?) -> Unit,
+            val columnName: String
         ) : Config()
     }
 

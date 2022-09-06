@@ -3,6 +3,7 @@ package ui.screens.base_entity_screen
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
 import domain.IEntity
+import domain.SampleType
 import ui.components.tables.IDataTableMapper
 import kotlin.reflect.KClass
 
@@ -10,6 +11,8 @@ interface IEntityComponent<T : IEntity> {
     val state: Value<State<T>>
 
     fun insertNewEntity(entity: T)
+
+    fun insertNewEntity(sampleType: SampleType)
     fun updateEntity(entity: T)
 
     val dataMapper: IDataTableMapper<T>
@@ -28,7 +31,8 @@ interface IEntityComponent<T : IEntity> {
     fun showEntityPickerDialog(
         entity: IEntity?,
         entityClass: KClass<out IEntity>,
-        onSelectionChanged: (IEntity?) -> Unit
+        onSelectionChanged: (IEntity?) -> Unit,
+        columnName: String
     )
 
     sealed class Dialog {
@@ -36,7 +40,8 @@ interface IEntityComponent<T : IEntity> {
         class EntityPicker<T : IEntity>(
             val component: IEntityComponent<T>,
             val initialSelection: String? = null,
-            val onSelectionChanged: (IEntity?) -> Unit
+            val onSelectionChanged: (IEntity?) -> Unit,
+            val columnName: String = ""
         ) : Dialog()
     }
 }

@@ -1,5 +1,6 @@
 package ui.screens.base_entity_screen
 
+import LocalSamplesType
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -18,6 +19,10 @@ import ui.UiSettings
 import ui.components.tables.Cell
 import ui.components.tables.DataTable
 import ui.components.tables.SelectionMode
+import ui.dialogs.DatePickerDialog
+import ui.dialogs.TimePickerDialog
+import java.time.LocalDateTime
+import java.time.temporal.TemporalAdjusters
 
 @OptIn(ExperimentalDecomposeApi::class)
 @Composable
@@ -32,6 +37,9 @@ fun <T : IEntity> BaseEntityUi(
     val entities = remember(state) { state.entities }
 
 
+    var dateTimePickerParams by remember { mutableStateOf<DateTimePickerDialogParams?>(null) }
+
+
     Box(modifier = Modifier.fillMaxSize()) {
 
         //parameters table:
@@ -43,33 +51,89 @@ fun <T : IEntity> BaseEntityUi(
                 component.updateEntity(it)
             },
             onCellClicked = { item, cell, column ->
-                if (cell is Cell.EntityCell) {
-                    component.showEntityPickerDialog(
-                        entity = cell.entity,
-                        entityClass = cell.entityClass,
-                        onSelectionChanged = {
-                            val updatedItem = component.dataMapper.updateItem(
-                                item = item,
-                                columnId = column,
-                                cell = cell.copy(entity = it)
-                            )
-                            component.updateEntity(updatedItem)
-                        }
-                    )
+                when (cell) {
+                    is Cell.EntityCell -> {
+                        component.showEntityPickerDialog(
+                            entity = cell.entity,
+                            entityClass = cell.entityClass,
+                            onSelectionChanged = {
+                                val updatedItem = component.dataMapper.updateItem(
+                                    item = item,
+                                    columnId = column,
+                                    cell = cell.copy(entity = it)
+                                )
+                                component.updateEntity(updatedItem)
+                            },
+                            columnName = column.title
+                        )
+                    }
+
+                    is Cell.DateTimeCell -> {
+                        dateTimePickerParams =
+                            DateTimePickerDialogParams(initialDateTime = cell.value,
+                                onDateChanged = {
+                                    val updatedItem =
+                                        component.dataMapper.updateItem(
+                                            item,
+                                            columnId = column,
+                                            cell = cell.copy(value = it)
+                                        )
+                                    component.updateEntity(updatedItem)
+                                })
+                    }
                 }
             },
             selectionMode = selectionMode,
             onSelectionChanged = onSelectionChanged
         )
 
+        val sampleType = LocalSamplesType.current
 
         FloatingActionButton(
             modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
             onClick = {
+                //add entity:
+                sampleType?.let {
+                    component.insertNewEntity(it)
+                }
                 //todo show add sample dialog
             },
             content = { Icon(Icons.Rounded.Add, contentDescription = "add parameter") })
     }
+
+
+    dateTimePickerParams?.let { params ->
+
+        var dateTime by remember { mutableStateOf(params.initialDateTime) }
+
+        var datePickerDialogShow by remember { mutableStateOf(true) }
+        var timePickerDialogShow by remember { mutableStateOf(false) }
+
+        if (datePickerDialogShow) {
+            DatePickerDialog(
+                initialSelection = dateTime?.toLocalDate(),
+                onDismiss = { datePickerDialogShow = false },
+                onDateSelected = { newDate ->
+                    dateTime =
+                        (dateTime ?: LocalDateTime.now())
+                            .with(TemporalAdjusters.ofDateAdjuster {
+                                newDate
+                            }
+                            )
+
+                    timePickerDialogShow = true
+                })
+
+        }
+        if (timePickerDialogShow) {
+            TimePickerDialog(initialTime = dateTime, onDismiss = { dateTimePickerParams = null }, onTimeSelected = {
+                params.onDateChanged(it)
+            })
+        }
+
+    }
+
+
 
     Children(stack = component.dialogStack) {
         when (val child = it.instance) {
@@ -83,6 +147,7 @@ fun <T : IEntity> BaseEntityUi(
 
                 Dialog(
                     state = dialogState,
+                    title = "Выбрать: ${child.columnName.lowercase()}",
                     onCloseRequest = {
                         component.dismissDialog()
                     }) {
@@ -118,3 +183,5 @@ fun <T : IEntity> BaseEntityUi(
     }
 
 }
+
+data class DateTimePickerDialogParams(val initialDateTime: LocalDateTime?, val onDateChanged: (LocalDateTime?) -> Unit)

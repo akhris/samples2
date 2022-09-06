@@ -166,14 +166,12 @@ private fun TimePickerTextField(
             }
         }) {
         BasicTextField(
-            modifier = Modifier.align(Alignment.Center),
+            modifier = Modifier.align(Alignment.Center).wrapContentWidth(),
             value = "%02d".format(currentValue),
             onValueChange = {
                 currentValue = (it.toIntOrNull() ?: 0).coerceIn(valueRange)
-            }
-
-//            textStyle = MaterialTheme.typography.h4
-//                .copy(textAlign = TextAlign.Center)
+            },
+            textStyle = MaterialTheme.typography.h4
         )
     }
 
