@@ -1,11 +1,13 @@
 package ui.components.tables
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -69,73 +71,79 @@ fun <T> DataTable(
 
     Box(modifier = modifier.fillMaxHeight()) {
 
+
         Surface(
             modifier = modifier.padding(start = 16.dp, top = 16.dp),
             shape = MaterialTheme.shapes.medium
         ) {
-            LazyColumn {
+
+            val listState = rememberLazyListState()
+            val headerElevation by animateDpAsState(if (listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0) 0.dp else 4.dp)
+            LazyColumn(state = listState) {
 
                 stickyHeader {
-                    Row(
-                        modifier = Modifier.height(UiSettings.DataTable.headerRowHeight),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        //render header:
-                        //selection box:
-                        Box(modifier = Modifier.width(UiSettings.DataTable.selectionRowWidth)) {
-                            if (selectionMode is SelectionMode.Multiple) {
-                                TriStateCheckbox(state = checkState, onClick = {
-                                    when (checkState) {
-                                        ToggleableState.On -> {
-                                            selectionMap.clear()
-                                            selectionMode.onItemsSelected?.invoke(listOf())
+                    Surface(elevation = headerElevation) {
+                        Row(
+                            modifier = Modifier.height(UiSettings.DataTable.headerRowHeight),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            //render header:
+                            //selection box:
+                            Box(modifier = Modifier.width(UiSettings.DataTable.selectionRowWidth)) {
+                                if (selectionMode is SelectionMode.Multiple) {
+                                    TriStateCheckbox(state = checkState, onClick = {
+                                        when (checkState) {
+                                            ToggleableState.On -> {
+                                                selectionMap.clear()
+                                                selectionMode.onItemsSelected?.invoke(listOf())
 //                                            onSelectionChanged?.invoke(listOf())
-                                        }
-
-                                        ToggleableState.Off,
-                                        ToggleableState.Indeterminate -> {
-                                            items.forEach {
-                                                selectionMap[mapper.getId(it)] = true
                                             }
-                                            selectionMode.onItemsSelected?.invoke(
-                                                selectionMap.filterValues { it }.keys.mapNotNull { key ->
-                                                    items.find {
-                                                        mapper.getId(
-                                                            it
-                                                        ) == key
-                                                    }
+
+                                            ToggleableState.Off,
+                                            ToggleableState.Indeterminate -> {
+                                                items.forEach {
+                                                    selectionMap[mapper.getId(it)] = true
                                                 }
-                                            )
+                                                selectionMode.onItemsSelected?.invoke(
+                                                    selectionMap.filterValues { it }.keys.mapNotNull { key ->
+                                                        items.find {
+                                                            mapper.getId(
+                                                                it
+                                                            ) == key
+                                                        }
+                                                    }
+                                                )
+                                            }
                                         }
-                                    }
-                                }, modifier = Modifier.align(Alignment.Center))
+                                    }, modifier = Modifier.align(Alignment.Center))
+                                }
                             }
-                        }
 
-                        for (column in mapper.columns) {
-                            Box(
-                                modifier = Modifier
-                                    .width(
-                                        when (column.width) {
-                                            is ColumnWidth.Custom -> column.width.width
-                                            ColumnWidth.Normal -> UiSettings.DataTable.columnWidthNormal
-                                            ColumnWidth.Small -> UiSettings.DataTable.columnWidthSmall
-                                            ColumnWidth.Wide -> UiSettings.DataTable.columnWidthWide
-                                        }
+                            for (column in mapper.columns) {
+                                Box(
+                                    modifier = Modifier
+                                        .width(
+                                            when (column.width) {
+                                                is ColumnWidth.Custom -> column.width.width
+                                                ColumnWidth.Normal -> UiSettings.DataTable.columnWidthNormal
+                                                ColumnWidth.Small -> UiSettings.DataTable.columnWidthSmall
+                                                ColumnWidth.Wide -> UiSettings.DataTable.columnWidthWide
+                                            }
+                                        )
+                                        .padding(horizontal = UiSettings.DataTable.columnPadding)
+                                ) {
+                                    Text(
+                                        modifier = Modifier.align(Alignment.CenterStart)
+                                            .padding(all = UiSettings.DataTable.cellPadding),
+                                        text = column.title,
+                                        style = MaterialTheme.typography.subtitle2,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
-                                    .padding(horizontal = UiSettings.DataTable.columnPadding)
-                            ) {
-                                Text(
-                                    modifier = Modifier.align(Alignment.CenterStart)
-                                        .padding(all = UiSettings.DataTable.cellPadding),
-                                    text = column.title,
-                                    style = MaterialTheme.typography.subtitle2,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
+                                }
 
+                            }
                         }
                     }
                 }
