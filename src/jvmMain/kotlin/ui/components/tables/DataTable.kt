@@ -150,7 +150,8 @@ fun <T> DataTable(
                         //render cells row:
 
                         Row(
-                            modifier = Modifier.height(UiSettings.DataTable.rowHeight)
+                            modifier = Modifier
+                                .height(UiSettings.DataTable.rowHeight)
                                 .onPointerEvent(PointerEventType.Enter) { isHover = true }
                                 .onPointerEvent(PointerEventType.Exit) { isHover = false }
                                 .background(

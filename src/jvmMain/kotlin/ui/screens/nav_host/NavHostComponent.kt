@@ -21,10 +21,6 @@ import navigation.NavItem
 import org.kodein.di.DI
 import org.kodein.di.instance
 import ui.screens.base_entity_screen.EntityComponent
-import ui.screens.norms.NormsComponent
-import ui.screens.operationtypes.OperationTypesComponent
-import ui.screens.places.PlacesComponent
-import ui.screens.workers.WorkersComponent
 
 /**
  * Main navigation component that holds all destinations
@@ -68,13 +64,13 @@ class NavHostComponent constructor(
 
     private fun createChild(config: Config, componentContext: ComponentContext): INavHost.Child {
         return when (config) {
-            Config.Places -> INavHost.Child.Places(PlacesComponent(componentContext))
-            Config.Workers -> INavHost.Child.Workers(WorkersComponent(componentContext))
-            Config.Norms -> INavHost.Child.Norms(NormsComponent(componentContext))
+            Config.Places -> INavHost.Child.Places(EntityComponent(di = di, componentContext))
+            Config.Workers -> INavHost.Child.Workers(EntityComponent(di = di, componentContext))
+            Config.Norms -> INavHost.Child.Norms(EntityComponent(di = di, componentContext))
             Config.Parameters -> INavHost.Child.Parameters(EntityComponent(di = di, componentContext))
             Config.Operations -> INavHost.Child.Operations(EntityComponent(di = di, componentContext))
             Config.Samples -> INavHost.Child.Samples(EntityComponent(di = di, componentContext))
-            Config.OperationTypes -> INavHost.Child.OperationTypes(OperationTypesComponent(componentContext))
+            Config.OperationTypes -> INavHost.Child.OperationTypes(EntityComponent(di = di, componentContext))
         }
     }
 
