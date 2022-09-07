@@ -14,15 +14,13 @@ import domain.IEntity
 import domain.Specification
 import kotlinx.coroutines.delay
 import ui.UiSettings
-import ui.components.tables.SelectionMode
 
 /**
  * Wrapper of BaseEntityUi with Search/Add panel.
  */
 @Composable
 fun <T : IEntity> EntityUiWithSearchAddPanel(
-    component: IEntityComponent<T>,
-    selectionMode: SelectionMode<T> = SelectionMode.Multiple()
+    component: IEntityComponent<T>
 ) {
 
 
@@ -36,8 +34,7 @@ fun <T : IEntity> EntityUiWithSearchAddPanel(
 
         BaseEntityUi(
             modifier = Modifier.align(Alignment.CenterHorizontally),
-            component = component,
-            selectionMode = selectionMode
+            component = component
         )
 
     }

@@ -21,7 +21,7 @@ object DbSettings {
             )
 //            Database.connect("jdbc:sqlite:file:test?mode=memory&cache=shared&foreign_keys=on", "org.sqlite.JDBC")
         transaction {
-            addLogger(StdOutSqlLogger)
+//            addLogger(StdOutSqlLogger)
 
             SchemaUtils.create(
                 Tables.SampleTypes,

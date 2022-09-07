@@ -13,15 +13,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import domain.IEntity
-import ui.components.tables.SelectionMode
 
 /**
  * Wrapper of BaseEntityUi with FloatingActionButton which adds single entity to the table
  */
 @Composable
 fun <T : IEntity> EntityUiwithFab(
-    component: IEntityComponent<T>,
-    selectionMode: SelectionMode<T> = SelectionMode.Multiple()
+    component: IEntityComponent<T>
 ) {
 
     val sampleType = LocalSamplesType.current
@@ -29,8 +27,7 @@ fun <T : IEntity> EntityUiwithFab(
     Box(modifier = Modifier.fillMaxSize()) {
         BaseEntityUi(
             modifier = Modifier.align(Alignment.TopCenter).padding(end = 48.dp),
-            component = component,
-            selectionMode = selectionMode
+            component = component
         )
 
         FloatingActionButton(

@@ -16,12 +16,16 @@ import domain.application.Result
 import domain.application.baseUseCases.GetEntities
 import domain.application.baseUseCases.InsertEntity
 import domain.application.baseUseCases.UpdateEntity
+import io.github.evanrupert.excelkt.workbook
 import kotlinx.coroutines.*
 import org.kodein.di.DI
 import org.kodein.di.LazyDelegate
 import org.kodein.di.instance
+import ui.components.tables.Cell
 import ui.components.tables.IDataTableMapper
+import utils.DateTimeConverter
 import utils.log
+import java.util.*
 import kotlin.reflect.KClass
 
 class EntityComponent<T : IEntity>(
@@ -142,6 +146,32 @@ class EntityComponent<T : IEntity>(
     }
 
 
+    override fun duplicateEntities(entities: List<T>) {
+        scope.launch {
+            //create duplicated copies with new id:
+            val duplicated =
+                entities
+                    .mapNotNull {
+                        when (it::class) {
+                            Sample::class -> (it as? Sample)?.copy(id = UUID.randomUUID().toString())
+                            SampleType::class -> (it as? SampleType)?.copy(id = UUID.randomUUID().toString())
+                            Parameter::class -> (it as? Parameter)?.copy(id = UUID.randomUUID().toString())
+                            Operation::class -> (it as? Operation)?.copy(id = UUID.randomUUID().toString())
+                            OperationType::class -> (it as? OperationType)?.copy(id = UUID.randomUUID().toString())
+                            Worker::class -> (it as? Worker)?.copy(id = UUID.randomUUID().toString())
+                            Place::class -> (it as? Place)?.copy(id = UUID.randomUUID().toString())
+                            else -> throw IllegalArgumentException("cannot get data table mapper!")
+                        }
+                    }
+
+            //insert duplicates:
+            duplicated
+                .forEach {
+                    insertEntity(InsertEntity.Insert(it))
+                }
+        }
+    }
+
     override fun setQuerySpec(spec: Specification) {
         _spec.reduce {
             spec
@@ -154,6 +184,40 @@ class EntityComponent<T : IEntity>(
     override fun resetQuerySpec(spec: Specification) {
         setQuerySpec(Specification.QueryAll)
     }
+
+    override fun saveRowsToExcel(entities: List<T>) {
+        scope.launch {
+            workbook {
+                sheet {
+
+                    row {
+                        //header:
+                        dataMapper.columns.forEach {
+                            cell(content = it.title)
+                        }
+                    }
+                    entities.forEach { entity ->
+                        row {
+                            dataMapper.columns.forEach { column ->
+                                val cell = dataMapper.getCell(entity, column)
+                                cell(
+                                    when (cell) {
+                                        is Cell.DateTimeCell -> cell.value?.let { DateTimeConverter.dateTimeToString(it) }
+                                            ?: ""
+
+                                        is Cell.EditTextCell -> cell.value
+                                        is Cell.EntityCell -> cell.entity?.toString() ?: ""
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                }
+            }.write("test.xlsx")
+        }
+    }
+
 
     private suspend fun invalidateEntities() {
         //get all samples

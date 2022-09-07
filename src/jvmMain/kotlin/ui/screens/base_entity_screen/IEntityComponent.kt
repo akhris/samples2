@@ -15,10 +15,14 @@ interface IEntityComponent<T : IEntity> {
     fun insertNewEntity(sampleType: SampleType)
     fun updateEntity(entity: T)
 
+    fun duplicateEntities(entities: List<T>)
+
     val dataMapper: IDataTableMapper<T>
 
     fun setQuerySpec(spec: Specification)
     fun resetQuerySpec(spec: Specification)
+
+    fun saveRowsToExcel(entities: List<T>)
 
     data class State<E : IEntity>(
         val entities: List<E> = listOf()

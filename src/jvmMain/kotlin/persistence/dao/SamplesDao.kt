@@ -42,7 +42,7 @@ class SamplesDao : IBaseDao<Sample> {
 
 
             val query = table.selectAll()
-
+//
             (searchSpec as? Specification.Search)?.let {
                 query.addSearching(it)
             }

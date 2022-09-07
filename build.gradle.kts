@@ -52,6 +52,9 @@ kotlin {
 
                 //for qualifiers
                 implementation("javax.inject:javax.inject:1")
+
+                //export to excel
+                implementation("io.github.evanrupert:excelkt:1.0.2")
             }
         }
         val jvmTest by getting

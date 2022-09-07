@@ -10,8 +10,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -48,7 +46,7 @@ fun <T> DataTable(
     LaunchedEffect(selectionMode) {
         val initialSelection: Map<String, Boolean> = when (selectionMode) {
             is SelectionMode.Multiple<T> -> mapOf()
-            SelectionMode.None -> mapOf()
+            is SelectionMode.None -> mapOf()
             is SelectionMode.Single -> listOfNotNull(selectionMode.initialSelection?.let { it to true }).toMap()
         }
         selectionMap.putAll(initialSelection)
@@ -59,7 +57,7 @@ fun <T> DataTable(
         .map { item -> selectionMap[mapper.getId(item)] ?: false }
 
     val checkState = remember(checks) {
-        if (checks.all { it }) {
+        if (checks.all { it } && checks.isNotEmpty()) {
             ToggleableState.On
         } else if (checks.all { !it } || checks.isEmpty()) {
             ToggleableState.Off
@@ -90,7 +88,7 @@ fun <T> DataTable(
                             //render header:
                             //selection box:
                             Box(modifier = Modifier.width(UiSettings.DataTable.selectionRowWidth)) {
-                                if (selectionMode is SelectionMode.Multiple) {
+                                if (selectionMode is SelectionMode.Multiple && items.size > 1) {
                                     TriStateCheckbox(state = checkState, onClick = {
                                         when (checkState) {
                                             ToggleableState.On -> {
@@ -156,7 +154,6 @@ fun <T> DataTable(
                         var isHover by remember { mutableStateOf(false) }
 
                         //render cells row:
-
                         Row(
                             modifier = Modifier
                                 .height(UiSettings.DataTable.rowHeight)
@@ -183,7 +180,7 @@ fun <T> DataTable(
                                             )
                                         }
 
-                                        SelectionMode.None -> {}
+                                        is SelectionMode.None -> {}
                                         is SelectionMode.Single -> {
                                             val prevValue = selectionMap[mapper.getId(item)] ?: false
                                             selectionMap.clear()
@@ -211,6 +208,10 @@ fun <T> DataTable(
 
                                     is SelectionMode.Single -> {
                                         RadioButton(selected = selectionMap[mapper.getId(item)] == true, onClick = null)
+                                    }
+
+                                    is SelectionMode.None -> {
+
                                     }
                                 }
                             }
@@ -251,34 +252,6 @@ fun <T> DataTable(
                     }
             }
         }
-
-        if (selectionMode is SelectionMode.Multiple<T> && selectionMap.any { it.value }) {
-            //show control buttons:
-            Surface(modifier = Modifier.align(Alignment.BottomCenter)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
-
-                    ) {
-                    Button(onClick = {
-
-                    }) {
-                        Text(text = "Дублировать")
-                    }
-                    TextButton(onClick = {
-
-                    }) {
-                        Text(text = "Удалить", color = MaterialTheme.colors.error)
-                        Icon(
-                            Icons.Rounded.Delete,
-                            contentDescription = "Удалить записи",
-                            tint = MaterialTheme.colors.error
-                        )
-                    }
-                }
-            }
-        }
-
     }
 }
 
@@ -412,5 +385,5 @@ sealed class SelectionMode<T> {
     ) :
         SelectionMode<T>()
 
-    object None : SelectionMode<Any>()
+    class None<T> : SelectionMode<T>()
 }
