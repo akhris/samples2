@@ -1,14 +1,12 @@
 package persistence.dao
 
-import domain.EntitiesList
-import domain.IBaseDao
-import domain.ISpecification
-import domain.Sample
+import domain.*
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import persistence.dto.EntitySample
 import persistence.dto.Tables
 import persistence.toSample
+import utils.log
 import utils.toUUID
 
 class SamplesDao : IBaseDao<Sample> {
@@ -37,13 +35,38 @@ class SamplesDao : IBaseDao<Sample> {
         searchSpec: ISpecification?,
         groupingSpec: ISpecification?
     ): EntitiesList<Sample> {
+        log("query with searchSpec: $searchSpec")
+
         //query all:
         return newSuspendedTransaction {
-            val types = EntitySample
-                .all()
-                .map { it.toSample() }
+
+
+            val query = table.selectAll()
+
+            (searchSpec as? Specification.Search)?.let {
+                query.addSearching(it)
+            }
+
+            val types =
+                EntitySample
+                    .wrapRows(query)
+                    .map { it.toSample() }
+//                .all()
+//                .map { it.toSample() }
 
             EntitiesList.NotGrouped(types)
+        }
+    }
+
+    private fun Query.addSearching(searchSpec: Specification.Search) {
+        if (searchSpec.searchString.isBlank())
+            return
+
+        table.columns.forEach { c ->
+            //search if it's text
+            (c as? Column<String>)?.let {
+                orWhere { it.lowerCase() like "%${searchSpec.searchString}%" }
+            }
         }
     }
 

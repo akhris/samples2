@@ -4,6 +4,7 @@ import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
 import domain.IEntity
 import domain.SampleType
+import domain.Specification
 import ui.components.tables.IDataTableMapper
 import kotlin.reflect.KClass
 
@@ -11,11 +12,13 @@ interface IEntityComponent<T : IEntity> {
     val state: Value<State<T>>
 
     fun insertNewEntity(entity: T)
-
     fun insertNewEntity(sampleType: SampleType)
     fun updateEntity(entity: T)
 
     val dataMapper: IDataTableMapper<T>
+
+    fun setQuerySpec(spec: Specification)
+    fun resetQuerySpec(spec: Specification)
 
     data class State<E : IEntity>(
         val entities: List<E> = listOf()

@@ -34,6 +34,8 @@ class EntityComponent<T : IEntity>(
     private val scope =
         CoroutineScope(Dispatchers.Default + SupervisorJob())
 
+    private val _spec = MutableValue<Specification>(Specification.QueryAll)
+
 
     private val navigation = StackNavigation<Config>()
 
@@ -140,9 +142,22 @@ class EntityComponent<T : IEntity>(
     }
 
 
+    override fun setQuerySpec(spec: Specification) {
+        _spec.reduce {
+            spec
+        }
+        scope.launch {
+            invalidateEntities()
+        }
+    }
+
+    override fun resetQuerySpec(spec: Specification) {
+        setQuerySpec(Specification.QueryAll)
+    }
+
     private suspend fun invalidateEntities() {
         //get all samples
-        val entities = getEntities(GetEntities.Params.GetWithSpecification(Specification.QueryAll))
+        val entities = getEntities(GetEntities.Params.GetWithSpecification(_spec.value))
 
         when (entities) {
             is Result.Success -> {

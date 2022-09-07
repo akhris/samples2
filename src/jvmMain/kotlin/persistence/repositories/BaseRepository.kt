@@ -3,7 +3,8 @@ package persistence.repositories
 import domain.*
 import kotlinx.coroutines.flow.SharedFlow
 
-class BaseRepository<ENTITY: IEntity>(private val baseDao: IBaseDao<ENTITY>) : IRepository<ENTITY>, IRepositoryCallback<ENTITY> {
+class BaseRepository<ENTITY : IEntity>(private val baseDao: IBaseDao<ENTITY>) : IRepository<ENTITY>,
+    IRepositoryCallback<ENTITY> {
     private val repoCallbacks = RepositoryCallbacks<ENTITY>()
     override val updates: SharedFlow<RepoResult<ENTITY>> = repoCallbacks.updates
 
@@ -14,12 +15,13 @@ class BaseRepository<ENTITY: IEntity>(private val baseDao: IBaseDao<ENTITY>) : I
         )
     }
 
-    override suspend fun remove(specification: ISpecification) {
+    override suspend fun remove(specifications: List<ISpecification>) {
         TODO("Not yet implemented")
     }
 
-    override suspend fun query(specification: ISpecification): EntitiesList<ENTITY> {
-       return baseDao.query()
+    override suspend fun query(specifications: List<ISpecification>): EntitiesList<ENTITY> {
+        val searchSpec = specifications.find { it is Specification.Search } as? Specification.Search
+        return baseDao.query(searchSpec = searchSpec)
     }
 
     override suspend fun insert(t: ENTITY) {

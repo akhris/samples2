@@ -1,5 +1,6 @@
 package domain
 
+import domain.RepoResult.*
 import kotlinx.coroutines.flow.SharedFlow
 
 
@@ -7,13 +8,13 @@ import kotlinx.coroutines.flow.SharedFlow
  * Base Repository interface, kind of CRUD.
  * Supposing that all entities have
  */
-interface IRepository<ENTITY: IEntity> {
+interface IRepository<ENTITY : IEntity> {
     suspend fun getByID(id: String): ENTITY
     suspend fun remove(t: ENTITY)
     suspend fun update(t: ENTITY)
     suspend fun insert(t: ENTITY)
-    suspend fun remove(specification: ISpecification)
-    suspend fun query(specification: ISpecification): EntitiesList<ENTITY>
+    suspend fun remove(specifications: List<ISpecification>)
+    suspend fun query(specifications: List<ISpecification>): EntitiesList<ENTITY>
 }
 
 

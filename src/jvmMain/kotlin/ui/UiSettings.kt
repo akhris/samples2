@@ -7,7 +7,8 @@ import androidx.compose.ui.unit.dp
 object UiSettings {
 
     object Window {
-        val minWidth = 640.dp
+        val initialWidth = 1024.dp
+        val initialHeight = 768.dp
     }
 
     object Debounce {
@@ -32,7 +33,6 @@ object UiSettings {
     }
 
     object DataTable {
-        val minCellWidth: Dp = 180.dp
         val gridLinesColor = Color.LightGray.copy(alpha = 0.5f)
         val gridLinesWidth = 1.dp
         val cellPadding: Dp = 4.dp
@@ -42,6 +42,10 @@ object UiSettings {
         val rowHeight: Dp = 52.dp
         val headerRowHeight: Dp = 56.dp
         val columnPadding: Dp = 16.dp
+
+        val columnWidthNormal: Dp = 180.dp
+        val columnWidthWide: Dp = 240.dp
+        val columnWidthSmall: Dp = 120.dp
     }
 
     object Dialogs {

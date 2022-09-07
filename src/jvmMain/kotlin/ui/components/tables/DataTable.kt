@@ -19,6 +19,7 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import domain.IEntity
 import kotlinx.coroutines.delay
@@ -34,9 +35,8 @@ fun <T> DataTable(
     items: List<T>,
     mapper: IDataTableMapper<T>,
     onItemChanged: ((T) -> Unit)? = null,
-    selectionMode: SelectionMode = SelectionMode.Multiple,
-    onCellClicked: ((T, Cell, ColumnId) -> Unit)? = null,
-    onSelectionChanged: ((List<T>) -> Unit)? = null
+    selectionMode: SelectionMode<T> = SelectionMode.Multiple(),
+    onCellClicked: ((T, Cell, ColumnId) -> Unit)? = null
 ) {
 
     val selectionMap = remember {
@@ -45,7 +45,7 @@ fun <T> DataTable(
 
     LaunchedEffect(selectionMode) {
         val initialSelection: Map<String, Boolean> = when (selectionMode) {
-            SelectionMode.Multiple -> mapOf()
+            is SelectionMode.Multiple<T> -> mapOf()
             SelectionMode.None -> mapOf()
             is SelectionMode.Single -> listOfNotNull(selectionMode.initialSelection?.let { it to true }).toMap()
         }
@@ -83,12 +83,13 @@ fun <T> DataTable(
                         //render header:
                         //selection box:
                         Box(modifier = Modifier.width(UiSettings.DataTable.selectionRowWidth)) {
-                            if (selectionMode == SelectionMode.Multiple) {
+                            if (selectionMode is SelectionMode.Multiple) {
                                 TriStateCheckbox(state = checkState, onClick = {
                                     when (checkState) {
                                         ToggleableState.On -> {
                                             selectionMap.clear()
-                                            onSelectionChanged?.invoke(listOf())
+                                            selectionMode.onItemsSelected?.invoke(listOf())
+//                                            onSelectionChanged?.invoke(listOf())
                                         }
 
                                         ToggleableState.Off,
@@ -96,13 +97,15 @@ fun <T> DataTable(
                                             items.forEach {
                                                 selectionMap[mapper.getId(it)] = true
                                             }
-                                            onSelectionChanged?.invoke(selectionMap.filterValues { it }.keys.mapNotNull { key ->
-                                                items.find {
-                                                    mapper.getId(
-                                                        it
-                                                    ) == key
+                                            selectionMode.onItemsSelected?.invoke(
+                                                selectionMap.filterValues { it }.keys.mapNotNull { key ->
+                                                    items.find {
+                                                        mapper.getId(
+                                                            it
+                                                        ) == key
+                                                    }
                                                 }
-                                            })
+                                            )
                                         }
                                     }
                                 }, modifier = Modifier.align(Alignment.Center))
@@ -112,7 +115,14 @@ fun <T> DataTable(
                         for (column in mapper.columns) {
                             Box(
                                 modifier = Modifier
-                                    .width(UiSettings.DataTable.minCellWidth)
+                                    .width(
+                                        when (column.width) {
+                                            is ColumnWidth.Custom -> column.width.width
+                                            ColumnWidth.Normal -> UiSettings.DataTable.columnWidthNormal
+                                            ColumnWidth.Small -> UiSettings.DataTable.columnWidthSmall
+                                            ColumnWidth.Wide -> UiSettings.DataTable.columnWidthWide
+                                        }
+                                    )
                                     .padding(horizontal = UiSettings.DataTable.columnPadding)
                             ) {
                                 Text(
@@ -150,16 +160,18 @@ fun <T> DataTable(
                                 )
                                 .clickable {
                                     when (selectionMode) {
-                                        SelectionMode.Multiple -> {
+                                        is SelectionMode.Multiple -> {
                                             selectionMap[mapper.getId(item)] =
                                                 !(selectionMap[mapper.getId(item)] ?: false)
-                                            onSelectionChanged?.invoke(selectionMap.filterValues { it }.keys.mapNotNull { key ->
-                                                items.find {
-                                                    mapper.getId(
-                                                        it
-                                                    ) == key
+                                            selectionMode.onItemsSelected?.invoke(
+                                                selectionMap.filterValues { it }.keys.mapNotNull { key ->
+                                                    items.find {
+                                                        mapper.getId(
+                                                            it
+                                                        ) == key
+                                                    }
                                                 }
-                                            })
+                                            )
                                         }
 
                                         SelectionMode.None -> {}
@@ -167,13 +179,9 @@ fun <T> DataTable(
                                             val prevValue = selectionMap[mapper.getId(item)] ?: false
                                             selectionMap.clear()
                                             selectionMap[mapper.getId(item)] = !prevValue
-                                            onSelectionChanged?.invoke(selectionMap.filterValues { it }.keys.mapNotNull { key ->
-                                                items.find {
-                                                    mapper.getId(
-                                                        it
-                                                    ) == key
-                                                }
-                                            })
+                                            selectionMode.onItemSelected?.invoke(
+                                                if (prevValue) null else item
+                                            )
                                         }
                                     }
                                 },
@@ -185,7 +193,7 @@ fun <T> DataTable(
                                 contentAlignment = Alignment.Center
                             ) {
                                 when (selectionMode) {
-                                    SelectionMode.Multiple -> {
+                                    is SelectionMode.Multiple -> {
                                         Checkbox(
                                             checked = selectionMap[mapper.getId(item)] == true,
                                             onCheckedChange = null
@@ -204,7 +212,14 @@ fun <T> DataTable(
                                 }
 
                                 Box(
-                                    modifier = Modifier.width(UiSettings.DataTable.minCellWidth)
+                                    modifier = Modifier.width(
+                                        when (column.width) {
+                                            is ColumnWidth.Custom -> column.width.width
+                                            ColumnWidth.Normal -> UiSettings.DataTable.columnWidthNormal
+                                            ColumnWidth.Small -> UiSettings.DataTable.columnWidthSmall
+                                            ColumnWidth.Wide -> UiSettings.DataTable.columnWidthWide
+                                        }
+                                    )
                                         .padding(horizontal = UiSettings.DataTable.columnPadding)
                                         .clickable {
                                             onCellClicked?.invoke(item, cell, column)
@@ -224,17 +239,11 @@ fun <T> DataTable(
                                 }
                             }
                         }
-
-
                     }
-
-
             }
-
-
         }
 
-        if (selectionMode == SelectionMode.Multiple && selectionMap.any { it.value }) {
+        if (selectionMode is SelectionMode.Multiple<T> && selectionMap.any { it.value }) {
             //show control buttons:
             Surface(modifier = Modifier.align(Alignment.BottomCenter)) {
                 Row(
@@ -343,13 +352,34 @@ private fun BoxScope.RenderEntityCell(
 }
 
 
-data class ColumnId(val key: String, val title: String)
+data class ColumnId(val key: String, val title: String, val width: ColumnWidth = ColumnWidth.Normal)
+
+sealed class ColumnWidth {
+    object Small : ColumnWidth()
+    object Normal : ColumnWidth()
+    object Wide : ColumnWidth()
+    class Custom(val width: Dp) : ColumnWidth()
+}
 
 interface IDataTableMapper<T> {
     val columns: List<ColumnId>
     fun getCell(item: T, columnId: ColumnId): Cell
     fun updateItem(item: T, columnId: ColumnId, cell: Cell): T
     fun getId(item: T): String
+}
+
+/**
+ * Calculate table width based on columns width settings.
+ */
+fun IDataTableMapper<*>.getTableWidth(): Dp {
+    return columns.fold(0.dp) { acc, columnId ->
+        acc + when (columnId.width) {
+            is ColumnWidth.Custom -> columnId.width.width
+            ColumnWidth.Normal -> UiSettings.DataTable.columnWidthNormal
+            ColumnWidth.Small -> UiSettings.DataTable.columnWidthSmall
+            ColumnWidth.Wide -> UiSettings.DataTable.columnWidthWide
+        }
+    }
 }
 
 sealed class Cell {
@@ -360,8 +390,18 @@ sealed class Cell {
 //    data class ReferenceCell() : Cell()
 }
 
-sealed class SelectionMode {
-    data class Single(val initialSelection: String? = null) : SelectionMode()
-    object Multiple : SelectionMode()
-    object None : SelectionMode()
+sealed class SelectionMode<T> {
+    data class Single<T>(
+        val initialSelection: String? = null,
+        val onItemSelected: ((T?) -> Unit)? = null
+    ) :
+        SelectionMode<T>()
+
+    class Multiple<T>(
+        val initialSelection: List<String> = listOf(),
+        val onItemsSelected: ((List<T>) -> Unit)? = null
+    ) :
+        SelectionMode<T>()
+
+    object None : SelectionMode<Any>()
 }

@@ -2,11 +2,10 @@ package ui.screens.base_entity_screen
 
 import LocalSamplesType
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.Button
+import androidx.compose.material.Text
+import androidx.compose.material.TextButton
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -19,17 +18,24 @@ import ui.UiSettings
 import ui.components.tables.Cell
 import ui.components.tables.DataTable
 import ui.components.tables.SelectionMode
+import ui.components.tables.getTableWidth
 import ui.dialogs.DatePickerDialog
 import ui.dialogs.TimePickerDialog
 import java.time.LocalDateTime
 import java.time.temporal.TemporalAdjusters
 
+/**
+ * Base Entity Screen:
+ * 1. contains only DataTable
+ * 2. handles cells clicks/selection
+ * 3. shows EntityPicker dialog
+ */
 @OptIn(ExperimentalDecomposeApi::class)
 @Composable
 fun <T : IEntity> BaseEntityUi(
+    modifier: Modifier = Modifier,
     component: IEntityComponent<T>,
-    selectionMode: SelectionMode = SelectionMode.Multiple,
-    onSelectionChanged: ((List<T>) -> Unit)? = null
+    selectionMode: SelectionMode<T> = SelectionMode.Multiple()
 ) {
     val state by component.state.subscribeAsState()
 
@@ -40,66 +46,54 @@ fun <T : IEntity> BaseEntityUi(
     var dateTimePickerParams by remember { mutableStateOf<DateTimePickerDialogParams?>(null) }
 
 
-    Box(modifier = Modifier.fillMaxSize()) {
+//    Box(modifier = Modifier.fillMaxSize()) {
 
-        //parameters table:
-        DataTable(
-            modifier = Modifier.align(Alignment.TopCenter).padding(end = 80.dp),
-            items = entities,
-            mapper = component.dataMapper,
-            onItemChanged = {
-                component.updateEntity(it)
-            },
-            onCellClicked = { item, cell, column ->
-                when (cell) {
-                    is Cell.EntityCell -> {
-                        component.showEntityPickerDialog(
-                            entity = cell.entity,
-                            entityClass = cell.entityClass,
-                            onSelectionChanged = {
-                                val updatedItem = component.dataMapper.updateItem(
-                                    item = item,
-                                    columnId = column,
-                                    cell = cell.copy(entity = it)
-                                )
+    //parameters table:
+    DataTable(
+        modifier = modifier,
+//            modifier = Modifier.align(Alignment.TopCenter).padding(end = 48.dp),
+        items = entities,
+        mapper = component.dataMapper,
+        onItemChanged = {
+            component.updateEntity(it)
+        },
+        onCellClicked = { item, cell, column ->
+            when (cell) {
+                is Cell.EntityCell -> {
+                    component.showEntityPickerDialog(
+                        entity = cell.entity,
+                        entityClass = cell.entityClass,
+                        onSelectionChanged = {
+                            val updatedItem = component.dataMapper.updateItem(
+                                item = item,
+                                columnId = column,
+                                cell = cell.copy(entity = it)
+                            )
+                            component.updateEntity(updatedItem)
+                        },
+                        columnName = column.title
+                    )
+                }
+
+                is Cell.DateTimeCell -> {
+                    dateTimePickerParams =
+                        DateTimePickerDialogParams(initialDateTime = cell.value,
+                            onDateChanged = {
+                                val updatedItem =
+                                    component.dataMapper.updateItem(
+                                        item,
+                                        columnId = column,
+                                        cell = cell.copy(value = it)
+                                    )
                                 component.updateEntity(updatedItem)
-                            },
-                            columnName = column.title
-                        )
-                    }
-
-                    is Cell.DateTimeCell -> {
-                        dateTimePickerParams =
-                            DateTimePickerDialogParams(initialDateTime = cell.value,
-                                onDateChanged = {
-                                    val updatedItem =
-                                        component.dataMapper.updateItem(
-                                            item,
-                                            columnId = column,
-                                            cell = cell.copy(value = it)
-                                        )
-                                    component.updateEntity(updatedItem)
-                                })
-                    }
+                            })
                 }
-            },
-            selectionMode = selectionMode,
-            onSelectionChanged = onSelectionChanged
-        )
-
-        val sampleType = LocalSamplesType.current
-
-        FloatingActionButton(
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
-            onClick = {
-                //add entity:
-                sampleType?.let {
-                    component.insertNewEntity(it)
-                }
-                //todo show add sample dialog
-            },
-            content = { Icon(Icons.Rounded.Add, contentDescription = "add parameter") })
-    }
+            }
+        },
+        selectionMode = selectionMode
+//            onSelectionChanged = onSelectionChanged
+    )
+//    }
 
 
     dateTimePickerParams?.let { params ->
@@ -112,7 +106,7 @@ fun <T : IEntity> BaseEntityUi(
         if (datePickerDialogShow) {
             DatePickerDialog(
                 initialSelection = dateTime?.toLocalDate(),
-                onDismiss = { datePickerDialogShow = false },
+                onDismiss = { dateTimePickerParams = null },
                 onDateSelected = { newDate ->
                     dateTime =
                         (dateTime ?: LocalDateTime.now())
@@ -138,12 +132,15 @@ fun <T : IEntity> BaseEntityUi(
     Children(stack = component.dialogStack) {
         when (val child = it.instance) {
             is IEntityComponent.Dialog.EntityPicker<*> -> {
+                val childTableWidth = remember { child.component.dataMapper.getTableWidth() + 128.dp }
                 val dialogState = rememberDialogState(
-                    width = UiSettings.Dialogs.defaultWideDialogWidth,
+                    width = childTableWidth,
                     height = UiSettings.Dialogs.defaultWideDialogHeight
                 )
 
                 var selection by remember { mutableStateOf<IEntity?>(null) }
+
+                val sampleType = LocalSamplesType.current
 
                 Dialog(
                     state = dialogState,
@@ -155,14 +152,21 @@ fun <T : IEntity> BaseEntityUi(
                         Box(modifier = Modifier.weight(1f)) {
                             BaseEntityUi(
                                 component = child.component,
-                                selectionMode = SelectionMode.Single(child.initialSelection),
-                                onSelectionChanged = {
-                                    selection = it.firstOrNull()
+                                selectionMode = SelectionMode.Single(child.initialSelection, onItemSelected = {
+                                    selection = it
                                 })
+                            )
                         }
                         Row(modifier = Modifier.fillMaxWidth()) {
                             TextButton(onClick = { component.dismissDialog() }) {
                                 Text("Отмена")
+                            }
+                            TextButton(onClick = {
+                                sampleType?.let {
+                                    child.component.insertNewEntity(it)
+                                }
+                            }) {
+                                Text("Добавить")
                             }
                             Button(onClick = {
 //                                component.updateEntity()

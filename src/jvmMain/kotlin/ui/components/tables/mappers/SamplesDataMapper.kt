@@ -3,6 +3,7 @@ package ui.components.tables.mappers
 import domain.Sample
 import ui.components.tables.Cell
 import ui.components.tables.ColumnId
+import ui.components.tables.ColumnWidth
 import ui.components.tables.IDataTableMapper
 
 class SamplesDataMapper :
@@ -36,9 +37,9 @@ class SamplesDataMapper :
     override fun getId(item: Sample): String = item.id
 
     private sealed class Column(val id: ColumnId) {
-        object ID : Column(ColumnId("column_id", "Идентификатор"))
-        object Description : Column(ColumnId("column_description", "Описание"))
-        object Comment : Column(ColumnId("column_comment", "Комментарий"))
+        object ID : Column(ColumnId("column_id", "ID", ColumnWidth.Small))
+        object Description : Column(ColumnId("column_description", "Описание", ColumnWidth.Wide))
+        object Comment : Column(ColumnId("column_comment", "Комментарий", ColumnWidth.Wide))
         object OrderId : Column(ColumnId("column_order_id", "Партия"))
 
         companion object {

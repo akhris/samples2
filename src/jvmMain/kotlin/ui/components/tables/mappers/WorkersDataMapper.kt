@@ -65,8 +65,8 @@ class WorkersDataMapper : IDataTableMapper<Worker> {
         object MiddleName : Column(ColumnId("column_mid_name", "Отчество"))
         object Surname : Column(ColumnId("column_surname", "Фамилия"))
         object Place : Column(ColumnId("column_place", "Помещение"))
-        object PhoneNumber : Column(ColumnId("column_phone_number", "Помещение"))
-        object Email : Column(ColumnId("column_email", "Помещение"))
+        object PhoneNumber : Column(ColumnId("column_phone_number", "Телефон"))
+        object Email : Column(ColumnId("column_email", "e-mail"))
 
         companion object {
             fun requireColumn(id: ColumnId): Column {

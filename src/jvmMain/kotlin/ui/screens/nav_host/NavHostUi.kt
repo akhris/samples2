@@ -6,7 +6,8 @@ import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.jetbrains.stack.Children
 import com.arkivanov.decompose.extensions.compose.jetbrains.stack.animation.fade
 import com.arkivanov.decompose.extensions.compose.jetbrains.stack.animation.stackAnimation
-import ui.screens.base_entity_screen.BaseEntityUi
+import ui.screens.base_entity_screen.EntityUiWithSearchAddPanel
+import ui.screens.base_entity_screen.EntityUiwithFab
 import ui.screens.norms.NormsUi
 import ui.screens.operationtypes.OperationsTypesUi
 import ui.screens.places.PlacesUi
@@ -21,10 +22,10 @@ fun NavHostUi(component: INavHost) {
             is INavHost.Child.Places -> PlacesUi(child.component)
             is INavHost.Child.Workers -> WorkersUi(child.component)
             is INavHost.Child.Norms -> NormsUi(child.component)
-            is INavHost.Child.Parameters -> BaseEntityUi(child.component)
-            is INavHost.Child.Operations -> BaseEntityUi(child.component)
+            is INavHost.Child.Parameters -> EntityUiwithFab(component = child.component)
+            is INavHost.Child.Operations -> EntityUiwithFab(component = child.component)
 
-            is INavHost.Child.Samples -> BaseEntityUi(child.component)
+            is INavHost.Child.Samples -> EntityUiWithSearchAddPanel(component = child.component)
             is INavHost.Child.OperationTypes -> OperationsTypesUi(child.component)
         }
     }

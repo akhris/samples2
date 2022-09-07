@@ -3,6 +3,7 @@ package ui.components.tables.mappers
 import domain.OperationType
 import ui.components.tables.Cell
 import ui.components.tables.ColumnId
+import ui.components.tables.ColumnWidth
 import ui.components.tables.IDataTableMapper
 
 class OperationTypesDataMapper : IDataTableMapper<OperationType> {
@@ -33,8 +34,8 @@ class OperationTypesDataMapper : IDataTableMapper<OperationType> {
     }
 
     private sealed class Column(val id: ColumnId) {
-        object Name : Column(ColumnId("column_name", "Имя"))
-        object Description : Column(ColumnId("column_description", "Описание"))
+        object Name : Column(ColumnId("column_name", "Имя", ColumnWidth.Wide))
+        object Description : Column(ColumnId("column_description", "Описание", ColumnWidth.Wide))
         companion object {
             fun requireColumn(id: ColumnId): Column {
                 return when (id.key) {

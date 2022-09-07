@@ -59,7 +59,6 @@ fun DatePickerDialog(
     onDateSelected: (LocalDate) -> Unit
 ) {
 
-
     val dialogState = rememberDialogState(
         size = DpSize(
             width = defaultPickerWidth,

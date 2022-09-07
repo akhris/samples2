@@ -3,6 +3,7 @@ package ui.components.tables.mappers
 import domain.*
 import ui.components.tables.Cell
 import ui.components.tables.ColumnId
+import ui.components.tables.ColumnWidth
 import ui.components.tables.IDataTableMapper
 
 class OperationsDataMapper : IDataTableMapper<Operation> {
@@ -58,11 +59,11 @@ class OperationsDataMapper : IDataTableMapper<Operation> {
 
 
     private sealed class Column(val id: ColumnId) {
-        object Sample : Column(ColumnId("column_sample", "Образец"))
+        object Sample : Column(ColumnId("column_sample", "Образец", ColumnWidth.Small))
         object OperationType : Column(ColumnId("column_operation_type", "Тип операции"))
-        object DateTime : Column(ColumnId("column_date_time", "Дата"))
-        object Worker : Column(ColumnId("column_worker", "Сотрудник"))
-        object Place : Column(ColumnId("column_place", "Место"))
+        object DateTime : Column(ColumnId("column_date_time", "Дата", ColumnWidth.Wide))
+        object Worker : Column(ColumnId("column_worker", "Сотрудник", ColumnWidth.Wide))
+        object Place : Column(ColumnId("column_place", "Место", ColumnWidth.Small))
 
 
         companion object {

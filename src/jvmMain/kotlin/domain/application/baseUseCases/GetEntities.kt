@@ -7,7 +7,6 @@ import domain.ISpecification
 import domain.application.IoDispatcher
 import domain.application.UseCase
 import kotlinx.coroutines.CoroutineDispatcher
-import utils.log
 
 open class GetEntities<ENTITY : IEntity>(
     val repo: IRepository<ENTITY>,
@@ -22,7 +21,7 @@ open class GetEntities<ENTITY : IEntity>(
     }
 
     private suspend fun getEntitiesWithSpec(specification: ISpecification): EntitiesList<ENTITY> {
-        return repo.query(specification)
+        return repo.query(listOf(specification))
     }
 
 
