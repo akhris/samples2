@@ -20,8 +20,7 @@ class BaseRepository<ENTITY : IEntity>(private val baseDao: IBaseDao<ENTITY>) : 
     }
 
     override suspend fun query(specifications: List<ISpecification>): EntitiesList<ENTITY> {
-        val searchSpec = specifications.find { it is Specification.Search } as? Specification.Search
-        return baseDao.query(searchSpec = searchSpec)
+        return baseDao.query(specs = specifications)
     }
 
     override suspend fun insert(t: ENTITY) {

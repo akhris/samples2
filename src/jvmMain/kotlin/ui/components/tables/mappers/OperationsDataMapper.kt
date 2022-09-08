@@ -1,6 +1,7 @@
 package ui.components.tables.mappers
 
 import domain.*
+import persistence.dto.Tables
 import ui.components.tables.Cell
 import ui.components.tables.ColumnId
 import ui.components.tables.ColumnWidth
@@ -59,11 +60,11 @@ class OperationsDataMapper : IDataTableMapper<Operation> {
 
 
     private sealed class Column(val id: ColumnId) {
-        object Sample : Column(ColumnId("column_sample", "Образец", ColumnWidth.Small))
-        object OperationType : Column(ColumnId("column_operation_type", "Тип операции"))
-        object DateTime : Column(ColumnId("column_date_time", "Дата", ColumnWidth.Wide))
-        object Worker : Column(ColumnId("column_worker", "Сотрудник", ColumnWidth.Wide))
-        object Place : Column(ColumnId("column_place", "Место", ColumnWidth.Small))
+        object Sample : Column(ColumnId(Tables.Operations.sample.name, "Образец", ColumnWidth.Small))
+        object OperationType : Column(ColumnId(Tables.Operations.operationType.name, "Тип операции"))
+        object DateTime : Column(ColumnId(Tables.Operations.dateTime.name, "Дата", ColumnWidth.Wide))
+        object Worker : Column(ColumnId(Tables.Operations.worker.name, "Сотрудник", ColumnWidth.Wide))
+        object Place : Column(ColumnId(Tables.Operations.place.name, "Место", ColumnWidth.Small))
 
 
         companion object {

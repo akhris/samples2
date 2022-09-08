@@ -1,6 +1,7 @@
 package ui.components.tables.mappers
 
 import domain.Sample
+import persistence.dto.Tables
 import ui.components.tables.Cell
 import ui.components.tables.ColumnId
 import ui.components.tables.ColumnWidth
@@ -37,10 +38,10 @@ class SamplesDataMapper :
     override fun getId(item: Sample): String = item.id
 
     private sealed class Column(val id: ColumnId) {
-        object ID : Column(ColumnId("column_id", "ID", ColumnWidth.Small))
-        object Description : Column(ColumnId("column_description", "Описание", ColumnWidth.Wide))
-        object Comment : Column(ColumnId("column_comment", "Комментарий", ColumnWidth.Wide))
-        object OrderId : Column(ColumnId("column_order_id", "Партия"))
+        object ID : Column(ColumnId(Tables.Samples.sampleID.name, "ID", ColumnWidth.Small))
+        object Description : Column(ColumnId(Tables.Samples.description.name, "Описание", ColumnWidth.Wide))
+        object Comment : Column(ColumnId(Tables.Samples.comment.name, "Комментарий", ColumnWidth.Wide))
+        object OrderId : Column(ColumnId(Tables.Samples.orderID.name, "Партия"))
 
         companion object {
             fun requireColumn(id: ColumnId): Column {

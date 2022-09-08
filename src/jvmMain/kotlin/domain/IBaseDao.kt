@@ -1,6 +1,6 @@
 package domain
 
-interface IBaseDao<ENTITY: IEntity> {
+interface IBaseDao<ENTITY : IEntity> {
     /**
      * Get single Entity by [id]
      */
@@ -25,22 +25,14 @@ interface IBaseDao<ENTITY: IEntity> {
      * Querying Entities using specs
      */
     suspend fun query(
-        filterSpec: ISpecification? = null,
-        sortingSpec: ISpecification? = null,
-        pagingSpec: ISpecification? = null,
-        searchSpec: ISpecification? = null,
-        groupingSpec: ISpecification? = null
+        specs: List<ISpecification> = listOf()
     ): EntitiesList<ENTITY>
 
     /**
      * Get items count using specs
      */
     suspend fun getItemsCount(
-        filterSpec: ISpecification? = null,
-        sortingSpec: ISpecification? = null,
-        pagingSpec: ISpecification? = null,
-        searchSpec: ISpecification? = null,
-        groupingSpec: ISpecification? = null
+        specs: List<ISpecification> = listOf()
     ): Long
 
 //    suspend fun slice(columnName: String, existedSlices: List<SliceValue<Any>> = listOf()): List<SliceValue<*>>

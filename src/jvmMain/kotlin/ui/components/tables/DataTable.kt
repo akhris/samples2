@@ -334,7 +334,11 @@ private fun BoxScope.RenderEntityCell(
 }
 
 
-data class ColumnId(val key: String, val title: String, val width: ColumnWidth = ColumnWidth.Normal)
+data class ColumnId(
+    val key: String,    //might correspond to exposed column name for working filtering, sorting and grouping
+    val title: String,
+    val width: ColumnWidth = ColumnWidth.Normal
+)
 
 sealed class ColumnWidth {
     object Small : ColumnWidth()
