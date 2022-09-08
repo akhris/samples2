@@ -2,6 +2,7 @@ package ui.screens.base_entity_screen
 
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
+import domain.EntitiesList
 import domain.IEntity
 import domain.SampleType
 import domain.Specification
@@ -25,7 +26,7 @@ interface IEntityComponent<T : IEntity> {
     fun saveRowsToExcel(entities: List<T>)
 
     data class State<E : IEntity>(
-        val entities: List<E> = listOf()
+        val entities: EntitiesList<E> = EntitiesList.empty()
     )
 
     /**

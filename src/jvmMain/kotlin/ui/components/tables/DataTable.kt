@@ -10,10 +10,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.state.ToggleableState
@@ -36,7 +39,9 @@ fun <T> DataTable(
     mapper: IDataTableMapper<T>,
     onItemChanged: ((T) -> Unit)? = null,
     selectionMode: SelectionMode<T> = SelectionMode.Multiple(),
-    onCellClicked: ((T, Cell, ColumnId) -> Unit)? = null
+    onCellClicked: ((T, Cell, ColumnId) -> Unit)? = null,
+    onHeaderClicked: ((ColumnId) -> Unit)? = null,
+    onSortingChanged: ((column: ColumnId, isAsc: Boolean) -> Unit)? = null
 ) {
 
     val selectionMap = remember {
@@ -67,7 +72,7 @@ fun <T> DataTable(
     }
 
 
-    Box(modifier = modifier.fillMaxHeight()) {
+    Box(modifier = modifier) {
 
 
         Surface(
@@ -77,6 +82,9 @@ fun <T> DataTable(
 
             val listState = rememberLazyListState()
             val headerElevation by animateDpAsState(if (listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0) 0.dp else 4.dp)
+
+
+
             LazyColumn(state = listState) {
 
                 stickyHeader {
@@ -117,8 +125,12 @@ fun <T> DataTable(
                                 }
                             }
 
+                            var sorting by remember { mutableStateOf<Pair<ColumnId, Boolean>?>(null) }
+
+
                             for (column in mapper.columns) {
-                                Box(
+
+                                Row(
                                     modifier = Modifier
                                         .width(
                                             when (column.width) {
@@ -129,17 +141,43 @@ fun <T> DataTable(
                                             }
                                         )
                                         .padding(horizontal = UiSettings.DataTable.columnPadding)
+                                        .clickable {
+                                            onHeaderClicked?.invoke(column)
+                                            if (onSortingChanged != null) {
+                                                sorting = column to !(sorting?.second ?: false)
+                                                sorting?.let {
+                                                    onSortingChanged(it.first, it.second)
+                                                }
+                                            }
+                                        }, verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        modifier = Modifier.align(Alignment.CenterStart)
-                                            .padding(all = UiSettings.DataTable.cellPadding),
+                                        modifier = Modifier.weight(1f)
+//                                            .padding(all = UiSettings.DataTable.cellPadding)
+                                        ,
                                         text = column.title,
                                         style = MaterialTheme.typography.subtitle2,
                                         fontWeight = FontWeight.Bold,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
+                                    //sorting icon:
+                                    if (onSortingChanged != null && sorting?.first == column) {
+                                        IconButton(onClick = {
+                                            sorting = column to !(sorting?.second ?: false)
+                                            sorting?.let {
+                                                onSortingChanged(it.first, it.second)
+                                            }
+                                        }) {
+                                            Icon(
+                                                Icons.Rounded.ArrowDropDown,
+                                                "sort items",
+                                                modifier = Modifier.rotate(if (sorting?.second == true) 180f else 0f)
+                                            )
+                                        }
+                                    }
                                 }
+
 
                             }
                         }

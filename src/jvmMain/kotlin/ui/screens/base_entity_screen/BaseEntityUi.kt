@@ -14,12 +14,11 @@ import androidx.compose.ui.window.rememberDialogState
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.jetbrains.stack.Children
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
+import domain.EntitiesList
 import domain.IEntity
+import domain.Specification
 import ui.UiSettings
-import ui.components.tables.Cell
-import ui.components.tables.DataTable
-import ui.components.tables.SelectionMode
-import ui.components.tables.getTableWidth
+import ui.components.tables.*
 import ui.dialogs.DatePickerDialog
 import ui.dialogs.TimePickerDialog
 import java.time.LocalDateTime
@@ -42,13 +41,96 @@ fun <T : IEntity> BaseEntityUi(
 
     //render samples list:
     val entities = remember(state) { state.entities }
+    when (entities) {
+        is EntitiesList.Grouped -> {
 
+        }
 
+        is EntitiesList.NotGrouped -> {
+            ShowDataTableForGroup(
+                modifier = modifier,
+                entities = entities.items,
+                component = component,
+                selectionMode = selectionMode
+            )
+        }
+    }
+
+    Children(stack = component.dialogStack) {
+        when (val child = it.instance) {
+            is IEntityComponent.Dialog.EntityPicker<*> -> {
+                val childTableWidth = remember { child.component.dataMapper.getTableWidth() + 128.dp }
+                val dialogState = rememberDialogState(
+                    width = childTableWidth,
+                    height = UiSettings.Dialogs.defaultWideDialogHeight
+                )
+
+                var selection by remember { mutableStateOf<IEntity?>(null) }
+
+                val sampleType = LocalSamplesType.current
+
+                Dialog(
+                    state = dialogState,
+                    title = "Выбрать: ${child.columnName.lowercase()}",
+                    onCloseRequest = {
+                        component.dismissDialog()
+                    }) {
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            BaseEntityUi(
+                                component = child.component,
+                                selectionMode = SelectionMode.Single(child.initialSelection, onItemSelected = {
+                                    selection = it
+                                })
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
+                        ) {
+                            TextButton(onClick = { component.dismissDialog() }) {
+                                Text("Отмена")
+                            }
+                            TextButton(onClick = {
+                                sampleType?.let {
+                                    child.component.insertNewEntity(it)
+                                }
+                            }) {
+                                Text("Добавить")
+                            }
+                            Button(onClick = {
+//                                component.updateEntity()
+                                child.onSelectionChanged(selection)
+                                component.dismissDialog()
+                            }) {
+                                Text("Выбрать")
+                            }
+                        }
+                    }
+                }
+            }
+
+            IEntityComponent.Dialog.None -> {
+                //render nothing
+            }
+        }
+    }
+
+}
+
+@Composable
+private fun <T : IEntity> ShowDataTableForGroup(
+    modifier: Modifier = Modifier,
+    entities: List<T>,
+    component: IEntityComponent<T>,
+    onHeaderClicked: ((ColumnId) -> Unit)? = null,
+    selectionMode: SelectionMode<T>
+) {
     var dateTimePickerParams by remember { mutableStateOf<DateTimePickerDialogParams?>(null) }
 
     var selectedEntities = remember { mutableStateListOf<T>() }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = modifier.fillMaxHeight()) {
 
         //parameters table:
         DataTable(
@@ -57,6 +139,9 @@ fun <T : IEntity> BaseEntityUi(
             mapper = component.dataMapper,
             onItemChanged = {
                 component.updateEntity(it)
+            },
+            onSortingChanged = { column, isAsc ->
+                component.setQuerySpec(Specification.Sorted(column, isAsc))
             },
             onCellClicked = { item, cell, column ->
                 when (cell) {
@@ -186,69 +271,6 @@ fun <T : IEntity> BaseEntityUi(
         }
 
     }
-
-
-
-    Children(stack = component.dialogStack) {
-        when (val child = it.instance) {
-            is IEntityComponent.Dialog.EntityPicker<*> -> {
-                val childTableWidth = remember { child.component.dataMapper.getTableWidth() + 128.dp }
-                val dialogState = rememberDialogState(
-                    width = childTableWidth,
-                    height = UiSettings.Dialogs.defaultWideDialogHeight
-                )
-
-                var selection by remember { mutableStateOf<IEntity?>(null) }
-
-                val sampleType = LocalSamplesType.current
-
-                Dialog(
-                    state = dialogState,
-                    title = "Выбрать: ${child.columnName.lowercase()}",
-                    onCloseRequest = {
-                        component.dismissDialog()
-                    }) {
-                    Column(modifier = Modifier.fillMaxSize()) {
-                        Box(modifier = Modifier.weight(1f)) {
-                            BaseEntityUi(
-                                component = child.component,
-                                selectionMode = SelectionMode.Single(child.initialSelection, onItemSelected = {
-                                    selection = it
-                                })
-                            )
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
-                        ) {
-                            TextButton(onClick = { component.dismissDialog() }) {
-                                Text("Отмена")
-                            }
-                            TextButton(onClick = {
-                                sampleType?.let {
-                                    child.component.insertNewEntity(it)
-                                }
-                            }) {
-                                Text("Добавить")
-                            }
-                            Button(onClick = {
-//                                component.updateEntity()
-                                child.onSelectionChanged(selection)
-                                component.dismissDialog()
-                            }) {
-                                Text("Выбрать")
-                            }
-                        }
-                    }
-                }
-            }
-
-            IEntityComponent.Dialog.None -> {
-                //render nothing
-            }
-        }
-    }
-
 }
 
 data class DateTimePickerDialogParams(val initialDateTime: LocalDateTime?, val onDateChanged: (LocalDateTime?) -> Unit)

@@ -227,10 +227,7 @@ class EntityComponent<T : IEntity>(
             is Result.Success -> {
                 _state.reduce {
                     it.copy(
-                        entities = when (val list = entities.value) {
-                            is EntitiesList.Grouped -> listOf()
-                            is EntitiesList.NotGrouped -> list.items
-                        }
+                        entities = entities.value
                     )
                 }
             }

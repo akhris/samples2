@@ -10,10 +10,12 @@ import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import domain.IEntity
 import domain.Specification
 import kotlinx.coroutines.delay
 import ui.UiSettings
+import ui.components.ScreenWithFilterSheet
 
 /**
  * Wrapper of BaseEntityUi with Search/Add panel.
@@ -26,18 +28,31 @@ fun <T : IEntity> EntityUiWithSearchAddPanel(
 
     val sampleType = LocalSamplesType.current
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    val columns = remember(component) { component.dataMapper.columns }
 
-        SearhAddPanel(modifier = Modifier.align(Alignment.CenterHorizontally), onSearchStringChanged = {
-            component.setQuerySpec(Specification.Search(it))
-        })
+    ScreenWithFilterSheet(
+        modifier = Modifier.fillMaxSize(),
+        isModal = true,
+        content = {
+            BaseEntityUi(
+                modifier = Modifier.align(Alignment.TopCenter),
+                component = component
+            )
+        },
+        filterContent = {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(horizontal = 8.dp)) {
+                SearhAddPanel(modifier = Modifier.align(Alignment.CenterHorizontally), onSearchStringChanged = {
+                    component.setQuerySpec(Specification.Search(it))
+                })
 
-        BaseEntityUi(
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-            component = component
-        )
+            }
+        },
+        mainScreenTitle = {
 
-    }
+        }
+    )
+
+
 }
 
 @Composable

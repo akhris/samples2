@@ -109,7 +109,8 @@ abstract class BaseExposedDao<ENTITY : IEntity, EXP_ENTITY : UUIDEntity, TABLE :
             //add filtering
         }
         (specs.filterIsInstance<Specification.Sorted>().firstOrNull())?.let {
-            //add filtering
+            //add sorting
+            query.addSorting(it)
         }
         (specs.filterIsInstance<Specification.Paginated>().firstOrNull())?.let {
             query.addPaging(it)
@@ -185,6 +186,15 @@ abstract class BaseExposedDao<ENTITY : IEntity, EXP_ENTITY : UUIDEntity, TABLE :
 
     private fun Query.addPaging(pagingSpec: Specification.Paginated) {
         limit(n = pagingSpec.itemsPerPage.toInt(), offset = pagingSpec.itemsPerPage * (pagingSpec.pageNumber - 1))
+    }
+
+    private fun Query.addSorting(sortingSpec: Specification.Sorted) {
+        val column = table.columns.find { it.name == sortingSpec.columnId.key } ?: return
+        if (sortingSpec.isAscending) {
+            orderBy(column to SortOrder.ASC)
+        } else {
+            orderBy(column to SortOrder.DESC)
+        }
     }
 
     /**

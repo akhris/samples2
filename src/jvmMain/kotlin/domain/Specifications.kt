@@ -9,7 +9,10 @@ sealed class Specification : ISpecification {
     data class Paginated(val pageNumber: Long, val itemsPerPage: Long) : Specification()
     data class Filtered(val filters: List<FilterSpec> = listOf()) : Specification()
     data class Grouped(val groupingSpec: GroupingSpec) : Specification()
-    data class Sorted(val spec: SortingSpec) : Specification()
+    data class Sorted(
+        val columnId: ColumnId,
+        val isAscending: Boolean = true
+    ) : Specification()
 }
 
 sealed class FilterSpec {
@@ -33,10 +36,6 @@ sealed class FilterSpec {
 data class SliceValue<VALUETYPE>(val name: Any, val value: VALUETYPE?, val column: Column<VALUETYPE?>)
 
 
-data class SortingSpec(
-    val columnId: ColumnId,
-    val isAscending: Boolean = true
-)
 
 data class GroupingSpec(
     val columnId: ColumnId
