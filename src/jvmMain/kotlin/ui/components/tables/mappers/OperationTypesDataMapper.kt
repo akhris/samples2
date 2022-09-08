@@ -1,6 +1,7 @@
 package ui.components.tables.mappers
 
 import domain.OperationType
+import persistence.dto.Tables
 import ui.components.tables.Cell
 import ui.components.tables.ColumnId
 import ui.components.tables.ColumnWidth
@@ -34,8 +35,8 @@ class OperationTypesDataMapper : IDataTableMapper<OperationType> {
     }
 
     private sealed class Column(val id: ColumnId) {
-        object Name : Column(ColumnId("column_name", "Имя", ColumnWidth.Wide))
-        object Description : Column(ColumnId("column_description", "Описание", ColumnWidth.Wide))
+        object Name : Column(ColumnId(Tables.OperationTypes.name.name, "Имя", ColumnWidth.Wide))
+        object Description : Column(ColumnId(Tables.OperationTypes.description.name, "Описание", ColumnWidth.Wide))
         companion object {
             fun requireColumn(id: ColumnId): Column {
                 return when (id.key) {

@@ -133,14 +133,14 @@ private fun DatePickerDialogContent(
             Row(modifier = Modifier.fillMaxWidth().padding(4.dp), horizontalArrangement = Arrangement.End) {
                 onCancelClick?.let {
                     TextButton(onClick = it, content = {
-                        Text(text = "cancel".uppercase())
+                        Text(text = "отмена".uppercase())
                     })
                 }
                 onOkClick?.let { onClick ->
                     TextButton(onClick = {
                         selectedDate?.let { onClick(it) }
                     }, content = {
-                        Text(text = "ok".uppercase())
+                        Text(text = "ок".uppercase())
                     })
                 }
             }
@@ -162,7 +162,7 @@ private fun TitleContent(selectedDate: LocalDate? = null, withMobileInputPicker:
         Box(modifier = Modifier.height(32.dp)) {
             Text(
                 modifier = Modifier.align(Alignment.BottomStart),
-                text = "select date",
+                text = "выберите дату",
                 style = MaterialTheme.typography.overline,
                 color = MaterialTheme.colors.contentColorFor(MaterialTheme.colors.primarySurface)
             )
@@ -180,7 +180,7 @@ private fun TitleContent(selectedDate: LocalDate? = null, withMobileInputPicker:
                 IconButton(modifier = Modifier.size(defaultIconSize), onClick = {}, content = {
                     Icon(
                         imageVector = Icons.Rounded.Edit,
-                        contentDescription = "edit date",
+                        contentDescription = "изменить дату",
                         tint = MaterialTheme.colors.contentColorFor(MaterialTheme.colors.primarySurface)
                     )
                 })

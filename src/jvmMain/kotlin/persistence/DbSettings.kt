@@ -41,8 +41,13 @@ object DbSettings {
         transaction {
             addLogger(StdOutSqlLogger)
             SchemaUtils.create(
+                Tables.SampleTypes,
                 Tables.Samples,
-                Tables.SampleTypes
+                Tables.Parameters,
+                Tables.OperationTypes,
+                Tables.Places,
+                Tables.Workers,
+                Tables.Operations
             )
         }
         return db

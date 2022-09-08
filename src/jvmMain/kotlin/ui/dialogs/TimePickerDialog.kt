@@ -75,7 +75,7 @@ private fun TimePickerDialogContent(
                 Box(modifier = Modifier.height(28.dp)) {
                     Text(
                         modifier = Modifier.align(Alignment.BottomStart),
-                        text = "enter time",
+                        text = "введите время",
                         style = MaterialTheme.typography.overline,
                         color = MaterialTheme.colors.contentColorFor(MaterialTheme.colors.surface)
                     )
@@ -114,7 +114,7 @@ private fun TimePickerDialogContent(
             Row(modifier = Modifier.fillMaxWidth().padding(4.dp), horizontalArrangement = Arrangement.End) {
                 onCancelClick?.let {
                     TextButton(onClick = it, content = {
-                        Text(text = "cancel".uppercase())
+                        Text(text = "отмена".uppercase())
                     })
                 }
                 onOkClick?.let { onClick ->
@@ -123,7 +123,7 @@ private fun TimePickerDialogContent(
                             (initialTime ?: LocalDateTime.now()).withHour(hour).withMinute(minute)
                         )
                     }, content = {
-                        Text(text = "ok".uppercase())
+                        Text(text = "ок".uppercase())
                     })
                 }
             }

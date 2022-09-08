@@ -2,6 +2,7 @@ package ui.components.tables.mappers
 
 import domain.Place
 import domain.Worker
+import persistence.dto.Tables
 import ui.components.tables.Cell
 import ui.components.tables.ColumnId
 import ui.components.tables.IDataTableMapper
@@ -61,12 +62,12 @@ class WorkersDataMapper : IDataTableMapper<Worker> {
     }
 
     private sealed class Column(val id: ColumnId) {
-        object Name : Column(ColumnId("column_name", "Имя"))
-        object MiddleName : Column(ColumnId("column_mid_name", "Отчество"))
-        object Surname : Column(ColumnId("column_surname", "Фамилия"))
-        object Place : Column(ColumnId("column_place", "Помещение"))
-        object PhoneNumber : Column(ColumnId("column_phone_number", "Телефон"))
-        object Email : Column(ColumnId("column_email", "e-mail"))
+        object Name : Column(ColumnId(Tables.Workers.name.name, "Имя"))
+        object MiddleName : Column(ColumnId(Tables.Workers.middleName.name, "Отчество"))
+        object Surname : Column(ColumnId(Tables.Workers.surname.name, "Фамилия"))
+        object Place : Column(ColumnId(Tables.Workers.room.name, "Помещение"))
+        object PhoneNumber : Column(ColumnId(Tables.Workers.phoneNumber.name, "Телефон"))
+        object Email : Column(ColumnId(Tables.Workers.email.name, "e-mail"))
 
         companion object {
             fun requireColumn(id: ColumnId): Column {

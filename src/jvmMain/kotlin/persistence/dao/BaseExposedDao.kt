@@ -19,6 +19,8 @@ abstract class BaseExposedDao<ENTITY : IEntity, EXP_ENTITY : UUIDEntity, TABLE :
 ) :
     IBaseDao<ENTITY> {
 
+    private val withCommit: Boolean = false
+
     abstract fun mapToEntity(expEntity: EXP_ENTITY): ENTITY
 
     protected abstract fun updateStatement(entity: ENTITY): TABLE.(UpdateStatement) -> Unit
@@ -74,7 +76,8 @@ abstract class BaseExposedDao<ENTITY : IEntity, EXP_ENTITY : UUIDEntity, TABLE :
             addLogger(StdOutSqlLogger)
             table.update(where = { table.id eq entity.id.toUUID() }, body = updateStatement(entity))
             doAfterUpdate(entity)
-            commit()
+            if (withCommit)
+                commit()
         }
     }
 
@@ -86,7 +89,8 @@ abstract class BaseExposedDao<ENTITY : IEntity, EXP_ENTITY : UUIDEntity, TABLE :
                 insertStatement(entity).invoke(this, statement)
             }
             doAfterInsert(entity)
-            commit()
+            if (withCommit)
+                commit()
         }
     }
 
@@ -95,7 +99,8 @@ abstract class BaseExposedDao<ENTITY : IEntity, EXP_ENTITY : UUIDEntity, TABLE :
         newSuspendedTransaction {
             addLogger(StdOutSqlLogger)
             table.deleteWhere { table.id eq id.toUUID() }
-            commit()
+            if (withCommit)
+                commit()
         }
     }
 

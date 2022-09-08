@@ -24,6 +24,7 @@ fun RootUi(component: INavHost) {
     val sampleTypes by remember(component) { component.sampleTypes }.subscribeAsState()
     var selectedSampleType by remember { mutableStateOf<SampleType?>(sampleTypes.firstOrNull()) }
 
+
     var showNewSampleTypeDialog by remember { mutableStateOf(false) }
     Scaffold(
         scaffoldState = scaffoldState,

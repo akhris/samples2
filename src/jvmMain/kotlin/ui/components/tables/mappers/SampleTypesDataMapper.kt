@@ -1,6 +1,7 @@
 package ui.components.tables.mappers
 
 import domain.SampleType
+import persistence.dto.Tables
 import ui.components.tables.Cell
 import ui.components.tables.ColumnId
 import ui.components.tables.IDataTableMapper
@@ -33,8 +34,8 @@ class SampleTypesDataMapper : IDataTableMapper<SampleType> {
     }
 
     private sealed class Column(val id: ColumnId) {
-        object Name : Column(ColumnId("column_name", "Имя"))
-        object Description : Column(ColumnId("column_description", "Описание"))
+        object Name : Column(ColumnId(Tables.SampleTypes.name.name, "Имя"))
+        object Description : Column(ColumnId(Tables.SampleTypes.description.name, "Описание"))
         companion object {
             fun requireColumn(id: ColumnId): Column {
                 return when (id.key) {

@@ -1,6 +1,7 @@
 package ui.components.tables.mappers
 
 import domain.Parameter
+import persistence.dto.Tables
 import ui.components.tables.Cell
 import ui.components.tables.ColumnId
 import ui.components.tables.IDataTableMapper
@@ -28,8 +29,8 @@ class ParametersDataMapper : IDataTableMapper<Parameter> {
     }
 
     private sealed class Column(val id: ColumnId) {
-        object Name : Column(ColumnId("column_name", "Идентификатор"))
-        object Description : Column(ColumnId("column_description", "Описание"))
+        object Name : Column(ColumnId(Tables.Parameters.name.name, "Идентификатор"))
+        object Description : Column(ColumnId(Tables.Parameters.description.name, "Описание"))
 
         companion object {
             fun requireColumn(id: ColumnId): Column {

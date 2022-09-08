@@ -243,15 +243,19 @@ private fun <T : IEntity> ShowDataTableForGroup(
 
     dateTimePickerParams?.let { params ->
 
-        var dateTime by remember { mutableStateOf(params.initialDateTime) }
+        var dateTime by remember(dateTimePickerParams) { mutableStateOf(params.initialDateTime) }
 
-        var datePickerDialogShow by remember { mutableStateOf(true) }
-        var timePickerDialogShow by remember { mutableStateOf(false) }
+        var datePickerDialogShow by remember(dateTimePickerParams) { mutableStateOf(true) }
+        var timePickerDialogShow by remember(dateTimePickerParams) { mutableStateOf(false) }
 
         if (datePickerDialogShow) {
             DatePickerDialog(
                 initialSelection = dateTime?.toLocalDate(),
-                onDismiss = { dateTimePickerParams = null },
+                onDismiss = {
+                    datePickerDialogShow = false
+                    if (!timePickerDialogShow)
+                        dateTimePickerParams = null
+                },
                 onDateSelected = { newDate ->
                     dateTime =
                         (dateTime ?: LocalDateTime.now())
@@ -259,7 +263,6 @@ private fun <T : IEntity> ShowDataTableForGroup(
                                 newDate
                             }
                             )
-
                     timePickerDialogShow = true
                 })
 
