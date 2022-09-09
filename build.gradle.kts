@@ -3,6 +3,7 @@ import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
     kotlin("multiplatform")
+    kotlin("plugin.serialization")
     id("org.jetbrains.compose")
 }
 
@@ -55,6 +56,9 @@ kotlin {
 
                 //export to excel
                 implementation("io.github.evanrupert:excelkt:1.0.2")
+
+                //kotlin json serialization
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.0")
             }
         }
         val jvmTest by getting

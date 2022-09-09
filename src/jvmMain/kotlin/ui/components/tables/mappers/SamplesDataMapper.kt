@@ -1,7 +1,7 @@
 package ui.components.tables.mappers
 
 import domain.Sample
-import persistence.dto.Tables
+import persistence.exposed.dto.Tables
 import ui.components.tables.*
 
 class SamplesDataMapper :

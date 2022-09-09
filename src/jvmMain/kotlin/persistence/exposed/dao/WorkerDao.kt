@@ -1,10 +1,10 @@
-package persistence.dao
+package persistence.exposed.dao
 
 import domain.Worker
 import org.jetbrains.exposed.sql.statements.InsertStatement
 import org.jetbrains.exposed.sql.statements.UpdateStatement
-import persistence.dto.EntityWorker
-import persistence.dto.Tables
+import persistence.exposed.dto.EntityWorker
+import persistence.exposed.dto.Tables
 import persistence.toWorker
 import utils.toUUID
 

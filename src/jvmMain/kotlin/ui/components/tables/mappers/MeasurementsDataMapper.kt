@@ -1,7 +1,7 @@
 package ui.components.tables.mappers
 
 import domain.*
-import persistence.dto.Tables
+import persistence.exposed.dto.Tables
 import ui.components.tables.Cell
 import ui.components.tables.ColumnId
 import ui.components.tables.IDataTableMapper

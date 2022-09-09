@@ -1,4 +1,4 @@
-package persistence.dao
+package persistence.exposed.dao
 
 import domain.*
 import org.jetbrains.exposed.dao.UUIDEntity

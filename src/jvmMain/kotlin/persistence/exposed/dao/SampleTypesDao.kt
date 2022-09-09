@@ -1,10 +1,10 @@
-package persistence.dao
+package persistence.exposed.dao
 
 import domain.SampleType
 import org.jetbrains.exposed.sql.statements.InsertStatement
 import org.jetbrains.exposed.sql.statements.UpdateStatement
-import persistence.dto.EntitySampleType
-import persistence.dto.Tables
+import persistence.exposed.dto.EntitySampleType
+import persistence.exposed.dto.Tables
 import persistence.toSampleType
 
 class SampleTypesDao : BaseExposedDao<SampleType, EntitySampleType, Tables.SampleTypes>(

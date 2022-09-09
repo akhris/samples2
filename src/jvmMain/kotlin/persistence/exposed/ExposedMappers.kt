@@ -1,7 +1,7 @@
 package persistence
 
 import domain.*
-import persistence.dto.*
+import persistence.exposed.dto.*
 
 fun EntitySampleType.toSampleType(): SampleType {
     return SampleType(
@@ -72,6 +72,10 @@ fun EntityMeasurement.toMeasurement(): Measurement {
         dateTime = this.dateTime,
         comment = this.comment,
         conditions = this.conditions,
-        results = this.results
+        results = this.results.map { it.toMeasurementResult() }
     )
+}
+
+fun EntityMeasurementResult.toMeasurementResult(): MeasurementResult {
+    return MeasurementResult(parameter = this.parameter.toParameter(), value = this.value ?: "", unit = this.unit ?: "")
 }

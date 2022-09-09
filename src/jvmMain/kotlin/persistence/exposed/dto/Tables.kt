@@ -1,7 +1,9 @@
-package persistence.dto
+package persistence.exposed.dto
 
+import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.ReferenceOption
+import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.datetime
 
 object Tables {
@@ -80,7 +82,12 @@ object Tables {
         val place = reference(name = "place", foreign = Places, onDelete = ReferenceOption.CASCADE).nullable()
         val comment = text(name = "comment").nullable()
         val conditions = text(name = "conditions").nullable()
-        val results = text(name = "results").nullable()
+    }
 
+    object MeasurementResults : IntIdTable() {
+        val measurement = reference(name = "measurement", foreign = Measurements, onDelete = ReferenceOption.CASCADE)
+        val parameter = reference(name = "parameters", foreign = Parameters, onDelete = ReferenceOption.CASCADE)
+        val value = text(name = "value").nullable()
+        val unit = text(name = "unit").nullable()
     }
 }

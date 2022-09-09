@@ -4,7 +4,7 @@ import domain.*
 import domain.application.baseUseCases.*
 import kotlinx.coroutines.Dispatchers
 import org.kodein.di.*
-import persistence.dao.*
+import persistence.exposed.dao.*
 import persistence.repositories.BaseRepository
 import ui.components.tables.mappers.*
 

@@ -1,5 +1,6 @@
 package domain
 
+import kotlinx.serialization.Serializable
 import java.time.LocalDateTime
 import java.util.*
 
@@ -114,6 +115,7 @@ data class Norm(
     val condition: Condition
     // TODO: add values range for norm (min, max, avg)
 ) : IEntity
+
 
 data class MeasurementResult(
     val parameter: Parameter,

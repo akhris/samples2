@@ -1,7 +1,6 @@
-package persistence.dto
+package persistence.exposed.dto
 
-import org.jetbrains.exposed.dao.UUIDEntity
-import org.jetbrains.exposed.dao.UUIDEntityClass
+import org.jetbrains.exposed.dao.*
 import org.jetbrains.exposed.dao.id.EntityID
 import java.util.*
 
@@ -68,6 +67,15 @@ class EntityOperation(id: EntityID<UUID>) : UUIDEntity(id) {
     val place by EntityPlace optionalReferencedOn Tables.Operations.place
 }
 
+class EntityMeasurementResult(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<EntityMeasurementResult>(Tables.MeasurementResults)
+
+    val measurement by EntityMeasurement referencedOn Tables.MeasurementResults.measurement
+    val parameter by EntityParameter referencedOn Tables.MeasurementResults.parameter
+    val value by Tables.MeasurementResults.value
+    val unit by Tables.MeasurementResults.unit
+}
+
 class EntityMeasurement(id: EntityID<UUID>) : UUIDEntity(id) {
     companion object : UUIDEntityClass<EntityMeasurement>(Tables.Measurements)
 
@@ -77,6 +85,5 @@ class EntityMeasurement(id: EntityID<UUID>) : UUIDEntity(id) {
     val place by EntityPlace optionalReferencedOn Tables.Measurements.place
     val comment by Tables.Measurements.comment
     val conditions by Tables.Measurements.conditions
-    val results by Tables.Measurements.results
-
+    val results by EntityMeasurementResult referrersOn Tables.MeasurementResults.measurement
 }

@@ -1,10 +1,10 @@
-package persistence.dao
+package persistence.exposed.dao
 
 import domain.Sample
 import org.jetbrains.exposed.sql.statements.InsertStatement
 import org.jetbrains.exposed.sql.statements.UpdateStatement
-import persistence.dto.EntitySample
-import persistence.dto.Tables
+import persistence.exposed.dto.EntitySample
+import persistence.exposed.dto.Tables
 import persistence.toSample
 import utils.toUUID
 

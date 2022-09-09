@@ -1,10 +1,10 @@
-package persistence.dao
+package persistence.exposed.dao
 
 import domain.OperationType
 import org.jetbrains.exposed.sql.statements.InsertStatement
 import org.jetbrains.exposed.sql.statements.UpdateStatement
-import persistence.dto.EntityOperationType
-import persistence.dto.Tables
+import persistence.exposed.dto.EntityOperationType
+import persistence.exposed.dto.Tables
 import persistence.toOperationType
 
 class OperationTypesDao : BaseExposedDao<OperationType, EntityOperationType, Tables.OperationTypes>(

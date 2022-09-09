@@ -17,7 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.kodein.di.instance
-import persistence.DbSettings
+import persistence.exposed.DbSettings
 import test.SampleTypes
 import ui.RootUi
 import ui.UiSettings

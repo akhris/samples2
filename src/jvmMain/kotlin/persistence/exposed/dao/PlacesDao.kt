@@ -1,10 +1,10 @@
-package persistence.dao
+package persistence.exposed.dao
 
 import domain.Place
 import org.jetbrains.exposed.sql.statements.InsertStatement
 import org.jetbrains.exposed.sql.statements.UpdateStatement
-import persistence.dto.EntityPlace
-import persistence.dto.Tables
+import persistence.exposed.dto.EntityPlace
+import persistence.exposed.dto.Tables
 import persistence.toPlace
 
 class PlacesDao : BaseExposedDao<Place, EntityPlace, Tables.Places>(
