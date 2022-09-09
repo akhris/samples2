@@ -15,6 +15,7 @@ interface IRepository<ENTITY : IEntity> {
     suspend fun insert(t: ENTITY)
     suspend fun remove(specifications: List<ISpecification>)
     suspend fun query(specifications: List<ISpecification>): EntitiesList<ENTITY>
+    suspend fun getItemsCount(specifications: List<ISpecification>): Long
 }
 
 

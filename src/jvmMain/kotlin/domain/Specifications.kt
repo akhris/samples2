@@ -6,7 +6,7 @@ import ui.components.tables.ColumnId
 sealed class Specification : ISpecification {
     object QueryAll : Specification()
     data class Search(val searchString: String = "") : Specification()
-    data class Paginated(val pageNumber: Long, val itemsPerPage: Long) : Specification()
+    data class Paginated(val pageNumber: Long, val itemsPerPage: Long, val totalItems: Long?) : Specification()
     data class Filtered(val filters: List<FilterSpec> = listOf()) : Specification()
     data class Grouped(val groupingSpec: GroupingSpec) : Specification()
     data class Sorted(
@@ -34,7 +34,6 @@ sealed class FilterSpec {
  * Class for storing Slice values (data from a single table column)
  */
 data class SliceValue<VALUETYPE>(val name: Any, val value: VALUETYPE?, val column: Column<VALUETYPE?>)
-
 
 
 data class GroupingSpec(

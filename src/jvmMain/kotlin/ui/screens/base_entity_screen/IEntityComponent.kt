@@ -12,6 +12,8 @@ import kotlin.reflect.KClass
 interface IEntityComponent<T : IEntity> {
     val state: Value<State<T>>
 
+    val pagingSpec: Value<Specification.Paginated>
+
     fun insertNewEntity(entity: T)
     fun insertNewEntity(sampleType: SampleType)
     fun updateEntity(entity: T)
@@ -22,6 +24,8 @@ interface IEntityComponent<T : IEntity> {
 
     fun setQuerySpec(spec: Specification)
     fun resetQuerySpec(spec: Specification)
+
+    fun setPagingSpec(spec: Specification.Paginated)
 
     fun saveRowsToExcel(entities: List<T>)
 

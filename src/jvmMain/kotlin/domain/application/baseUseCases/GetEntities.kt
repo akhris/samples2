@@ -16,18 +16,18 @@ open class GetEntities<ENTITY : IEntity>(
 
     override suspend fun run(params: Params): EntitiesList<ENTITY> {
         return when (params) {
-            is Params.GetWithSpecification -> getEntitiesWithSpec(params.specification)
+            is Params.GetWithSpecification -> getEntitiesWithSpec(params.specifications.toList())
         }
     }
 
-    private suspend fun getEntitiesWithSpec(specification: ISpecification): EntitiesList<ENTITY> {
-        return repo.query(listOf(specification))
+    private suspend fun getEntitiesWithSpec(specifications: List<ISpecification>): EntitiesList<ENTITY> {
+        return repo.query(specifications)
     }
 
 
     sealed class Params {
 
-        class GetWithSpecification(val specification: ISpecification) : Params()
+        class GetWithSpecification(vararg val specifications: ISpecification) : Params()
     }
 
 }

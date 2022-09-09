@@ -14,6 +14,7 @@ import com.arkivanov.essenty.parcelable.Parcelize
 import domain.*
 import domain.application.Result
 import domain.application.baseUseCases.GetEntities
+import domain.application.baseUseCases.GetItemsCount
 import domain.application.baseUseCases.InsertEntity
 import domain.application.baseUseCases.UpdateEntity
 import io.github.evanrupert.excelkt.workbook
@@ -39,7 +40,9 @@ class EntityComponent<T : IEntity>(
         CoroutineScope(Dispatchers.Default + SupervisorJob())
 
     private val _spec = MutableValue<Specification>(Specification.QueryAll)
+    private val _pagingSpec = MutableValue<Specification.Paginated>(Specification.Paginated(1L, 25L, null))
 
+    override val pagingSpec: Value<Specification.Paginated> = _pagingSpec
 
     private val navigation = StackNavigation<Config>()
 
@@ -89,6 +92,17 @@ class EntityComponent<T : IEntity>(
         Place::class -> di.instance<UpdateEntity<Place>>()
         else -> throw IllegalArgumentException("unsupported type: $type")
     } as LazyDelegate<UpdateEntity<T>>
+
+    private val getItemsCount: GetItemsCount<T> by when (type) {
+        Sample::class -> di.instance<GetItemsCount<Sample>>()
+        SampleType::class -> di.instance<GetItemsCount<SampleType>>()
+        Parameter::class -> di.instance<GetItemsCount<Parameter>>()
+        Operation::class -> di.instance<GetItemsCount<Operation>>()
+        OperationType::class -> di.instance<GetItemsCount<OperationType>>()
+        Worker::class -> di.instance<GetItemsCount<Worker>>()
+        Place::class -> di.instance<GetItemsCount<Place>>()
+        else -> throw IllegalArgumentException("unsupported type: $type")
+    } as LazyDelegate<GetItemsCount<T>>
 
     private val repositoryCallbacks: IRepositoryCallback<T> by when (type) {
         Sample::class -> di.instance<IRepositoryCallback<Sample>>()
@@ -181,6 +195,15 @@ class EntityComponent<T : IEntity>(
         }
     }
 
+    override fun setPagingSpec(spec: Specification.Paginated) {
+        _pagingSpec.reduce {
+            spec
+        }
+        scope.launch {
+            invalidateEntities()
+        }
+    }
+
     override fun resetQuerySpec(spec: Specification) {
         setQuerySpec(Specification.QueryAll)
     }
@@ -221,7 +244,7 @@ class EntityComponent<T : IEntity>(
 
     private suspend fun invalidateEntities() {
         //get all samples
-        val entities = getEntities(GetEntities.Params.GetWithSpecification(_spec.value))
+        val entities = getEntities(GetEntities.Params.GetWithSpecification(_spec.value, _pagingSpec.value))
 
         when (entities) {
             is Result.Success -> {
@@ -269,6 +292,23 @@ class EntityComponent<T : IEntity>(
         navigation.replaceCurrent(Config.EntityPickerDialog(entity, entityClass, onSelectionChanged, columnName))
     }
 
+    private suspend fun invalidateItemsCount() {
+        val itemsCount = getItemsCount(GetItemsCount.Params.GetBySpecifications(_spec.value))
+        when (itemsCount) {
+            is Result.Failure -> {
+                log("could not get items count: ${itemsCount.throwable.localizedMessage}")
+            }
+
+            is Result.Success -> {
+                log("got items count: ${itemsCount.value}")
+                _pagingSpec.reduce {
+                    it.copy(totalItems = itemsCount.value)
+                }
+            }
+        }
+
+    }
+
     init {
 
         lifecycle.subscribe(onDestroy = {
@@ -276,6 +316,8 @@ class EntityComponent<T : IEntity>(
         })
 
         scope.launch {
+            //invalidate pagination params
+            invalidateItemsCount()
             invalidateEntities()
         }
 

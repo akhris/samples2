@@ -2,10 +2,7 @@ package ui.components.tables.mappers
 
 import domain.*
 import persistence.dto.Tables
-import ui.components.tables.Cell
-import ui.components.tables.ColumnId
-import ui.components.tables.ColumnWidth
-import ui.components.tables.IDataTableMapper
+import ui.components.tables.*
 
 class OperationsDataMapper : IDataTableMapper<Operation> {
     override val columns: List<ColumnId> = listOf(
@@ -60,11 +57,13 @@ class OperationsDataMapper : IDataTableMapper<Operation> {
 
 
     private sealed class Column(val id: ColumnId) {
-        object Sample : Column(ColumnId(Tables.Operations.sample.name, "Образец", ColumnWidth.Small))
+        object Sample :
+            Column(ColumnId(Tables.Operations.sample.name, "Образец", ColumnWidth.Small, ColumnAlignment.End))
+
         object OperationType : Column(ColumnId(Tables.Operations.operationType.name, "Тип операции"))
         object DateTime : Column(ColumnId(Tables.Operations.dateTime.name, "Дата", ColumnWidth.Wide))
         object Worker : Column(ColumnId(Tables.Operations.worker.name, "Сотрудник", ColumnWidth.Wide))
-        object Place : Column(ColumnId(Tables.Operations.place.name, "Место", ColumnWidth.Small))
+        object Place : Column(ColumnId(Tables.Operations.place.name, "Место", ColumnWidth.Small, ColumnAlignment.End))
 
 
         companion object {

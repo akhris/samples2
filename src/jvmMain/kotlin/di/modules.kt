@@ -30,6 +30,7 @@ inline fun <reified ENTITY : IEntity> getEntityModule(
     bindSingleton<IRepository<ENTITY>> { instance<BaseRepository<ENTITY>>() }
     bindSingleton<IRepositoryCallback<ENTITY>> { instance<BaseRepository<ENTITY>>() }
     bindSingleton<GetEntity<ENTITY>> { GetEntity(repo = instance(), ioDispatcher = Dispatchers.IO) }
+    bindSingleton<GetItemsCount<ENTITY>> { GetItemsCount(repo = instance(), ioDispatcher = Dispatchers.IO) }
     bindSingleton<GetEntities<ENTITY>> { GetEntities(repo = instance(), ioDispatcher = Dispatchers.IO) }
     bindSingleton<RemoveEntity<ENTITY>> { RemoveEntity(repo = instance(), ioDispatcher = Dispatchers.IO) }
     bindSingleton<UpdateEntity<ENTITY>> { UpdateEntity(repo = instance(), ioDispatcher = Dispatchers.IO) }

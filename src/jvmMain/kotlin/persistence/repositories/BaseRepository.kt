@@ -23,6 +23,10 @@ class BaseRepository<ENTITY : IEntity>(private val baseDao: IBaseDao<ENTITY>) : 
         return baseDao.query(specs = specifications)
     }
 
+    override suspend fun getItemsCount(specifications: List<ISpecification>): Long {
+        return baseDao.getItemsCount(specs = specifications)
+    }
+
     override suspend fun insert(t: ENTITY) {
         baseDao.insert(t)
         repoCallbacks.onItemInserted(t)

@@ -2,10 +2,7 @@ package ui.components.tables.mappers
 
 import domain.Sample
 import persistence.dto.Tables
-import ui.components.tables.Cell
-import ui.components.tables.ColumnId
-import ui.components.tables.ColumnWidth
-import ui.components.tables.IDataTableMapper
+import ui.components.tables.*
 
 class SamplesDataMapper :
     IDataTableMapper<Sample> {
@@ -38,7 +35,9 @@ class SamplesDataMapper :
     override fun getId(item: Sample): String = item.id
 
     private sealed class Column(val id: ColumnId) {
-        object ID : Column(ColumnId(Tables.Samples.sampleID.name, "ID", ColumnWidth.Small))
+        object ID :
+            Column(ColumnId(Tables.Samples.sampleID.name, "ID", ColumnWidth.Small, alignment = ColumnAlignment.End))
+
         object Description : Column(ColumnId(Tables.Samples.description.name, "Описание", ColumnWidth.Wide))
         object Comment : Column(ColumnId(Tables.Samples.comment.name, "Комментарий", ColumnWidth.Wide))
         object OrderId : Column(ColumnId(Tables.Samples.orderID.name, "Партия"))

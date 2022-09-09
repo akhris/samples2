@@ -1,13 +1,19 @@
 package ui.screens.base_entity_screen
 
 import LocalSamplesType
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.rememberDialogState
@@ -18,6 +24,7 @@ import domain.EntitiesList
 import domain.IEntity
 import domain.Specification
 import ui.UiSettings
+import ui.components.Pagination
 import ui.components.tables.*
 import ui.dialogs.DatePickerDialog
 import ui.dialogs.TimePickerDialog
@@ -37,10 +44,10 @@ fun <T : IEntity> BaseEntityUi(
     component: IEntityComponent<T>,
     selectionMode: SelectionMode<T> = SelectionMode.Multiple()
 ) {
-    val state by component.state.subscribeAsState()
-
+    val state by remember(component) { component.state }.subscribeAsState()
     //render samples list:
     val entities = remember(state) { state.entities }
+
     when (entities) {
         is EntitiesList.Grouped -> {
 
@@ -118,6 +125,7 @@ fun <T : IEntity> BaseEntityUi(
 
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun <T : IEntity> ShowDataTableForGroup(
     modifier: Modifier = Modifier,
@@ -129,6 +137,10 @@ private fun <T : IEntity> ShowDataTableForGroup(
     var dateTimePickerParams by remember { mutableStateOf<DateTimePickerDialogParams?>(null) }
 
     var selectedEntities = remember { mutableStateListOf<T>() }
+
+    var bottomPanelHeight by remember { mutableStateOf(0.dp) }
+
+    val pagingSpec by remember(component) { component.pagingSpec }.subscribeAsState()
 
     Box(modifier = modifier.fillMaxHeight()) {
 
@@ -202,12 +214,17 @@ private fun <T : IEntity> ShowDataTableForGroup(
                         }
                     }
                 )
-            }
+            },
+            footer = {
+                Spacer(modifier = Modifier.height(bottomPanelHeight))
+            },
+            firstItemIndex = ((pagingSpec.pageNumber - 1) * pagingSpec.itemsPerPage + 1).toInt()
         )
 
         if (selectionMode is SelectionMode.Multiple<T> && selectedEntities.isNotEmpty()) {
             //show control buttons:
-            Surface(modifier = Modifier.align(Alignment.BottomCenter)) {
+            Surface(
+                modifier = Modifier.align(Alignment.BottomCenter).onSizeChanged { bottomPanelHeight = it.height.dp }) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
@@ -235,6 +252,28 @@ private fun <T : IEntity> ShowDataTableForGroup(
                             tint = MaterialTheme.colors.error
                         )
                     }
+                }
+            }
+        } else {
+            //show pagination control:
+            pagingSpec.totalItems?.let { ti ->
+
+                var isHovered by remember { mutableStateOf(false) }
+
+                val alpha by animateFloatAsState(if (isHovered) 1f else 0.1f)
+
+                Surface(modifier = Modifier.align(Alignment.BottomCenter).onSizeChanged {
+                    bottomPanelHeight = it.height.dp
+                }.onPointerEvent(PointerEventType.Enter) { isHovered = true }
+                    .onPointerEvent(PointerEventType.Exit) { isHovered = false }.alpha(alpha)) {
+                    Pagination(
+                        modifier = modifier,
+                        currentPage = pagingSpec.pageNumber.toInt(),
+                        onPageChanged = { component.setPagingSpec(pagingSpec.copy(pageNumber = it.toLong())) },
+                        rowsPerPage = pagingSpec.itemsPerPage.toInt(),
+                        onRowsPerPageChanged = { component.setPagingSpec(pagingSpec.copy(itemsPerPage = it.toLong())) },
+                        maxItemsCount = ti
+                    )
                 }
             }
         }

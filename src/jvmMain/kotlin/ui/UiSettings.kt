@@ -1,5 +1,7 @@
 package ui
 
+import androidx.compose.material.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -36,7 +38,7 @@ object UiSettings {
         val gridLinesColor = Color.LightGray.copy(alpha = 0.5f)
         val gridLinesWidth = 1.dp
         val cellPadding: Dp = 4.dp
-        val selectionRowWidth: Dp = 48.dp
+        val additionalRowWidth: Dp = 48.dp
 
         //material specs: https://material.io/components/data-tables#specs
         val rowHeight: Dp = 52.dp
@@ -46,6 +48,16 @@ object UiSettings {
         val columnWidthNormal: Dp = 180.dp
         val columnWidthWide: Dp = 240.dp
         val columnWidthSmall: Dp = 120.dp
+
+        private val dividerAlpha = 0.12f
+
+        @Composable
+        fun dividerColor() = MaterialTheme.colors.onSurface.copy(alpha = dividerAlpha)
+    }
+
+    object PaginationPanel {
+        val rowsPerPageFieldWidth: Dp = 128.dp
+        val panelHeight: Dp = 56.dp
     }
 
     object Dialogs {

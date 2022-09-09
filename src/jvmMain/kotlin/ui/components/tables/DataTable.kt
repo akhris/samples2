@@ -6,7 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
@@ -21,6 +21,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -41,7 +42,9 @@ fun <T> DataTable(
     selectionMode: SelectionMode<T> = SelectionMode.Multiple(),
     onCellClicked: ((T, Cell, ColumnId) -> Unit)? = null,
     onHeaderClicked: ((ColumnId) -> Unit)? = null,
-    onSortingChanged: ((column: ColumnId, isAsc: Boolean) -> Unit)? = null
+    onSortingChanged: ((column: ColumnId, isAsc: Boolean) -> Unit)? = null,
+    footer: (@Composable () -> Unit)? = null,
+    firstItemIndex: Int? = null
 ) {
 
     val selectionMap = remember {
@@ -71,34 +74,84 @@ fun <T> DataTable(
         }
     }
 
-    Surface(
-        modifier = modifier.padding(start = 16.dp, top = 16.dp),
-        shape = MaterialTheme.shapes.medium
-    ) {
+    val tableWidth = remember(mapper) { mapper.getTableWidth() }
 
-        val listState = rememberLazyListState()
-        val headerElevation by animateDpAsState(if (listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0) 0.dp else 4.dp)
+//    Surface(
+//        modifier = modifier.padding(start = 16.dp, top = 16.dp),
+//        shape = MaterialTheme.shapes.medium
+//    ) {
 
+    val listState = rememberLazyListState()
+    val headerElevation by animateDpAsState(if (listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0) 0.dp else 4.dp)
+
+
+    var isLeftMouseClicked by remember { mutableStateOf(false) }
+
+    val selectItem = remember {
+        { item: T ->
+            when (selectionMode) {
+                is SelectionMode.Multiple -> {
+                    selectionMap[mapper.getId(item)] =
+                        !(selectionMap[mapper.getId(item)] ?: false)
+                    selectionMode.onItemsSelected?.invoke(
+                        selectionMap.filterValues { it }.keys.mapNotNull { key ->
+                            items.find {
+                                mapper.getId(
+                                    it
+                                ) == key
+                            }
+                        }
+                    )
+                }
+
+                is SelectionMode.None -> {}
+                is SelectionMode.Single -> {
+                    val prevValue = selectionMap[mapper.getId(item)] ?: false
+                    selectionMap.clear()
+                    selectionMap[mapper.getId(item)] = !prevValue
+                    selectionMode.onItemSelected?.invoke(
+                        if (prevValue) null else item
+                    )
+                }
+            }
+        }
+    }
 
 //        log("rendering table:\nmap: $selectionMap\nchecks: $checks\ncheckState: $checkState\nheaderElevation: $headerElevation")
-        LazyColumn(state = listState) {
 
-            stickyHeader {
+
+    LazyColumn(
+        modifier = modifier,
+        state = listState
+    ) {
+
+        stickyHeader {
+
+            Row(
+                modifier = Modifier.height(UiSettings.DataTable.headerRowHeight),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                //render header:
+
+                //space for first item index if used:
+                firstItemIndex?.let {
+                    Spacer(modifier = Modifier.width(UiSettings.DataTable.additionalRowWidth))
+                }
                 Surface(elevation = headerElevation) {
                     Row(
-                        modifier = Modifier.height(UiSettings.DataTable.headerRowHeight),
+                        modifier = Modifier.height(
+                            UiSettings.DataTable.headerRowHeight
+                        ),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        //render header:
                         //selection box:
-                        Box(modifier = Modifier.width(UiSettings.DataTable.selectionRowWidth)) {
+                        Box(modifier = Modifier.width(UiSettings.DataTable.additionalRowWidth)) {
                             if (selectionMode is SelectionMode.Multiple && items.size > 1) {
                                 TriStateCheckbox(state = checkState, onClick = {
                                     when (checkState) {
                                         ToggleableState.On -> {
                                             selectionMap.clear()
                                             selectionMode.onItemsSelected?.invoke(listOf())
-//                                            onSelectionChanged?.invoke(listOf())
                                         }
 
                                         ToggleableState.Off,
@@ -145,12 +198,19 @@ fun <T> DataTable(
                                                 onSortingChanged(it.first, it.second)
                                             }
                                         }
-                                    }, verticalAlignment = Alignment.CenterVertically
+                                    }, verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(
+                                    space = 2.dp, alignment = when (column.alignment) {
+                                        ColumnAlignment.Center -> Alignment.CenterHorizontally
+                                        ColumnAlignment.End -> Alignment.End
+                                        ColumnAlignment.Start -> Alignment.Start
+                                    }
+                                )
                             ) {
                                 Text(
-                                    modifier = Modifier.weight(1f)
+
 //                                            .padding(all = UiSettings.DataTable.cellPadding)
-                                    ,
+
                                     text = column.title,
                                     style = MaterialTheme.typography.subtitle2,
                                     fontWeight = FontWeight.Bold,
@@ -180,125 +240,147 @@ fun <T> DataTable(
                     }
                 }
             }
+        }
 
-            this
-                .items(items, key = {
-                    mapper.getId(it)
-                }) { item ->
 
-                    var isHover by remember { mutableStateOf(false) }
+
+        this
+            .itemsIndexed(items, key = { index, item ->
+                mapper.getId(item)
+            }) { index, item ->
+
+                var isHover by remember { mutableStateOf(false) }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    //if indexes are used:
+                    firstItemIndex?.let { fii ->
+                        Text(
+                            modifier = Modifier.width(UiSettings.DataTable.additionalRowWidth),
+                            text = (fii + index).toString(),
+                            style = MaterialTheme.typography.caption.copy(
+                                color = UiSettings.DataTable.dividerColor(),
+                                textAlign = TextAlign.Center
+                            )
+                        )
+                    }
 
                     //render cells row:
-                    Row(
-                        modifier = Modifier
-                            .height(UiSettings.DataTable.rowHeight)
-                            .onPointerEvent(PointerEventType.Enter) { isHover = true }
-                            .onPointerEvent(PointerEventType.Exit) { isHover = false }
-                            .background(
-                                color = if (isHover) {
-                                    MaterialTheme.colors.primary.copy(alpha = 0.1f)
-                                } else MaterialTheme.colors.surface
-                            )
-                            .clickable {
-                                when (selectionMode) {
-                                    is SelectionMode.Multiple -> {
-                                        selectionMap[mapper.getId(item)] =
-                                            !(selectionMap[mapper.getId(item)] ?: false)
-                                        selectionMode.onItemsSelected?.invoke(
-                                            selectionMap.filterValues { it }.keys.mapNotNull { key ->
-                                                items.find {
-                                                    mapper.getId(
-                                                        it
-                                                    ) == key
-                                                }
-                                            }
-                                        )
-                                    }
+                    Surface {
+                        Box {
 
-                                    is SelectionMode.None -> {}
-                                    is SelectionMode.Single -> {
-                                        val prevValue = selectionMap[mapper.getId(item)] ?: false
-                                        selectionMap.clear()
-                                        selectionMap[mapper.getId(item)] = !prevValue
-                                        selectionMode.onItemSelected?.invoke(
-                                            if (prevValue) null else item
-                                        )
-                                    }
-                                }
-                            },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // selection control:
-                        Box(
-                            modifier = Modifier.width(UiSettings.DataTable.selectionRowWidth),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            when (selectionMode) {
-                                is SelectionMode.Multiple -> {
-                                    Checkbox(
-                                        checked = selectionMap[mapper.getId(item)] == true,
-                                        onCheckedChange = null
+
+                            Row(
+                                modifier = Modifier
+                                    .height(UiSettings.DataTable.rowHeight)
+                                    .onPointerEvent(PointerEventType.Enter) { isHover = true }
+                                    .onPointerEvent(PointerEventType.Exit) { isHover = false }
+                                    .background(
+                                        color = if (isHover) {
+                                            MaterialTheme.colors.primary.copy(alpha = 0.1f)
+                                        } else MaterialTheme.colors.surface
                                     )
-                                }
-
-                                is SelectionMode.Single -> {
-                                    RadioButton(selected = selectionMap[mapper.getId(item)] == true, onClick = null)
-                                }
-
-                                is SelectionMode.None -> {
-
-                                }
-                            }
-                        }
-                        for (column in mapper.columns) {
-                            //render cell:
-                            val cell = remember(mapper, item, column) {
-                                mapper.getCell(item, column)
-                            }
-
-                            Box(
-                                modifier = Modifier.width(
-                                    when (column.width) {
-                                        is ColumnWidth.Custom -> column.width.width
-                                        ColumnWidth.Normal -> UiSettings.DataTable.columnWidthNormal
-                                        ColumnWidth.Small -> UiSettings.DataTable.columnWidthSmall
-                                        ColumnWidth.Wide -> UiSettings.DataTable.columnWidthWide
-                                    }
-                                )
-                                    .padding(horizontal = UiSettings.DataTable.columnPadding)
                                     .clickable {
-                                        onCellClicked?.invoke(item, cell, column)
-                                    }
+                                        selectItem(item)
+                                    },
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
 
-                                RenderCell(
-                                    modifier =
-                                    Modifier
-                                        .padding(all = UiSettings.DataTable.cellPadding),
 
-                                    cell = cell,
-                                    onCellChanged = { changedCell ->
-                                        onItemChanged?.invoke(mapper.updateItem(item, column, changedCell))
+                                // selection control:
+                                Box(
+                                    modifier = Modifier.width(UiSettings.DataTable.additionalRowWidth),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    when (selectionMode) {
+                                        is SelectionMode.Multiple -> {
+                                            Checkbox(
+                                                checked = selectionMap[mapper.getId(item)] == true,
+                                                onCheckedChange = null
+                                            )
+                                        }
+
+                                        is SelectionMode.Single -> {
+                                            RadioButton(
+                                                selected = selectionMap[mapper.getId(item)] == true,
+                                                onClick = null
+                                            )
+                                        }
+
+                                        is SelectionMode.None -> {
+
+                                        }
                                     }
-                                )
+                                }
+                                for (column in mapper.columns) {
+                                    //render cell:
+                                    val cell = remember(mapper, item, column) {
+                                        mapper.getCell(item, column)
+                                    }
+
+                                    Box(
+                                        modifier = Modifier.width(
+                                            when (column.width) {
+                                                is ColumnWidth.Custom -> column.width.width
+                                                ColumnWidth.Normal -> UiSettings.DataTable.columnWidthNormal
+                                                ColumnWidth.Small -> UiSettings.DataTable.columnWidthSmall
+                                                ColumnWidth.Wide -> UiSettings.DataTable.columnWidthWide
+                                            }
+                                        )
+                                            .padding(horizontal = UiSettings.DataTable.columnPadding)
+                                            .clickable {
+                                                onCellClicked?.invoke(item, cell, column)
+                                            },
+                                        contentAlignment = when (column.alignment) {
+                                            ColumnAlignment.Center -> Alignment.Center
+                                            ColumnAlignment.End -> Alignment.CenterEnd
+                                            ColumnAlignment.Start -> Alignment.CenterStart
+                                        }
+                                    ) {
+
+                                        RenderCell(
+                                            modifier =
+                                            Modifier
+                                                .padding(all = UiSettings.DataTable.cellPadding),
+                                            cell = cell,
+                                            onCellChanged = { changedCell ->
+                                                onItemChanged?.invoke(mapper.updateItem(item, column, changedCell))
+                                            },
+                                            columnAlignment = column.alignment
+                                        )
+                                    }
+                                }
                             }
+                            //divider:
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopCenter)
+                                    .height(1.dp)
+                                    .width(tableWidth + UiSettings.DataTable.additionalRowWidth)
+                                    .background(color = UiSettings.DataTable.dividerColor())
+                            )
                         }
                     }
                 }
+            }
+
+        //footer
+        item {
+            footer?.invoke()
         }
     }
 }
+
 
 @Composable
 private fun BoxScope.RenderCell(
     modifier: Modifier = Modifier,
     cell: Cell,
-    onCellChanged: (Cell) -> Unit
+    onCellChanged: (Cell) -> Unit,
+    columnAlignment: ColumnAlignment
 ) {
     when (cell) {
-        is Cell.EditTextCell -> RenderEditTextCell(modifier, cell, onCellChanged)
-        is Cell.EntityCell -> RenderEntityCell(modifier, cell, onCellChanged)
-        is Cell.DateTimeCell -> RenderDateTimeCell(modifier, cell)
+        is Cell.EditTextCell -> RenderEditTextCell(modifier, cell, onCellChanged, columnAlignment)
+        is Cell.EntityCell -> RenderEntityCell(modifier, cell, onCellChanged, columnAlignment)
+        is Cell.DateTimeCell -> RenderDateTimeCell(modifier, cell, columnAlignment)
     }
 }
 
@@ -307,20 +389,24 @@ private fun BoxScope.RenderCell(
 private fun BoxScope.RenderEditTextCell(
     modifier: Modifier = Modifier,
     cell: Cell.EditTextCell,
-    onCellChanged: (Cell) -> Unit
+    onCellChanged: (Cell) -> Unit,
+    columnAlignment: ColumnAlignment
 ) {
 
     var value by remember(cell) { mutableStateOf(cell.value) }
-    var isHover by remember { mutableStateOf(false) }
 
     BasicTextField(
-        modifier = modifier
-            .onPointerEvent(PointerEventType.Enter) { isHover = true }
-            .onPointerEvent(PointerEventType.Exit) { isHover = false }
-            .background(color = MaterialTheme.colors.primary.copy(alpha = if (isHover) 0.05f else 0f)).padding(4.dp),
+        modifier = modifier,
         value = value,
         onValueChange = { value = it },
-        singleLine = true
+        singleLine = true,
+        textStyle = LocalTextStyle.current.copy(
+            textAlign = when (columnAlignment) {
+                ColumnAlignment.Center -> TextAlign.Center
+                ColumnAlignment.End -> TextAlign.End
+                ColumnAlignment.Start -> TextAlign.Start
+            }
+        )
     )
 
 
@@ -338,16 +424,21 @@ private fun BoxScope.RenderEditTextCell(
 @Composable
 private fun BoxScope.RenderDateTimeCell(
     modifier: Modifier = Modifier,
-    cell: Cell.DateTimeCell
+    cell: Cell.DateTimeCell,
+    columnAlignment: ColumnAlignment
 ) {
-    var isHover by remember { mutableStateOf(false) }
+
 
     Text(
-        modifier = modifier
-            .onPointerEvent(PointerEventType.Enter) { isHover = true }
-            .onPointerEvent(PointerEventType.Exit) { isHover = false }
-            .background(color = MaterialTheme.colors.primary.copy(alpha = if (isHover) 0.05f else 0f)).padding(4.dp),
-        text = cell.value?.let { DateTimeConverter.dateTimeToString(it) } ?: ""
+        modifier = modifier,
+        text = cell.value?.let { DateTimeConverter.dateTimeToString(it) } ?: "",
+        style = LocalTextStyle.current.copy(
+            textAlign = when (columnAlignment) {
+                ColumnAlignment.Center -> TextAlign.Center
+                ColumnAlignment.End -> TextAlign.End
+                ColumnAlignment.Start -> TextAlign.Start
+            }
+        )
     )
 
 
@@ -358,20 +449,27 @@ private fun BoxScope.RenderDateTimeCell(
 private fun BoxScope.RenderEntityCell(
     modifier: Modifier = Modifier,
     cell: Cell.EntityCell,
-    onCellChanged: (Cell) -> Unit
+    onCellChanged: (Cell) -> Unit,
+    columnAlignment: ColumnAlignment
 ) {
-//    var showEntityPickerDialog by remember { mutableStateOf<KClass<out IEntity>?>(null) }
-//    Text(text = cell.entityClass.simpleName ?: "", modifier = Modifier.clickable { onCellClicked(cell) })
-    Text(text = cell.entity?.toString() ?: "")
-
-
+    Text(
+        modifier = modifier, text = cell.entity?.toString() ?: "",
+        style = LocalTextStyle.current.copy(
+            textAlign = when (columnAlignment) {
+                ColumnAlignment.Center -> TextAlign.Center
+                ColumnAlignment.End -> TextAlign.End
+                ColumnAlignment.Start -> TextAlign.Start
+            }
+        )
+    )
 }
 
 
 data class ColumnId(
     val key: String,    //might correspond to exposed column name for working filtering, sorting and grouping
     val title: String,
-    val width: ColumnWidth = ColumnWidth.Normal
+    val width: ColumnWidth = ColumnWidth.Normal,
+    val alignment: ColumnAlignment = ColumnAlignment.Start
 )
 
 sealed class ColumnWidth {
@@ -379,6 +477,12 @@ sealed class ColumnWidth {
     object Normal : ColumnWidth()
     object Wide : ColumnWidth()
     class Custom(val width: Dp) : ColumnWidth()
+}
+
+sealed class ColumnAlignment {
+    object End : ColumnAlignment()
+    object Start : ColumnAlignment()
+    object Center : ColumnAlignment()
 }
 
 interface IDataTableMapper<T> {
