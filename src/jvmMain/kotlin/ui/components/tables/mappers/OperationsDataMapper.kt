@@ -10,9 +10,8 @@ class OperationsDataMapper : IDataTableMapper<Operation> {
         Column.OperationType.id,
         Column.DateTime.id,
         Column.Worker.id,
-        Column.Place.id,
-
-        )
+        Column.Place.id
+    )
 
     override fun getId(item: Operation): String = item.id
 

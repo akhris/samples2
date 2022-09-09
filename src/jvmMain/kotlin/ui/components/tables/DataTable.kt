@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.mouseClickable
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -18,6 +19,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
@@ -119,6 +121,7 @@ fun <T> DataTable(
 
 //        log("rendering table:\nmap: $selectionMap\nchecks: $checks\ncheckState: $checkState\nheaderElevation: $headerElevation")
 
+    var lastClickedIndex by remember(items) { mutableStateOf(-1) }
 
     LazyColumn(
         modifier = modifier,
@@ -278,8 +281,16 @@ fun <T> DataTable(
                                             MaterialTheme.colors.primary.copy(alpha = 0.1f)
                                         } else MaterialTheme.colors.surface
                                     )
-                                    .clickable {
+                                    .mouseClickable {
                                         selectItem(item)
+                                        if (lastClickedIndex != -1 && keyboardModifiers.isShiftPressed) {
+                                            for (i in lastClickedIndex + 1 until index) {
+                                                items.getOrNull(i)?.let {
+                                                    selectItem(it)
+                                                }
+                                            }
+                                        }
+                                        lastClickedIndex = index
                                     },
                                 verticalAlignment = Alignment.CenterVertically
                             ) {

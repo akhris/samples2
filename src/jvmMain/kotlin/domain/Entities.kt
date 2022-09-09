@@ -115,6 +115,11 @@ data class Norm(
     // TODO: add values range for norm (min, max, avg)
 ) : IEntity
 
+data class MeasurementResult(
+    val parameter: Parameter,
+    val value: String,
+    val unit: String
+)
 
 /**
  * Entity representing single measurement of the [sample].
@@ -123,5 +128,10 @@ data class Norm(
 data class Measurement(
     override val id: String = UUID.randomUUID().toString(),
     val sample: Sample,
-    val results: String
+    val dateTime: LocalDateTime?,
+    val operator: Worker?,
+    val place: Place?,
+    val comment: String?,
+    val conditions: String?,
+    val results: List<MeasurementResult> = listOf()
 ) : IEntity

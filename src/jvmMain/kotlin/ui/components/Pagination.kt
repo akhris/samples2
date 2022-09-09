@@ -34,7 +34,7 @@ fun Pagination(
     }
 
     val firstRow = remember(rowsPerPage, currentPage) { (currentPage - 1) * rowsPerPage + 1 }
-    val lastRow = remember(rowsPerPage, firstRow) {
+    val lastRow = remember(rowsPerPage, firstRow, maxItemsCount) {
         val a = firstRow + rowsPerPage - 1
         if (a > maxItemsCount)
             maxItemsCount.toInt()

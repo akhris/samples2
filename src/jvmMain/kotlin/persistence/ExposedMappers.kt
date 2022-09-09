@@ -62,3 +62,16 @@ fun EntityOperation.toOperation(): Operation {
         place = this.place?.toPlace()
     )
 }
+
+fun EntityMeasurement.toMeasurement(): Measurement {
+    return Measurement(
+        id = this.id.value.toString(),
+        sample = this.sample.toSample(),
+        operator = this.operator?.toWorker(),
+        place = this.place?.toPlace(),
+        dateTime = this.dateTime,
+        comment = this.comment,
+        conditions = this.conditions,
+        results = this.results
+    )
+}

@@ -30,7 +30,8 @@ object DbSettings {
                 Tables.OperationTypes,
                 Tables.Places,
                 Tables.Workers,
-                Tables.Operations
+                Tables.Operations,
+                Tables.Measurements
             )
         }
         db

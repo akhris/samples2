@@ -44,6 +44,7 @@ interface INavHost {
         class Parameters(val component: IEntityComponent<Parameter>) : Child()
         class Samples(val component: IEntityComponent<Sample>) : Child()
 
+
     }
 
 }

@@ -72,4 +72,15 @@ object Tables {
         val place = reference(name = "place", foreign = Places, onDelete = ReferenceOption.CASCADE).nullable()
     }
 
+
+    object Measurements : UUIDTable() {
+        val sample = reference(name = "sample", foreign = Samples, onDelete = ReferenceOption.CASCADE)
+        val dateTime = datetime(name = "dateTime").nullable()
+        val operator = reference(name = "worker", foreign = Workers, onDelete = ReferenceOption.CASCADE).nullable()
+        val place = reference(name = "place", foreign = Places, onDelete = ReferenceOption.CASCADE).nullable()
+        val comment = text(name = "comment").nullable()
+        val conditions = text(name = "conditions").nullable()
+        val results = text(name = "results").nullable()
+
+    }
 }

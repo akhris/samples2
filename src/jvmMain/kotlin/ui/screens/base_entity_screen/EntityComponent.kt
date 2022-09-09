@@ -191,6 +191,7 @@ class EntityComponent<T : IEntity>(
             spec
         }
         scope.launch {
+            invalidateItemsCount()
             invalidateEntities()
         }
     }
@@ -328,6 +329,7 @@ class EntityComponent<T : IEntity>(
                     is RepoResult.ItemInserted,
                     is RepoResult.ItemRemoved,
                     is RepoResult.ItemUpdated -> {
+                        invalidateItemsCount()
                         invalidateEntities()
                     }
                 }

@@ -67,3 +67,16 @@ class EntityOperation(id: EntityID<UUID>) : UUIDEntity(id) {
     val worker by EntityWorker optionalReferencedOn Tables.Operations.worker
     val place by EntityPlace optionalReferencedOn Tables.Operations.place
 }
+
+class EntityMeasurement(id: EntityID<UUID>) : UUIDEntity(id) {
+    companion object : UUIDEntityClass<EntityMeasurement>(Tables.Measurements)
+
+    val sample by EntitySample referencedOn Tables.Measurements.sample
+    val dateTime by Tables.Measurements.dateTime
+    val operator by EntityWorker optionalReferencedOn Tables.Measurements.operator
+    val place by EntityPlace optionalReferencedOn Tables.Measurements.place
+    val comment by Tables.Measurements.comment
+    val conditions by Tables.Measurements.conditions
+    val results by Tables.Measurements.results
+
+}
