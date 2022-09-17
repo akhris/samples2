@@ -21,6 +21,7 @@ import navigation.NavItem
 import org.kodein.di.DI
 import org.kodein.di.instance
 import ui.screens.base_entity_screen.EntityComponent
+import ui.screens.measurements.MeasurementsComponent
 
 /**
  * Main navigation component that holds all destinations
@@ -54,7 +55,6 @@ class NavHostComponent constructor(
         )
 
 
-
     override val state: Value<INavHost.State> = _state
 
     override val sampleTypes: Value<List<SampleType>> = _sampleTypesState
@@ -71,16 +71,21 @@ class NavHostComponent constructor(
             Config.Operations -> INavHost.Child.Operations(EntityComponent(di = di, componentContext))
             Config.Samples -> INavHost.Child.Samples(EntityComponent(di = di, componentContext))
             Config.OperationTypes -> INavHost.Child.OperationTypes(EntityComponent(di = di, componentContext))
+            Config.Measurements -> INavHost.Child.Measurements(
+                MeasurementsComponent(
+                    di = di,
+                    componentContext = componentContext
+                )
+            )
         }
     }
-
 
 
     override fun setDestination(navItem: NavItem) {
 
         val newConf = when (navItem) {
             NavItem.Conditions -> null
-            NavItem.Measurements -> null
+            NavItem.Measurements -> Config.Measurements
             NavItem.Norms -> Config.Norms
             NavItem.Operations -> Config.Operations
             NavItem.Parameters -> Config.Parameters
@@ -122,6 +127,9 @@ class NavHostComponent constructor(
 
         @Parcelize
         object Samples : Config()
+
+        @Parcelize
+        object Measurements : Config()
 
     }
 

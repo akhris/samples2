@@ -5,6 +5,7 @@ import com.arkivanov.decompose.value.Value
 import domain.*
 import navigation.NavItem
 import ui.screens.base_entity_screen.IEntityComponent
+import ui.screens.measurements.IMeasurements
 
 /**
  * Interface for Navigation Host
@@ -43,6 +44,7 @@ interface INavHost {
         class Norms(val component: IEntityComponent<Norm>) : Child()
         class Parameters(val component: IEntityComponent<Parameter>) : Child()
         class Samples(val component: IEntityComponent<Sample>) : Child()
+        class Measurements(val component: IMeasurements) : Child()
 
 
     }

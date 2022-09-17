@@ -7,9 +7,10 @@ import com.arkivanov.decompose.extensions.compose.jetbrains.stack.Children
 import com.arkivanov.decompose.extensions.compose.jetbrains.stack.animation.fade
 import com.arkivanov.decompose.extensions.compose.jetbrains.stack.animation.stackAnimation
 import ui.screens.base_entity_screen.EntityUiwithFab
+import ui.screens.measurements.MeasurementsUi
 
 
-@OptIn(ExperimentalDecomposeApi::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalDecomposeApi::class)
 @Composable
 fun NavHostUi(component: INavHost) {
     Children(stack = component.childStack, animation = stackAnimation(fade())) {
@@ -22,6 +23,7 @@ fun NavHostUi(component: INavHost) {
 
             is INavHost.Child.Samples -> EntityUiwithFab(component = child.component)
             is INavHost.Child.OperationTypes -> EntityUiwithFab(component = child.component)
+            is INavHost.Child.Measurements -> MeasurementsUi(component = child.component)
         }
     }
 }
