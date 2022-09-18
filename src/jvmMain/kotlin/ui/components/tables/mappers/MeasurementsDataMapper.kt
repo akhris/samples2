@@ -4,6 +4,7 @@ import domain.*
 import persistence.exposed.dto.Tables
 import ui.components.tables.Cell
 import ui.components.tables.ColumnId
+import ui.components.tables.ColumnWidth
 import ui.components.tables.IDataTableMapper
 
 class MeasurementsDataMapper(private val parameters: List<Parameter>) : IDataTableMapper<Measurement> {
@@ -99,13 +100,13 @@ class MeasurementsDataMapper(private val parameters: List<Parameter>) : IDataTab
 
     private sealed class Column(val id: ColumnId) {
 
-        object Sample : Column(ColumnId(Tables.Measurements.sample.name, "Образец"))
+        object Sample : Column(ColumnId(Tables.Measurements.sample.name, "Образец", width = ColumnWidth.Small))
         object DateTime : Column(ColumnId(Tables.Measurements.dateTime.name, "Дата"))
         object Operator : Column(ColumnId(Tables.Measurements.operator.name, "Оператор"))
         object Place : Column(ColumnId(Tables.Measurements.place.name, "Место"))
         object Comment : Column(ColumnId(Tables.Measurements.comment.name, "Комментарий"))
         object Conditions : Column(ColumnId(Tables.Measurements.conditions.name, "Условия"))
-        class Result(val parameter: Parameter) : Column(ColumnId(parameter.id, title = parameter.name))
+        class Result(val parameter: Parameter) : Column(ColumnId(parameter.id, title = parameter.name, width = ColumnWidth.Small))
 
     }
 }

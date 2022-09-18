@@ -116,13 +116,13 @@ class EntityComponent<T : IEntity>(
     } as LazyDelegate<IRepositoryCallback<T>>
 
     override val dataMapper: IDataTableMapper<T> by when (type) {
-        Sample::class -> di.di.instance<IDataTableMapper<Sample>>()
-        SampleType::class -> di.di.instance<IDataTableMapper<SampleType>>()
-        Parameter::class -> di.di.instance<IDataTableMapper<Parameter>>()
-        Operation::class -> di.di.instance<IDataTableMapper<Operation>>()
-        OperationType::class -> di.di.instance<IDataTableMapper<OperationType>>()
-        Worker::class -> di.di.instance<IDataTableMapper<Worker>>()
-        Place::class -> di.di.instance<IDataTableMapper<Place>>()
+        Sample::class -> di.instance<IDataTableMapper<Sample>>()
+        SampleType::class -> di.instance<IDataTableMapper<SampleType>>()
+        Parameter::class -> di.instance<IDataTableMapper<Parameter>>()
+        Operation::class -> di.instance<IDataTableMapper<Operation>>()
+        OperationType::class -> di.instance<IDataTableMapper<OperationType>>()
+        Worker::class -> di.instance<IDataTableMapper<Worker>>()
+        Place::class -> di.instance<IDataTableMapper<Place>>()
         else -> throw IllegalArgumentException("cannot get data table mapper!")
     } as LazyDelegate<IDataTableMapper<T>>
 
