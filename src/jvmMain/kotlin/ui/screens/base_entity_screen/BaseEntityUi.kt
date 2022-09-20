@@ -2,7 +2,9 @@ package ui.screens.base_entity_screen
 
 import LocalSamplesType
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
@@ -66,7 +68,7 @@ fun <T : IEntity> BaseEntityUi(
     Children(stack = component.dialogStack) {
         when (val child = it.instance) {
             is IEntityComponent.Dialog.EntityPicker<*> -> {
-                val childTableWidth = remember { child.component.dataMapper.getTableWidth() + 128.dp }
+                val childTableWidth = remember { child.component.dataMapper.value.getTableWidth() + 128.dp }
                 val dialogState = rememberDialogState(
                     width = childTableWidth,
                     height = UiSettings.Dialogs.defaultWideDialogHeight
@@ -142,13 +144,15 @@ private fun <T : IEntity> ShowDataTableForGroup(
 
     val pagingSpec by remember(component) { component.pagingSpec }.subscribeAsState()
 
+    val mapper by remember(component) { component.dataMapper }.subscribeAsState()
+
     Box(modifier = modifier.fillMaxHeight()) {
 
         //parameters table:
         DataTable(
-            modifier = modifier,
+            modifier = modifier.horizontalScroll(state = rememberScrollState()),
             items = entities,
-            mapper = component.dataMapper,
+            mapper = mapper,
             onItemChanged = {
                 component.updateEntity(it)
             },
@@ -162,7 +166,7 @@ private fun <T : IEntity> ShowDataTableForGroup(
                             entity = cell.entity,
                             entityClass = cell.entityClass,
                             onSelectionChanged = {
-                                val updatedItem = component.dataMapper.updateItem(
+                                val updatedItem = mapper.updateItem(
                                     item = item,
                                     columnId = column,
                                     cell = cell.copy(entity = it)
@@ -178,7 +182,7 @@ private fun <T : IEntity> ShowDataTableForGroup(
                             DateTimePickerDialogParams(initialDateTime = cell.value,
                                 onDateChanged = {
                                     val updatedItem =
-                                        component.dataMapper.updateItem(
+                                        mapper.updateItem(
                                             item,
                                             columnId = column,
                                             cell = cell.copy(value = it)

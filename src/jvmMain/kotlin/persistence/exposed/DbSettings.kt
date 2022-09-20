@@ -31,6 +31,7 @@ object DbSettings {
                 Tables.Places,
                 Tables.Workers,
                 Tables.Operations,
+                Tables.MeasurementResults,
                 Tables.Measurements
             )
         }
@@ -48,7 +49,9 @@ object DbSettings {
                 Tables.OperationTypes,
                 Tables.Places,
                 Tables.Workers,
-                Tables.Operations
+                Tables.Operations,
+                Tables.MeasurementResults,
+                Tables.Measurements
             )
         }
         return db

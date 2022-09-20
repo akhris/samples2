@@ -21,7 +21,7 @@ import navigation.NavItem
 import org.kodein.di.DI
 import org.kodein.di.instance
 import ui.screens.base_entity_screen.EntityComponent
-import ui.screens.measurements.MeasurementsComponent
+import ui.screens.measurements.MeasurementsEntityComponent
 
 /**
  * Main navigation component that holds all destinations
@@ -72,7 +72,7 @@ class NavHostComponent constructor(
             Config.Samples -> INavHost.Child.Samples(EntityComponent(di = di, componentContext))
             Config.OperationTypes -> INavHost.Child.OperationTypes(EntityComponent(di = di, componentContext))
             Config.Measurements -> INavHost.Child.Measurements(
-                MeasurementsComponent(
+                MeasurementsEntityComponent(
                     di = di,
                     componentContext = componentContext
                 )

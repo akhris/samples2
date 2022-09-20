@@ -129,11 +129,11 @@ data class MeasurementResult(
  */
 data class Measurement(
     override val id: String = UUID.randomUUID().toString(),
-    val sample: Sample,
-    val dateTime: LocalDateTime?,
-    val operator: Worker?,
-    val place: Place?,
-    val comment: String?,
-    val conditions: String?,
+    val sample: Sample? = null,
+    val dateTime: LocalDateTime? = null,
+    val operator: Worker? = null,
+    val place: Place? = null,
+    val comment: String? = null,
+    val conditions: String? = null,
     val results: List<MeasurementResult> = listOf()
 ) : IEntity

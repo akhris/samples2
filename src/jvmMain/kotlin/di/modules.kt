@@ -66,5 +66,5 @@ val measurementsModule =
     getEntityModule(
         name = "measurements module",
         getDao = { MeasurementsDao() },
-        additionalBindings = { bindMultiton { params: List<Parameter> -> MeasurementsDataMapper(params) } }
+        additionalBindings = { bindSingleton { MeasurementsDataMapper() } }
     )

@@ -6,8 +6,11 @@ import ui.components.tables.Cell
 import ui.components.tables.ColumnId
 import ui.components.tables.ColumnWidth
 import ui.components.tables.IDataTableMapper
+import utils.log
+import utils.replace
+import utils.replaceOrAdd
 
-class MeasurementsDataMapper(private val parameters: List<Parameter>) : IDataTableMapper<Measurement> {
+data class MeasurementsDataMapper(val parameters: List<Parameter> = listOf()) : IDataTableMapper<Measurement> {
     override val columns: List<ColumnId>
         get() = listOf(
             Column.Sample.id,
@@ -21,7 +24,7 @@ class MeasurementsDataMapper(private val parameters: List<Parameter>) : IDataTab
     override fun getId(item: Measurement): String = item.id
 
     override fun updateItem(item: Measurement, columnId: ColumnId, cell: Cell): Measurement {
-        return when (requireColumn(columnId)) {
+        return when (val col = requireColumn(columnId)) {
             Column.Sample -> {
                 (cell as? Cell.EntityCell)?.let {
                     (it.entity as? Sample)?.let { e ->
@@ -63,7 +66,17 @@ class MeasurementsDataMapper(private val parameters: List<Parameter>) : IDataTab
             }
 
             is Column.Result -> {
-                TODO("not yet implemented")
+                (cell as? Cell.EditTextCell)?.let { textCell ->
+                    val changedResult =
+                        item.results.find { res -> res.parameter.id == col.parameter.id }?.copy(value = textCell.value)
+                            ?: MeasurementResult(parameter = col.parameter, value = textCell.value, unit = "")
+
+
+                    item.copy(results = item.results.replaceOrAdd(changedResult) {
+                        it.parameter.id == changedResult.parameter.id
+                    })
+
+                }
             }
         } ?: item
     }
@@ -106,7 +119,8 @@ class MeasurementsDataMapper(private val parameters: List<Parameter>) : IDataTab
         object Place : Column(ColumnId(Tables.Measurements.place.name, "Место"))
         object Comment : Column(ColumnId(Tables.Measurements.comment.name, "Комментарий"))
         object Conditions : Column(ColumnId(Tables.Measurements.conditions.name, "Условия"))
-        class Result(val parameter: Parameter) : Column(ColumnId(parameter.id, title = parameter.name, width = ColumnWidth.Small))
+        class Result(val parameter: Parameter) :
+            Column(ColumnId(parameter.id, title = parameter.name, width = ColumnWidth.Small))
 
     }
 }

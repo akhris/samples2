@@ -79,7 +79,7 @@ class EntityMeasurementResult(id: EntityID<Int>) : IntEntity(id) {
 class EntityMeasurement(id: EntityID<UUID>) : UUIDEntity(id) {
     companion object : UUIDEntityClass<EntityMeasurement>(Tables.Measurements)
 
-    val sample by EntitySample referencedOn Tables.Measurements.sample
+    val sample by EntitySample optionalReferencedOn Tables.Measurements.sample
     val dateTime by Tables.Measurements.dateTime
     val operator by EntityWorker optionalReferencedOn Tables.Measurements.operator
     val place by EntityPlace optionalReferencedOn Tables.Measurements.place

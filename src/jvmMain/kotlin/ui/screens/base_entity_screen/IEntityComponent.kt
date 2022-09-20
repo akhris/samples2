@@ -20,7 +20,7 @@ interface IEntityComponent<T : IEntity> {
 
     fun duplicateEntities(entities: List<T>)
 
-    val dataMapper: IDataTableMapper<T>
+    val dataMapper: Value<IDataTableMapper<T>>
 
     fun setQuerySpec(spec: Specification)
     fun resetQuerySpec(spec: Specification)

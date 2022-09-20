@@ -4,6 +4,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -18,9 +19,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -31,6 +35,7 @@ import domain.IEntity
 import kotlinx.coroutines.delay
 import ui.UiSettings
 import utils.DateTimeConverter
+import utils.log
 import java.time.LocalDateTime
 import kotlin.reflect.KClass
 
@@ -77,7 +82,7 @@ fun <T> DataTable(
     }
 
     val tableWidth = remember(mapper) { mapper.getTableWidth() }
-
+    var windowWidth by remember { mutableStateOf(1.dp) }
 //    Surface(
 //        modifier = modifier.padding(start = 16.dp, top = 16.dp),
 //        shape = MaterialTheme.shapes.medium
@@ -124,7 +129,13 @@ fun <T> DataTable(
     var lastClickedIndex by remember(items) { mutableStateOf(-1) }
 
     LazyColumn(
-        modifier = modifier,
+        modifier =
+        modifier
+//            .onSizeChanged {
+//                windowWidth = it.width.dp
+//            }
+//            .scale(if (windowWidth > 1.dp) tableWidth / windowWidth else 1f)
+        ,
         state = listState
     ) {
 

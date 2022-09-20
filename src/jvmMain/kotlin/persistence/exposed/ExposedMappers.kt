@@ -66,7 +66,7 @@ fun EntityOperation.toOperation(): Operation {
 fun EntityMeasurement.toMeasurement(): Measurement {
     return Measurement(
         id = this.id.value.toString(),
-        sample = this.sample.toSample(),
+        sample = this.sample?.toSample(),
         operator = this.operator?.toWorker(),
         place = this.place?.toPlace(),
         dateTime = this.dateTime,

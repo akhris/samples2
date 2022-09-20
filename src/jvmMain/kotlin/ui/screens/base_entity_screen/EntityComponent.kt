@@ -24,19 +24,20 @@ import org.kodein.di.LazyDelegate
 import org.kodein.di.instance
 import ui.components.tables.Cell
 import ui.components.tables.IDataTableMapper
+import ui.components.tables.mappers.MeasurementsDataMapper
 import utils.DateTimeConverter
 import utils.log
 import java.util.*
 import kotlin.reflect.KClass
 
-class EntityComponent<T : IEntity>(
+open class EntityComponent<T : IEntity>(
     val type: KClass<out T>,
     private val di: DI,
     componentContext: ComponentContext
 ) : IEntityComponent<T>,
     ComponentContext by componentContext {
 
-    private val scope =
+    protected val scope =
         CoroutineScope(Dispatchers.Default + SupervisorJob())
 
     private val _spec = MutableValue<Specification>(Specification.QueryAll)
@@ -44,20 +45,19 @@ class EntityComponent<T : IEntity>(
 
     override val pagingSpec: Value<Specification.Paginated> = _pagingSpec
 
-    private val navigation = StackNavigation<Config>()
+    private val dialogNav = StackNavigation<Config>()
 
 
     private val _dialogStack =
         childStack(
-            source = navigation,
+            source = dialogNav,
             initialConfiguration = Config.None,
             handleBackButton = true,
             childFactory = ::createChild,
-            key = "nav host stack"
+            key = "entity picker dialog stack"
         )
 
     override val dialogStack: Value<ChildStack<*, IEntityComponent.Dialog>> = _dialogStack
-
 
     private val getEntities: GetEntities<T> by when (type) {
         Sample::class -> di.instance<GetEntities<Sample>>()
@@ -67,6 +67,7 @@ class EntityComponent<T : IEntity>(
         OperationType::class -> di.instance<GetEntities<OperationType>>()
         Worker::class -> di.instance<GetEntities<Worker>>()
         Place::class -> di.instance<GetEntities<Place>>()
+        Measurement::class -> di.instance<GetEntities<Measurement>>()
         else -> throw IllegalArgumentException("unsupported type: $type")
     } as LazyDelegate<GetEntities<T>>
 
@@ -79,6 +80,7 @@ class EntityComponent<T : IEntity>(
         OperationType::class -> di.instance<InsertEntity<OperationType>>()
         Worker::class -> di.instance<InsertEntity<Worker>>()
         Place::class -> di.instance<InsertEntity<Place>>()
+        Measurement::class -> di.instance<InsertEntity<Measurement>>()
         else -> throw IllegalArgumentException("unsupported type: $type")
     } as LazyDelegate<InsertEntity<T>>
 
@@ -90,6 +92,7 @@ class EntityComponent<T : IEntity>(
         OperationType::class -> di.instance<UpdateEntity<OperationType>>()
         Worker::class -> di.instance<UpdateEntity<Worker>>()
         Place::class -> di.instance<UpdateEntity<Place>>()
+        Measurement::class -> di.instance<UpdateEntity<Measurement>>()
         else -> throw IllegalArgumentException("unsupported type: $type")
     } as LazyDelegate<UpdateEntity<T>>
 
@@ -101,6 +104,7 @@ class EntityComponent<T : IEntity>(
         OperationType::class -> di.instance<GetItemsCount<OperationType>>()
         Worker::class -> di.instance<GetItemsCount<Worker>>()
         Place::class -> di.instance<GetItemsCount<Place>>()
+        Measurement::class -> di.instance<GetItemsCount<Measurement>>()
         else -> throw IllegalArgumentException("unsupported type: $type")
     } as LazyDelegate<GetItemsCount<T>>
 
@@ -112,10 +116,11 @@ class EntityComponent<T : IEntity>(
         OperationType::class -> di.instance<IRepositoryCallback<OperationType>>()
         Worker::class -> di.instance<IRepositoryCallback<Worker>>()
         Place::class -> di.instance<IRepositoryCallback<Place>>()
+        Measurement::class -> di.instance<IRepositoryCallback<Measurement>>()
         else -> throw IllegalArgumentException("unsupported type: $type")
     } as LazyDelegate<IRepositoryCallback<T>>
 
-    override val dataMapper: IDataTableMapper<T> by when (type) {
+    private val _dataMapper: IDataTableMapper<T> by when (type) {
         Sample::class -> di.instance<IDataTableMapper<Sample>>()
         SampleType::class -> di.instance<IDataTableMapper<SampleType>>()
         Parameter::class -> di.instance<IDataTableMapper<Parameter>>()
@@ -123,11 +128,22 @@ class EntityComponent<T : IEntity>(
         OperationType::class -> di.instance<IDataTableMapper<OperationType>>()
         Worker::class -> di.instance<IDataTableMapper<Worker>>()
         Place::class -> di.instance<IDataTableMapper<Place>>()
+        Measurement::class -> di.instance<IDataTableMapper<Measurement>>()
         else -> throw IllegalArgumentException("cannot get data table mapper!")
     } as LazyDelegate<IDataTableMapper<T>>
 
+
+    private val _mutableDataMapper = MutableValue<IDataTableMapper<T>>(_dataMapper)
+
+    override val dataMapper: Value<IDataTableMapper<T>> = _mutableDataMapper
+
     private val _state = MutableValue(IEntityComponent.State<T>())
     override val state: Value<IEntityComponent.State<T>> = _state
+
+    protected fun updateDataMapper(reducer: (IDataTableMapper<T>) -> IDataTableMapper<T>) {
+        _mutableDataMapper.reduce(reducer)
+    }
+
 
     override fun insertNewEntity(sampleType: SampleType) {
 
@@ -139,6 +155,7 @@ class EntityComponent<T : IEntity>(
             OperationType::class -> OperationType()
             Worker::class -> Worker()
             Place::class -> Place()
+            Measurement::class -> Measurement()
             else -> throw IllegalArgumentException("cannot get data table mapper!")
         } as? T
 
@@ -149,7 +166,8 @@ class EntityComponent<T : IEntity>(
 
     override fun insertNewEntity(entity: T) {
         scope.launch {
-            insertEntity(InsertEntity.Insert(entity))
+            val result = insertEntity(InsertEntity.Insert(entity))
+            log(result)
         }
     }
 
@@ -174,6 +192,7 @@ class EntityComponent<T : IEntity>(
                             OperationType::class -> (it as? OperationType)?.copy(id = UUID.randomUUID().toString())
                             Worker::class -> (it as? Worker)?.copy(id = UUID.randomUUID().toString())
                             Place::class -> (it as? Place)?.copy(id = UUID.randomUUID().toString())
+                            Measurement::class -> (it as? Measurement)?.copy(id = UUID.randomUUID().toString())
                             else -> throw IllegalArgumentException("cannot get data table mapper!")
                         }
                     }
@@ -216,14 +235,14 @@ class EntityComponent<T : IEntity>(
 
                     row {
                         //header:
-                        dataMapper.columns.forEach {
+                        _dataMapper.columns.forEach {
                             cell(content = it.title)
                         }
                     }
                     entities.forEach { entity ->
                         row {
-                            dataMapper.columns.forEach { column ->
-                                val cell = dataMapper.getCell(entity, column)
+                            _dataMapper.columns.forEach { column ->
+                                val cell = _dataMapper.getCell(entity, column)
                                 cell(
                                     when (cell) {
                                         is Cell.DateTimeCell -> cell.value?.let { DateTimeConverter.dateTimeToString(it) }
@@ -281,7 +300,7 @@ class EntityComponent<T : IEntity>(
     }
 
     override fun dismissDialog() {
-        navigation.replaceCurrent(Config.None)
+        dialogNav.replaceCurrent(Config.None)
     }
 
     override fun showEntityPickerDialog(
@@ -290,7 +309,7 @@ class EntityComponent<T : IEntity>(
         onSelectionChanged: (IEntity?) -> Unit,
         columnName: String
     ) {
-        navigation.replaceCurrent(Config.EntityPickerDialog(entity, entityClass, onSelectionChanged, columnName))
+        dialogNav.replaceCurrent(Config.EntityPickerDialog(entity, entityClass, onSelectionChanged, columnName))
     }
 
     private suspend fun invalidateItemsCount() {
@@ -311,10 +330,11 @@ class EntityComponent<T : IEntity>(
     }
 
     init {
-
-        lifecycle.subscribe(onDestroy = {
-            scope.coroutineContext.cancelChildren()
-        })
+        componentContext
+            .lifecycle
+            .subscribe(onDestroy = {
+                scope.coroutineContext.cancelChildren()
+            })
 
         scope.launch {
             //invalidate pagination params
