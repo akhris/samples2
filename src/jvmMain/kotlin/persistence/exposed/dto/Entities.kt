@@ -28,6 +28,8 @@ class EntityParameter(id: EntityID<UUID>) : UUIDEntity(id) {
     val sampleType by EntitySampleType referencedOn Tables.Parameters.sampleType
     val description by Tables.Parameters.description
     val position by Tables.Parameters.position
+    val unit by EntityUnit optionalReferencedOn Tables.Parameters.unit
+    val factor by Tables.Parameters.factor
 }
 
 class EntityPlace(id: EntityID<UUID>) : UUIDEntity(id) {
@@ -73,7 +75,6 @@ class EntityMeasurementResult(id: EntityID<Int>) : IntEntity(id) {
     val measurement by EntityMeasurement referencedOn Tables.MeasurementResults.measurement
     val parameter by EntityParameter referencedOn Tables.MeasurementResults.parameter
     val value by Tables.MeasurementResults.value
-    val unit by Tables.MeasurementResults.unit
 }
 
 class EntityMeasurement(id: EntityID<UUID>) : UUIDEntity(id) {
@@ -86,4 +87,11 @@ class EntityMeasurement(id: EntityID<UUID>) : UUIDEntity(id) {
     val comment by Tables.Measurements.comment
     val conditions by Tables.Measurements.conditions
     val results by EntityMeasurementResult referrersOn Tables.MeasurementResults.measurement
+}
+
+class EntityUnit(id: EntityID<UUID>) : UUIDEntity(id) {
+    companion object : UUIDEntityClass<EntityUnit>(Tables.Units)
+
+    val unit by Tables.Units.unit
+    val isMultipliable by Tables.Units.isMultipliable
 }

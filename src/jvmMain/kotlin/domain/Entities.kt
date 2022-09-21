@@ -89,7 +89,9 @@ data class Parameter(
     val name: String = "",
     val sampleType: SampleType,
     val description: String = "",
-    val position: Int? = null
+    val position: Int? = null,
+    val unit: Unit? = null,
+    val factor: Int? = null
 ) : IEntity {
     override fun toString() = name
 }
@@ -116,11 +118,17 @@ data class Norm(
     // TODO: add values range for norm (min, max, avg)
 ) : IEntity
 
+data class Unit(
+    override val id: String = UUID.randomUUID().toString(),
+    val unit: String = "",  //A, V, Ohm
+    val isMultipliable: Boolean = false //can be prefixed with multiplier: -k, -u, -M, -m, ...
+) : IEntity {
+    override fun toString(): String = unit
+}
 
 data class MeasurementResult(
     val parameter: Parameter,
-    val value: String,
-    val unit: String
+    val value: String
 )
 
 /**

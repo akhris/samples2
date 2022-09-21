@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import org.kodein.di.*
 import persistence.exposed.dao.*
 import persistence.repositories.BaseRepository
+import ui.components.tables.IDataTableMapper
 import ui.components.tables.mappers.*
 
 /**
@@ -14,10 +15,11 @@ import ui.components.tables.mappers.*
 inline fun <reified ENTITY : IEntity> getEntityModule(
     name: String,
     crossinline getDao: DirectDI.() -> IBaseDao<ENTITY>,
+    crossinline getDataMapper: DirectDI.() -> IDataTableMapper<ENTITY>,
     crossinline additionalBindings: DI.Builder.() -> Unit = {}
 ): DI.Module = DI.Module(name) {
     bindSingleton { getDao() }
-//    bindSingleton { getDataMapper() }   //fixme getDataMapper has to be mapped from factory for Measurement Entity
+    bindSingleton { getDataMapper() }
     bindSingleton<BaseRepository<ENTITY>> { BaseRepository(instance()) }
     bindSingleton<IRepository<ENTITY>> { instance<BaseRepository<ENTITY>>() }
     bindSingleton<IRepositoryCallback<ENTITY>> { instance<BaseRepository<ENTITY>>() }
@@ -34,37 +36,46 @@ val samplesModule =
     getEntityModule(
         name = "samples module",
         getDao = { SamplesDao() },
-        additionalBindings = { bindSingleton { SamplesDataMapper() } })
+        getDataMapper = { SamplesDataMapper() })
+
 val sampleTypesModule = getEntityModule(
     name = "sample types module",
     getDao = { SampleTypesDao() },
-    additionalBindings = { bindSingleton { SampleTypesDataMapper() } })
+    getDataMapper = { SampleTypesDataMapper() })
+
 val parametersModule = getEntityModule(
     name = "parameters module",
     getDao = { ParametersDao() },
-    additionalBindings = { bindSingleton { ParametersDataMapper() } })
+    getDataMapper = { ParametersDataMapper() })
 val operationsModule = getEntityModule(
     name = "operations module",
     getDao = { OperationsDao() },
-    additionalBindings = { bindSingleton { OperationsDataMapper() } })
+    getDataMapper = { OperationsDataMapper() })
 val operationTypesModule = getEntityModule(
     name = "operation types module",
     getDao = { OperationTypesDao() },
-    additionalBindings = { bindSingleton { OperationTypesDataMapper() } })
+    getDataMapper = { OperationTypesDataMapper() })
 val workersModule =
     getEntityModule(
         name = "workers module",
         getDao = { WorkerDao() },
-        additionalBindings = { bindSingleton { WorkersDataMapper() } })
+        getDataMapper = { WorkersDataMapper() })
 val placesModule =
     getEntityModule(
         name = "places module",
         getDao = { PlacesDao() },
-        additionalBindings = { bindSingleton { PlacesDataMapper() } })
+        getDataMapper = { PlacesDataMapper() })
 
 val measurementsModule =
     getEntityModule(
         name = "measurements module",
         getDao = { MeasurementsDao() },
-        additionalBindings = { bindSingleton { MeasurementsDataMapper() } }
+        getDataMapper = { MeasurementsDataMapper() }
+    )
+
+val unitsModule =
+    getEntityModule(
+        name = "units module",
+        getDao = { UnitsDao() },
+        getDataMapper = { UnitsDataMapper() }
     )

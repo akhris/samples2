@@ -47,7 +47,6 @@ class MeasurementsDao : BaseExposedDao<Measurement, EntityMeasurement, Tables.Me
                     .MeasurementResults
                     .insert {
                         it[value] = mr.value
-                        it[unit] = mr.unit
                         it[measurement] = entity.id.toUUID()
                         it[parameter] = mr.parameter.id.toUUID()
                     }
@@ -66,7 +65,6 @@ class MeasurementsDao : BaseExposedDao<Measurement, EntityMeasurement, Tables.Me
                     .MeasurementResults
                     .insert {
                         it[value] = mr.value
-                        it[unit] = mr.unit
                         it[measurement] = entity.id.toUUID()
                         it[parameter] = mr.parameter.id.toUUID()
                     }

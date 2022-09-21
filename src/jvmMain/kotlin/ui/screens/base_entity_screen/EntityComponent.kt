@@ -67,6 +67,7 @@ open class EntityComponent<T : IEntity>(
         OperationType::class -> di.instance<GetEntities<OperationType>>()
         Worker::class -> di.instance<GetEntities<Worker>>()
         Place::class -> di.instance<GetEntities<Place>>()
+        domain.Unit::class -> di.instance<GetEntities<domain.Unit>>()
         Measurement::class -> di.instance<GetEntities<Measurement>>()
         else -> throw IllegalArgumentException("unsupported type: $type")
     } as LazyDelegate<GetEntities<T>>
@@ -80,6 +81,7 @@ open class EntityComponent<T : IEntity>(
         OperationType::class -> di.instance<InsertEntity<OperationType>>()
         Worker::class -> di.instance<InsertEntity<Worker>>()
         Place::class -> di.instance<InsertEntity<Place>>()
+        domain.Unit::class -> di.instance<InsertEntity<domain.Unit>>()
         Measurement::class -> di.instance<InsertEntity<Measurement>>()
         else -> throw IllegalArgumentException("unsupported type: $type")
     } as LazyDelegate<InsertEntity<T>>
@@ -92,6 +94,7 @@ open class EntityComponent<T : IEntity>(
         OperationType::class -> di.instance<UpdateEntity<OperationType>>()
         Worker::class -> di.instance<UpdateEntity<Worker>>()
         Place::class -> di.instance<UpdateEntity<Place>>()
+        domain.Unit::class -> di.instance<UpdateEntity<domain.Unit>>()
         Measurement::class -> di.instance<UpdateEntity<Measurement>>()
         else -> throw IllegalArgumentException("unsupported type: $type")
     } as LazyDelegate<UpdateEntity<T>>
@@ -104,6 +107,7 @@ open class EntityComponent<T : IEntity>(
         OperationType::class -> di.instance<GetItemsCount<OperationType>>()
         Worker::class -> di.instance<GetItemsCount<Worker>>()
         Place::class -> di.instance<GetItemsCount<Place>>()
+        domain.Unit::class -> di.instance<GetItemsCount<domain.Unit>>()
         Measurement::class -> di.instance<GetItemsCount<Measurement>>()
         else -> throw IllegalArgumentException("unsupported type: $type")
     } as LazyDelegate<GetItemsCount<T>>
@@ -116,6 +120,7 @@ open class EntityComponent<T : IEntity>(
         OperationType::class -> di.instance<IRepositoryCallback<OperationType>>()
         Worker::class -> di.instance<IRepositoryCallback<Worker>>()
         Place::class -> di.instance<IRepositoryCallback<Place>>()
+        domain.Unit::class -> di.instance<IRepositoryCallback<domain.Unit>>()
         Measurement::class -> di.instance<IRepositoryCallback<Measurement>>()
         else -> throw IllegalArgumentException("unsupported type: $type")
     } as LazyDelegate<IRepositoryCallback<T>>
@@ -128,6 +133,7 @@ open class EntityComponent<T : IEntity>(
         OperationType::class -> di.instance<IDataTableMapper<OperationType>>()
         Worker::class -> di.instance<IDataTableMapper<Worker>>()
         Place::class -> di.instance<IDataTableMapper<Place>>()
+        domain.Unit::class -> di.instance<IDataTableMapper<domain.Unit>>()
         Measurement::class -> di.instance<IDataTableMapper<Measurement>>()
         else -> throw IllegalArgumentException("cannot get data table mapper!")
     } as LazyDelegate<IDataTableMapper<T>>
@@ -155,8 +161,9 @@ open class EntityComponent<T : IEntity>(
             OperationType::class -> OperationType()
             Worker::class -> Worker()
             Place::class -> Place()
+            domain.Unit::class -> domain.Unit()
             Measurement::class -> Measurement()
-            else -> throw IllegalArgumentException("cannot get data table mapper!")
+            else -> throw IllegalArgumentException("cannot create new entity of type: $type!")
         } as? T
 
         entity?.let {
@@ -250,6 +257,8 @@ open class EntityComponent<T : IEntity>(
 
                                         is Cell.EditTextCell -> cell.value
                                         is Cell.EntityCell -> cell.entity?.toString() ?: ""
+                                        is Cell.BooleanCell -> TODO()
+                                        is Cell.ListCell -> TODO()
                                     }
                                 )
                             }

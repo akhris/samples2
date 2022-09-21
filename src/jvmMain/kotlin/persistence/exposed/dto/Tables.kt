@@ -5,6 +5,7 @@ import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.datetime
+import persistence.exposed.dto.Tables.MeasurementResults.nullable
 
 object Tables {
 
@@ -36,6 +37,8 @@ object Tables {
         val sampleType = reference(name = "sample_type", foreign = SampleTypes, onDelete = ReferenceOption.CASCADE)
         val description = text(name = "description").nullable()
         val position = integer(name = "position").nullable()
+        val unit = reference(name = "unit", foreign = Units).nullable()
+        val factor = integer(name = "factor").nullable()
     }
 
     object Places : UUIDTable() {
@@ -74,6 +77,10 @@ object Tables {
         val place = reference(name = "place", foreign = Places, onDelete = ReferenceOption.CASCADE).nullable()
     }
 
+    object Units : UUIDTable() {
+        val unit = text(name = "unit")
+        val isMultipliable = bool(name = "isMultipliable").default(false)
+    }
 
     object Measurements : UUIDTable() {
         val sample = reference(name = "sample", foreign = Samples, onDelete = ReferenceOption.CASCADE).nullable()
@@ -88,6 +95,5 @@ object Tables {
         val measurement = reference(name = "measurement", foreign = Measurements, onDelete = ReferenceOption.CASCADE)
         val parameter = reference(name = "parameters", foreign = Parameters, onDelete = ReferenceOption.CASCADE)
         val value = text(name = "value").nullable()
-        val unit = text(name = "unit").nullable()
     }
 }

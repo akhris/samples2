@@ -11,5 +11,6 @@ val di = DI {
     import(workersModule)
     import(placesModule)
     import(measurementsModule)
+    import(unitsModule)
 }
 

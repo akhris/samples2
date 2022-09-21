@@ -403,10 +403,11 @@ private fun BoxScope.RenderCell(
         is Cell.EditTextCell -> RenderEditTextCell(modifier, cell, onCellChanged, columnAlignment)
         is Cell.EntityCell -> RenderEntityCell(modifier, cell, onCellChanged, columnAlignment)
         is Cell.DateTimeCell -> RenderDateTimeCell(modifier, cell, columnAlignment)
+        is Cell.BooleanCell -> RenderBooleanCell(modifier, cell, onCellChanged, columnAlignment)
+        is Cell.ListCell -> TODO()
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun BoxScope.RenderEditTextCell(
     modifier: Modifier = Modifier,
@@ -442,7 +443,28 @@ private fun BoxScope.RenderEditTextCell(
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun BoxScope.RenderBooleanCell(
+    modifier: Modifier = Modifier,
+    cell: Cell.BooleanCell,
+    onCellChanged: (Cell) -> Unit,
+    columnAlignment: ColumnAlignment
+) {
+    var value by remember(cell) { mutableStateOf(cell.value) }
+
+    Switch(checked = value, onCheckedChange = { value = it })
+
+    //debounce:
+    LaunchedEffect(value) {
+        if (value == cell.value) {
+            return@LaunchedEffect
+        }
+        delay(UiSettings.Debounce.debounceTime)
+        onCellChanged(cell.copy(value = value))
+    }
+}
+
+
 @Composable
 private fun BoxScope.RenderDateTimeCell(
     modifier: Modifier = Modifier,
@@ -533,7 +555,9 @@ sealed class Cell {
     data class EntityCell(val entity: IEntity?, val entityClass: KClass<out IEntity>) : Cell()
 
     data class DateTimeCell(val value: LocalDateTime?) : Cell()
-//    data class ReferenceCell() : Cell()
+    data class BooleanCell(val value: Boolean) : Cell()
+
+    data class ListCell(val values: List<String>) : Cell()
 }
 
 sealed class SelectionMode<T> {

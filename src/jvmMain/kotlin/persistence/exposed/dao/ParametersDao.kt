@@ -18,6 +18,8 @@ class ParametersDao : BaseExposedDao<Parameter, EntityParameter, Tables.Paramete
         it[description] = entity.description
         it[position] = entity.position
         it[sampleType] = entity.sampleType.id.toUUID()
+        it[unit] = entity.unit?.id?.toUUID()
+        it[factor] = entity.factor
     }
 
     override fun updateStatement(entity: Parameter): Tables.Parameters.(UpdateStatement) -> Unit = {
@@ -25,6 +27,8 @@ class ParametersDao : BaseExposedDao<Parameter, EntityParameter, Tables.Paramete
         it[description] = entity.description
         it[position] = entity.position
         it[sampleType] = entity.sampleType.id.toUUID()
+        it[unit] = entity.unit?.id?.toUUID()
+        it[factor] = entity.factor
     }
 
     override fun mapToEntity(expEntity: EntityParameter): Parameter = expEntity.toParameter()

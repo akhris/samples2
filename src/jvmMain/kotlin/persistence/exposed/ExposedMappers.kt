@@ -1,6 +1,7 @@
 package persistence
 
 import domain.*
+import domain.Unit
 import persistence.exposed.dto.*
 
 fun EntitySampleType.toSampleType(): SampleType {
@@ -28,7 +29,9 @@ fun EntityParameter.toParameter(): Parameter {
         name = this.name,
         sampleType = this.sampleType.toSampleType(),
         description = this.description ?: "",
-        position = this.position
+        position = this.position,
+        unit = this.unit?.toUnit(),
+        factor = this.factor
     )
 }
 
@@ -77,5 +80,12 @@ fun EntityMeasurement.toMeasurement(): Measurement {
 }
 
 fun EntityMeasurementResult.toMeasurementResult(): MeasurementResult {
-    return MeasurementResult(parameter = this.parameter.toParameter(), value = this.value ?: "", unit = this.unit ?: "")
+    return MeasurementResult(
+        parameter = this.parameter.toParameter(),
+        value = this.value ?: ""
+    )
+}
+
+fun EntityUnit.toUnit(): Unit {
+    return Unit(id = this.id.value.toString(), unit = this.unit, isMultipliable = this.isMultipliable)
 }

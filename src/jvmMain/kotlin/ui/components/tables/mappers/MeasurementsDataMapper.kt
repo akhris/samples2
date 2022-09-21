@@ -69,7 +69,7 @@ data class MeasurementsDataMapper(val parameters: List<Parameter> = listOf()) : 
                 (cell as? Cell.EditTextCell)?.let { textCell ->
                     val changedResult =
                         item.results.find { res -> res.parameter.id == col.parameter.id }?.copy(value = textCell.value)
-                            ?: MeasurementResult(parameter = col.parameter, value = textCell.value, unit = "")
+                            ?: MeasurementResult(parameter = col.parameter, value = textCell.value)
 
 
                     item.copy(results = item.results.replaceOrAdd(changedResult) {
