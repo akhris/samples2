@@ -5,7 +5,7 @@ import org.jetbrains.exposed.sql.statements.InsertStatement
 import org.jetbrains.exposed.sql.statements.UpdateStatement
 import persistence.exposed.dto.EntityUnit
 import persistence.exposed.dto.Tables
-import persistence.toUnit
+import persistence.exposed.toUnit
 
 class UnitsDao : BaseExposedDao<Unit, EntityUnit, Tables.Units>(
     table = Tables.Units,

@@ -35,8 +35,10 @@ class OperationTypesDataMapper : IDataTableMapper<OperationType> {
     }
 
     private sealed class Column(val id: ColumnId) {
-        object Name : Column(ColumnId(Tables.OperationTypes.name.name, "Имя", ColumnWidth.Wide))
-        object Description : Column(ColumnId(Tables.OperationTypes.description.name, "Описание", ColumnWidth.Wide))
+        object Name : Column(ColumnId(key = Tables.OperationTypes.name.name, title = "Имя", width = ColumnWidth.Wide))
+        object Description :
+            Column(ColumnId(key = Tables.OperationTypes.description.name, title = "Описание", width = ColumnWidth.Wide))
+
         companion object {
             fun requireColumn(id: ColumnId): Column {
                 return when (id.key) {

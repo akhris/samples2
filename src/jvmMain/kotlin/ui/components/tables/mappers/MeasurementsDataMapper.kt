@@ -83,12 +83,12 @@ data class MeasurementsDataMapper(val parameters: List<Parameter> = listOf()) : 
 
     override fun getCell(item: Measurement, columnId: ColumnId): Cell {
         return when (val col = requireColumn(columnId)) {
-            Column.Sample -> Cell.EntityCell(entity = item.sample, Sample::class)
+            Column.Sample -> Cell.EntityCell.SimpleEntityCell(entity = item.sample, Sample::class)
             Column.Comment -> Cell.EditTextCell(value = item.comment ?: "")
             Column.Conditions -> Cell.EditTextCell(value = item.conditions ?: "")
             Column.DateTime -> Cell.DateTimeCell(value = item.dateTime)
-            Column.Operator -> Cell.EntityCell(entity = item.operator, Worker::class)
-            Column.Place -> Cell.EntityCell(entity = item.place, Place::class)
+            Column.Operator -> Cell.EntityCell.SimpleEntityCell(entity = item.operator, Worker::class)
+            Column.Place -> Cell.EntityCell.SimpleEntityCell(entity = item.place, Place::class)
             is Column.Result -> {
                 //todo make Cell.ResultCell with unit
                 Cell.EditTextCell(value = item.results.find { it.parameter.id == col.parameter.id }?.value ?: "")
@@ -120,7 +120,14 @@ data class MeasurementsDataMapper(val parameters: List<Parameter> = listOf()) : 
         object Comment : Column(ColumnId(Tables.Measurements.comment.name, "Комментарий"))
         object Conditions : Column(ColumnId(Tables.Measurements.conditions.name, "Условия"))
         class Result(val parameter: Parameter) :
-            Column(ColumnId(parameter.id, title = parameter.name, width = ColumnWidth.Small))
+            Column(
+                ColumnId(
+                    parameter.id,
+                    title = parameter.name,
+                    width = ColumnWidth.Small,
+                    secondaryText = parameter.unit?.unit?.let { ", $it" } ?: ""
+                )
+            )
 
     }
 }

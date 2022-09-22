@@ -20,8 +20,8 @@ class ParametersDataMapper : IDataTableMapper<Parameter> {
         return when (Column.requireColumn(columnId)) {
             Column.Description -> (cell as? Cell.EditTextCell)?.let { item.copy(description = it.value) }
             Column.Name -> (cell as? Cell.EditTextCell)?.let { item.copy(name = it.value) }
-            Column.Unit -> (cell as? Cell.EntityCell)?.let {
-                item.copy(unit = it.entity as? Unit)
+            Column.Unit -> (cell as? Cell.EntityCell.UnitCell)?.let {
+                item.copy(unit = it.entity as? Unit, factor = it.factor)
             }
         } ?: item
     }
@@ -30,7 +30,12 @@ class ParametersDataMapper : IDataTableMapper<Parameter> {
         return when (Column.requireColumn(columnId)) {
             Column.Description -> Cell.EditTextCell(value = item.description)
             Column.Name -> Cell.EditTextCell(value = item.name)
-            Column.Unit -> Cell.EntityCell(entity = item.unit, entityClass = Unit::class)
+            Column.Unit -> Cell.EntityCell.UnitCell(
+                entity = item.unit,
+                entityClass = Unit::class,
+                unit = item.unit,
+                factor = item.factor
+            )
         }
     }
 

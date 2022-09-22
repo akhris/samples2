@@ -36,11 +36,22 @@ class SamplesDataMapper :
 
     private sealed class Column(val id: ColumnId) {
         object ID :
-            Column(ColumnId(Tables.Samples.sampleID.name, "ID", ColumnWidth.Small, alignment = ColumnAlignment.End))
+            Column(
+                ColumnId(
+                    key = Tables.Samples.sampleID.name,
+                    title = "ID",
+                    width = ColumnWidth.Small,
+                    alignment = ColumnAlignment.End
+                )
+            )
 
-        object Description : Column(ColumnId(Tables.Samples.description.name, "Описание", ColumnWidth.Wide))
-        object Comment : Column(ColumnId(Tables.Samples.comment.name, "Комментарий", ColumnWidth.Wide))
-        object OrderId : Column(ColumnId(Tables.Samples.orderID.name, "Партия"))
+        object Description :
+            Column(ColumnId(key = Tables.Samples.description.name, title = "Описание", width = ColumnWidth.Wide))
+
+        object Comment :
+            Column(ColumnId(key = Tables.Samples.comment.name, title = "Комментарий", width = ColumnWidth.Wide))
+
+        object OrderId : Column(ColumnId(key = Tables.Samples.orderID.name, title = "Партия"))
 
         companion object {
             fun requireColumn(id: ColumnId): Column {

@@ -5,7 +5,7 @@ import org.jetbrains.exposed.sql.statements.InsertStatement
 import org.jetbrains.exposed.sql.statements.UpdateStatement
 import persistence.exposed.dto.EntitySampleType
 import persistence.exposed.dto.Tables
-import persistence.toSampleType
+import persistence.exposed.toSampleType
 
 class SampleTypesDao : BaseExposedDao<SampleType, EntitySampleType, Tables.SampleTypes>(
     table = Tables.SampleTypes,

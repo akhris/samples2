@@ -5,7 +5,7 @@ import org.jetbrains.exposed.sql.statements.InsertStatement
 import org.jetbrains.exposed.sql.statements.UpdateStatement
 import persistence.exposed.dto.EntityOperationType
 import persistence.exposed.dto.Tables
-import persistence.toOperationType
+import persistence.exposed.toOperationType
 
 class OperationTypesDao : BaseExposedDao<OperationType, EntityOperationType, Tables.OperationTypes>(
     table = Tables.OperationTypes,

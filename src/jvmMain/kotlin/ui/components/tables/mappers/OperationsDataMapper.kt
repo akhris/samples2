@@ -47,22 +47,40 @@ class OperationsDataMapper : IDataTableMapper<Operation> {
     override fun getCell(item: Operation, columnId: ColumnId): Cell {
         return when (Column.requireColumn(columnId)) {
             Column.DateTime -> Cell.DateTimeCell(value = item.dateTime)
-            Column.OperationType -> Cell.EntityCell(entity = item.operationType, OperationType::class)
-            Column.Place -> Cell.EntityCell(entity = item.place, Place::class)
-            Column.Sample -> Cell.EntityCell(entity = item.sample, Sample::class)
-            Column.Worker -> Cell.EntityCell(entity = item.worker, Worker::class)
+            Column.OperationType -> Cell.EntityCell.SimpleEntityCell(entity = item.operationType, OperationType::class)
+            Column.Place -> Cell.EntityCell.SimpleEntityCell(entity = item.place, Place::class)
+            Column.Sample -> Cell.EntityCell.SimpleEntityCell(entity = item.sample, Sample::class)
+            Column.Worker -> Cell.EntityCell.SimpleEntityCell(entity = item.worker, Worker::class)
         }
     }
 
 
     private sealed class Column(val id: ColumnId) {
         object Sample :
-            Column(ColumnId(Tables.Operations.sample.name, "Образец", ColumnWidth.Small, ColumnAlignment.End))
+            Column(
+                ColumnId(
+                    key = Tables.Operations.sample.name,
+                    title = "Образец",
+                    width = ColumnWidth.Small,
+                    alignment = ColumnAlignment.End
+                )
+            )
 
-        object OperationType : Column(ColumnId(Tables.Operations.operationType.name, "Тип операции"))
-        object DateTime : Column(ColumnId(Tables.Operations.dateTime.name, "Дата", ColumnWidth.Wide))
-        object Worker : Column(ColumnId(Tables.Operations.worker.name, "Сотрудник", ColumnWidth.Wide))
-        object Place : Column(ColumnId(Tables.Operations.place.name, "Место", ColumnWidth.Small, ColumnAlignment.End))
+        object OperationType : Column(ColumnId(key = Tables.Operations.operationType.name, title = "Тип операции"))
+        object DateTime :
+            Column(ColumnId(key = Tables.Operations.dateTime.name, title = "Дата", width = ColumnWidth.Wide))
+
+        object Worker :
+            Column(ColumnId(key = Tables.Operations.worker.name, title = "Сотрудник", width = ColumnWidth.Wide))
+
+        object Place : Column(
+            ColumnId(
+                key = Tables.Operations.place.name,
+                title = "Место",
+                width = ColumnWidth.Small,
+                alignment = ColumnAlignment.End
+            )
+        )
 
 
         companion object {

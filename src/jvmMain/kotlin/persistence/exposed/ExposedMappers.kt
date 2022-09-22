@@ -1,7 +1,8 @@
-package persistence
+package persistence.exposed
 
 import domain.*
 import domain.Unit
+import domain.valueobjects.Factor
 import persistence.exposed.dto.*
 
 fun EntitySampleType.toSampleType(): SampleType {
@@ -31,7 +32,7 @@ fun EntityParameter.toParameter(): Parameter {
         description = this.description ?: "",
         position = this.position,
         unit = this.unit?.toUnit(),
-        factor = this.factor
+        factor = this.factor?.let { Factor.parse(it) }
     )
 }
 

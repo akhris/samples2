@@ -169,7 +169,12 @@ private fun <T : IEntity> ShowDataTableForGroup(
                                 val updatedItem = mapper.updateItem(
                                     item = item,
                                     columnId = column,
-                                    cell = cell.copy(entity = it)
+                                    cell = when(cell){
+                                        is Cell.EntityCell.SimpleEntityCell -> cell.copy(entity = it)
+                                        is Cell.EntityCell.UnitCell -> cell.copy(entity = it)
+                                    }
+
+
                                 )
                                 component.updateEntity(updatedItem)
                             },
@@ -194,6 +199,9 @@ private fun <T : IEntity> ShowDataTableForGroup(
                     is Cell.EditTextCell -> {
 
                     }
+
+                    is Cell.BooleanCell -> TODO()
+                    is Cell.ListCell -> TODO()
                 }
             },
             //wrapping selection mode to make additional actions available (duplicating/deleting)

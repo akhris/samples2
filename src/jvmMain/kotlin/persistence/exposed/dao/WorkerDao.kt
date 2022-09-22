@@ -5,7 +5,7 @@ import org.jetbrains.exposed.sql.statements.InsertStatement
 import org.jetbrains.exposed.sql.statements.UpdateStatement
 import persistence.exposed.dto.EntityWorker
 import persistence.exposed.dto.Tables
-import persistence.toWorker
+import persistence.exposed.toWorker
 import utils.toUUID
 
 class WorkerDao : BaseExposedDao<Worker, EntityWorker, Tables.Workers>(

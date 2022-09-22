@@ -2,14 +2,11 @@ package persistence.exposed.dao
 
 import domain.Measurement
 import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.statements.BatchUpdateStatement
 import org.jetbrains.exposed.sql.statements.InsertStatement
 import org.jetbrains.exposed.sql.statements.UpdateStatement
 import persistence.exposed.dto.EntityMeasurement
-import persistence.exposed.dto.EntityMeasurementResult
 import persistence.exposed.dto.Tables
-import persistence.toMeasurement
+import persistence.exposed.toMeasurement
 import utils.log
 import utils.toUUID
 

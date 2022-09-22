@@ -32,6 +32,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import domain.IEntity
+import domain.valueobjects.Factor
+import domain.valueobjects.factors
 import kotlinx.coroutines.delay
 import ui.UiSettings
 import utils.DateTimeConverter
@@ -231,6 +233,17 @@ fun <T> DataTable(
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
+                                if (column.secondaryText.isNotEmpty()) {
+                                    Text(
+                                        text = column.secondaryText,
+                                        style = MaterialTheme.typography.caption.copy(
+                                            color = MaterialTheme.colors.primaryVariant
+                                        ),
+//                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
                                 //sorting icon:
                                 if (onSortingChanged != null && sorting?.first == column) {
                                     IconButton(onClick = {
@@ -401,7 +414,8 @@ private fun BoxScope.RenderCell(
 ) {
     when (cell) {
         is Cell.EditTextCell -> RenderEditTextCell(modifier, cell, onCellChanged, columnAlignment)
-        is Cell.EntityCell -> RenderEntityCell(modifier, cell, onCellChanged, columnAlignment)
+        is Cell.EntityCell.UnitCell -> RenderUnitCell(modifier, cell, onCellChanged, columnAlignment)
+        is Cell.EntityCell.SimpleEntityCell -> RenderEntityCell(modifier, cell, onCellChanged, columnAlignment)
         is Cell.DateTimeCell -> RenderDateTimeCell(modifier, cell, columnAlignment)
         is Cell.BooleanCell -> RenderBooleanCell(modifier, cell, onCellChanged, columnAlignment)
         is Cell.ListCell -> TODO()
@@ -508,10 +522,69 @@ private fun BoxScope.RenderEntityCell(
     )
 }
 
+@Composable
+private fun BoxScope.RenderUnitCell(
+    modifier: Modifier = Modifier,
+    cell: Cell.EntityCell.UnitCell,
+    onCellChanged: (Cell) -> Unit,
+    columnAlignment: ColumnAlignment
+) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        if (cell.unit?.isMultipliable == true) {
+            var showFactorsList by remember { mutableStateOf(false) }
+
+            Text(text = (cell.factor ?: Factor.NoFactor).name, modifier = Modifier.clickable {
+                //show factors list to choose from:
+                showFactorsList = true
+            }, color = MaterialTheme.colors.secondaryVariant)
+
+            DropdownMenu(
+                expanded = showFactorsList,
+                onDismissRequest = { showFactorsList = false }
+            ) {
+                factors
+                    .forEach { factor ->
+                        DropdownMenuItem(
+                            modifier = Modifier.background(
+                                if (factor == cell.factor) MaterialTheme.colors.secondary.copy(alpha = 0.5f) else MaterialTheme.colors.surface
+                            ),
+                            onClick = {
+                            onCellChanged(cell.copy(factor = factor))
+                            showFactorsList = false
+                        }) {
+                            Text(
+                                text = "${factor.prefix}: ${factor.name}"
+
+                            )
+                        }
+                    }
+            }
+
+        }
+        Text(
+            modifier = modifier, text = cell.entity?.toString() ?: "",
+            style = LocalTextStyle.current.copy(
+                textAlign = when (columnAlignment) {
+                    ColumnAlignment.Center -> TextAlign.Center
+                    ColumnAlignment.End -> TextAlign.End
+                    ColumnAlignment.Start -> TextAlign.Start
+                }
+            )
+        )
+    }
+}
+
+@Composable
+private fun ShowFactorsList(modifier: Modifier = Modifier) {
+
+
+}
+
 
 data class ColumnId(
     val key: String,    //might correspond to exposed column name for working filtering, sorting and grouping
     val title: String,
+    val secondaryText: String = "",
     val width: ColumnWidth = ColumnWidth.Normal,
     val alignment: ColumnAlignment = ColumnAlignment.Start
 )
@@ -552,12 +625,31 @@ fun IDataTableMapper<*>.getTableWidth(): Dp {
 
 sealed class Cell {
     data class EditTextCell(val value: String) : Cell()
-    data class EntityCell(val entity: IEntity?, val entityClass: KClass<out IEntity>) : Cell()
+    sealed class EntityCell : Cell() {
+
+        abstract val entity: IEntity?
+        abstract val entityClass: KClass<out IEntity>
+
+        data class SimpleEntityCell(
+            override val entity: IEntity?,
+            override val entityClass: KClass<out IEntity>,
+        ) : EntityCell()
+
+        data class UnitCell(
+            override val entity: IEntity?,
+            override val entityClass: KClass<out IEntity>,
+            val unit: domain.Unit?, //fixme unit is entity! maybe add some tag: Any? value and use it for factor property
+            val factor: Factor?
+        ) :
+            EntityCell()
+    }
 
     data class DateTimeCell(val value: LocalDateTime?) : Cell()
     data class BooleanCell(val value: Boolean) : Cell()
 
     data class ListCell(val values: List<String>) : Cell()
+
+
 }
 
 sealed class SelectionMode<T> {

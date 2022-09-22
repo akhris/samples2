@@ -5,7 +5,7 @@ import org.jetbrains.exposed.sql.statements.InsertStatement
 import org.jetbrains.exposed.sql.statements.UpdateStatement
 import persistence.exposed.dto.EntityParameter
 import persistence.exposed.dto.Tables
-import persistence.toParameter
+import persistence.exposed.toParameter
 import utils.toUUID
 
 class ParametersDao : BaseExposedDao<Parameter, EntityParameter, Tables.Parameters>(
@@ -19,7 +19,7 @@ class ParametersDao : BaseExposedDao<Parameter, EntityParameter, Tables.Paramete
         it[position] = entity.position
         it[sampleType] = entity.sampleType.id.toUUID()
         it[unit] = entity.unit?.id?.toUUID()
-        it[factor] = entity.factor
+        it[factor] = entity.factor?.factor
     }
 
     override fun updateStatement(entity: Parameter): Tables.Parameters.(UpdateStatement) -> Unit = {
@@ -28,7 +28,7 @@ class ParametersDao : BaseExposedDao<Parameter, EntityParameter, Tables.Paramete
         it[position] = entity.position
         it[sampleType] = entity.sampleType.id.toUUID()
         it[unit] = entity.unit?.id?.toUUID()
-        it[factor] = entity.factor
+        it[factor] = entity.factor?.factor
     }
 
     override fun mapToEntity(expEntity: EntityParameter): Parameter = expEntity.toParameter()

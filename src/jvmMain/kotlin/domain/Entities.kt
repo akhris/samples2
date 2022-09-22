@@ -1,5 +1,6 @@
 package domain
 
+import domain.valueobjects.Factor
 import kotlinx.serialization.Serializable
 import java.time.LocalDateTime
 import java.util.*
@@ -91,7 +92,7 @@ data class Parameter(
     val description: String = "",
     val position: Int? = null,
     val unit: Unit? = null,
-    val factor: Int? = null
+    val factor: Factor? = null
 ) : IEntity {
     override fun toString() = name
 }

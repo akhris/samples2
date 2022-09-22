@@ -5,7 +5,7 @@ import org.jetbrains.exposed.sql.statements.InsertStatement
 import org.jetbrains.exposed.sql.statements.UpdateStatement
 import persistence.exposed.dto.EntityPlace
 import persistence.exposed.dto.Tables
-import persistence.toPlace
+import persistence.exposed.toPlace
 
 class PlacesDao : BaseExposedDao<Place, EntityPlace, Tables.Places>(
     table = Tables.Places,
