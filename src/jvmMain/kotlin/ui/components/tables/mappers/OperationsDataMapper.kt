@@ -47,10 +47,10 @@ class OperationsDataMapper : IDataTableMapper<Operation> {
     override fun getCell(item: Operation, columnId: ColumnId): Cell {
         return when (Column.requireColumn(columnId)) {
             Column.DateTime -> Cell.DateTimeCell(value = item.dateTime)
-            Column.OperationType -> Cell.EntityCell.SimpleEntityCell(entity = item.operationType, OperationType::class)
-            Column.Place -> Cell.EntityCell.SimpleEntityCell(entity = item.place, Place::class)
-            Column.Sample -> Cell.EntityCell.SimpleEntityCell(entity = item.sample, Sample::class)
-            Column.Worker -> Cell.EntityCell.SimpleEntityCell(entity = item.worker, Worker::class)
+            Column.OperationType -> Cell.EntityCell(entity = item.operationType, OperationType::class)
+            Column.Place -> Cell.EntityCell(entity = item.place, Place::class)
+            Column.Sample -> Cell.EntityCell(entity = item.sample, Sample::class)
+            Column.Worker -> Cell.EntityCell(entity = item.worker, Worker::class)
         }
     }
 

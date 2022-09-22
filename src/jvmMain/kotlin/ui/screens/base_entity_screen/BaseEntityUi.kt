@@ -169,12 +169,7 @@ private fun <T : IEntity> ShowDataTableForGroup(
                                 val updatedItem = mapper.updateItem(
                                     item = item,
                                     columnId = column,
-                                    cell = when(cell){
-                                        is Cell.EntityCell.SimpleEntityCell -> cell.copy(entity = it)
-                                        is Cell.EntityCell.UnitCell -> cell.copy(entity = it)
-                                    }
-
-
+                                    cell = cell.copy(entity = it)
                                 )
                                 component.updateEntity(updatedItem)
                             },

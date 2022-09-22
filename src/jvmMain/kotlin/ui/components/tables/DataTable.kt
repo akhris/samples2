@@ -277,7 +277,7 @@ fun <T> DataTable(
             }) { index, item ->
 
                 var isHover by remember { mutableStateOf(false) }
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.animateItemPlacement()) {
                     //if indexes are used:
                     firstItemIndex?.let { fii ->
                         Text(
@@ -414,8 +414,7 @@ private fun BoxScope.RenderCell(
 ) {
     when (cell) {
         is Cell.EditTextCell -> RenderEditTextCell(modifier, cell, onCellChanged, columnAlignment)
-        is Cell.EntityCell.UnitCell -> RenderUnitCell(modifier, cell, onCellChanged, columnAlignment)
-        is Cell.EntityCell.SimpleEntityCell -> RenderEntityCell(modifier, cell, onCellChanged, columnAlignment)
+        is Cell.EntityCell -> RenderEntityCell(modifier, cell, onCellChanged, columnAlignment)
         is Cell.DateTimeCell -> RenderDateTimeCell(modifier, cell, columnAlignment)
         is Cell.BooleanCell -> RenderBooleanCell(modifier, cell, onCellChanged, columnAlignment)
         is Cell.ListCell -> TODO()
@@ -510,50 +509,77 @@ private fun BoxScope.RenderEntityCell(
     onCellChanged: (Cell) -> Unit,
     columnAlignment: ColumnAlignment
 ) {
-    Text(
-        modifier = modifier, text = cell.entity?.toString() ?: "",
-        style = LocalTextStyle.current.copy(
-            textAlign = when (columnAlignment) {
-                ColumnAlignment.Center -> TextAlign.Center
-                ColumnAlignment.End -> TextAlign.End
-                ColumnAlignment.Start -> TextAlign.Start
-            }
-        )
-    )
+
+    when (cell.entityClass) {
+        domain.Unit::class -> {
+            RenderUnitCell(
+                modifier = modifier,
+                cell = cell,
+                unit = cell.entity as? domain.Unit,
+                factor = cell.tag as? Factor,
+                onFactorChanged = { onCellChanged(cell.copy(tag = it)) },
+                columnAlignment = columnAlignment
+            )
+        }
+
+        else -> {
+            Text(
+                modifier = modifier, text = cell.entity?.toString() ?: "",
+                style = LocalTextStyle.current.copy(
+                    textAlign = when (columnAlignment) {
+                        ColumnAlignment.Center -> TextAlign.Center
+                        ColumnAlignment.End -> TextAlign.End
+                        ColumnAlignment.Start -> TextAlign.Start
+                    }
+                )
+            )
+        }
+    }
+
 }
 
 @Composable
 private fun BoxScope.RenderUnitCell(
     modifier: Modifier = Modifier,
-    cell: Cell.EntityCell.UnitCell,
-    onCellChanged: (Cell) -> Unit,
+    cell: Cell.EntityCell,
+    unit: domain.Unit?,
+    factor: Factor?,
+    onFactorChanged: (Factor) -> Unit,
     columnAlignment: ColumnAlignment
 ) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        if (cell.unit?.isMultipliable == true) {
+        if (unit?.isMultipliable == true) {
             var showFactorsList by remember { mutableStateOf(false) }
 
-            Text(text = (cell.factor ?: Factor.NoFactor).name, modifier = Modifier.clickable {
-                //show factors list to choose from:
-                showFactorsList = true
-            }, color = MaterialTheme.colors.secondaryVariant)
+            Text(
+                text = (factor ?: Factor.NoFactor)
+                    .prefix,
+                modifier =
+                Modifier
+
+                    .clickable {
+                        //show factors list to choose from:
+                        showFactorsList = true
+                    }.padding(horizontal = 2.dp),
+                color = MaterialTheme.colors.secondary
+            )
 
             DropdownMenu(
                 expanded = showFactorsList,
                 onDismissRequest = { showFactorsList = false }
             ) {
                 factors
-                    .forEach { factor ->
+                    .forEach { f ->
                         DropdownMenuItem(
                             modifier = Modifier.background(
-                                if (factor == cell.factor) MaterialTheme.colors.secondary.copy(alpha = 0.5f) else MaterialTheme.colors.surface
+                                if (f == factor) MaterialTheme.colors.secondary.copy(alpha = 0.5f) else MaterialTheme.colors.surface
                             ),
                             onClick = {
-                            onCellChanged(cell.copy(factor = factor))
-                            showFactorsList = false
-                        }) {
+                                onFactorChanged(f)
+                                showFactorsList = false
+                            }) {
                             Text(
-                                text = "${factor.prefix}: ${factor.name}"
+                                text = "${f.prefix}: ${f.name}"
 
                             )
                         }
@@ -572,12 +598,6 @@ private fun BoxScope.RenderUnitCell(
             )
         )
     }
-}
-
-@Composable
-private fun ShowFactorsList(modifier: Modifier = Modifier) {
-
-
 }
 
 
@@ -625,24 +645,11 @@ fun IDataTableMapper<*>.getTableWidth(): Dp {
 
 sealed class Cell {
     data class EditTextCell(val value: String) : Cell()
-    sealed class EntityCell : Cell() {
-
-        abstract val entity: IEntity?
-        abstract val entityClass: KClass<out IEntity>
-
-        data class SimpleEntityCell(
-            override val entity: IEntity?,
-            override val entityClass: KClass<out IEntity>,
-        ) : EntityCell()
-
-        data class UnitCell(
-            override val entity: IEntity?,
-            override val entityClass: KClass<out IEntity>,
-            val unit: domain.Unit?, //fixme unit is entity! maybe add some tag: Any? value and use it for factor property
-            val factor: Factor?
-        ) :
-            EntityCell()
-    }
+    data class EntityCell(
+        val entity: IEntity?,
+        val entityClass: KClass<out IEntity>,
+        val tag: Any? = null
+    ) : Cell()
 
     data class DateTimeCell(val value: LocalDateTime?) : Cell()
     data class BooleanCell(val value: Boolean) : Cell()
