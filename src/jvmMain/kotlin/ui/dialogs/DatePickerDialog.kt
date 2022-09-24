@@ -65,7 +65,6 @@ fun DatePickerDialog(
             height = DialogSettings.DatePickerSettings.defaultPickerHeight
         )
     )
-
     Dialog(
         state = dialogState,
         onCloseRequest = onDismiss,
