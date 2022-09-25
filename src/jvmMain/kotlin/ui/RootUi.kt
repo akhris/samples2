@@ -11,6 +11,7 @@ import androidx.compose.ui.window.rememberDialogState
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import domain.SampleType
 import ui.components.ListSelector
+import ui.components.VerticalReorderList
 import ui.screens.nav_host.INavHost
 import ui.screens.nav_host.NavHostUi
 
@@ -46,6 +47,7 @@ fun RootUi(component: INavHost) {
             }
         },
         content = {
+
             CompositionLocalProvider(LocalSamplesType provides selectedSampleType) {
                 Row {
                     SideNavigationPanel(

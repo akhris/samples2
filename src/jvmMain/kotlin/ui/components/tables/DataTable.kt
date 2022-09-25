@@ -7,8 +7,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.mouseClickable
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
@@ -19,29 +19,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.*
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
 import domain.IEntity
 import domain.valueobjects.Factor
 import domain.valueobjects.factors
 import kotlinx.coroutines.delay
+import org.burnoutcrew.reorderable.ReorderableItem
+import org.burnoutcrew.reorderable.detectReorder
+import org.burnoutcrew.reorderable.rememberReorderableLazyListState
+import org.burnoutcrew.reorderable.reorderable
 import ui.UiSettings
 import utils.DateTimeConverter
-import utils.log
 import java.time.LocalDateTime
-import kotlin.math.roundToInt
 import kotlin.reflect.KClass
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
@@ -59,7 +54,7 @@ fun <T> DataTable(
     firstItemIndex: Int? = null
 ) {
 
-    var _items = remember(items) { items }
+    var _items = remember(items) { items.toMutableList() }
 
 
     val selectionMap = remember {
@@ -90,17 +85,16 @@ fun <T> DataTable(
     }
 
     val tableWidth = remember(mapper) { mapper.getTableWidth() }
-    var windowWidth by remember { mutableStateOf(1.dp) }
+//    var windowWidth by remember { mutableStateOf(1.dp) }
 //    Surface(
 //        modifier = modifier.padding(start = 16.dp, top = 16.dp),
 //        shape = MaterialTheme.shapes.medium
 //    ) {
 
-    val listState = rememberLazyListState()
-    val headerElevation by animateDpAsState(if (listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0) 0.dp else 4.dp)
-
-
-    var isLeftMouseClicked by remember { mutableStateOf(false) }
+    val listState = rememberReorderableLazyListState(onMove = { from, to ->
+//        _items.add(to.index, _items.removeAt(from.index))
+    })
+    val headerElevation by animateDpAsState(if (listState.listState.firstVisibleItemIndex == 0 && listState.listState.firstVisibleItemScrollOffset == 0) 0.dp else 4.dp)
 
     val selectItem = remember {
         { item: T ->
@@ -136,25 +130,18 @@ fun <T> DataTable(
 
     var lastClickedIndex by remember(items) { mutableStateOf(-1) }
 
-    val itemsCoords = remember(items) { mutableStateMapOf<Int, Offset>() }
-
-
-//    log("coords:")
-//    itemsCoords.forEach { t, u ->
-//        log("$t: $u")
-//    }
-    var dropToElementIndex by remember { mutableStateOf<Int?>(null) }
-
 
     LazyColumn(
         modifier =
         modifier
+            .reorderable(listState)
+            .detectReorder(listState)
 //            .onSizeChanged {
 //                windowWidth = it.width.dp
 //            }
 //            .scale(if (windowWidth > 1.dp) tableWidth / windowWidth else 1f)
         ,
-        state = listState
+        state = listState.listState
     ) {
 
         stickyHeader {
@@ -240,9 +227,6 @@ fun <T> DataTable(
                                 )
                             ) {
                                 Text(
-
-//                                            .padding(all = UiSettings.DataTable.cellPadding)
-
                                     text = column.title,
                                     style = MaterialTheme.typography.subtitle2,
                                     fontWeight = FontWeight.Bold,
@@ -277,8 +261,6 @@ fun <T> DataTable(
                                     }
                                 }
                             }
-
-
                         }
                     }
                 }
@@ -287,62 +269,15 @@ fun <T> DataTable(
 
 
         this
-            .itemsIndexed(_items, key = { index, item ->
+            .itemsIndexed(items = _items, key = { index, item ->
                 mapper.getId(item)
             }) { index, item ->
-                var isDragging by remember { mutableStateOf(false) }
+                ReorderableItem(listState, key = mapper.getId(item)) { isDragging ->
+                    val elevation by animateDpAsState(if (isDragging) 16.dp else 0.dp)
 
 
-                var offsetY by remember { mutableStateOf(0f) }
-                var isHover by remember { mutableStateOf(false) }
-                val elevation by animateDpAsState(if (isDragging) 8.dp else 0.dp)
-
-
-                Column(
-                    modifier = Modifier
-                        .animateItemPlacement()
-                        .offset { IntOffset(0, offsetY.roundToInt()) }
-                        .zIndex(if (isDragging) 10f else 0f)
-                        .onGloballyPositioned {
-                            itemsCoords[index] = it.positionInParent()
-//                            log("$index. onGP: ${it.positionInParent()}")
-                        }
-                        .onPointerEvent(PointerEventType.Press) {
-                            isDragging = true
-                        }
-                        .onPointerEvent(PointerEventType.Release) {
-                            offsetY = 0f
-                            isDragging = false
-                        }
-                        .pointerInput(Unit) {
-                            detectDragGestures { change, dragAmount ->
-                                change.consumeAllChanges()
-                                offsetY += dragAmount.y
-
-                                dropToElementIndex = itemsCoords[index]?.y?.let { currentItemY ->
-//                                    val currentItemY = currentItemInitialY + offsetY
-                                    val dropTo = itemsCoords
-                                        .filterValues { o -> o.y > currentItemY }
-                                        .minByOrNull { it.key }
-                                    dropTo
-                                }?.key
-                            }
-                        }
-                ) {
-                    if (dropToElementIndex == index) {
-                        Spacer(modifier = Modifier.height(UiSettings.DataTable.rowHeight))
-                    }
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-//                        modifier =
-//                        Modifier
-
-//                        .padding(top = if (itemsCoords.filterValues { }))
-//                        .draggable(state = rememberDraggableState {
-//                            offsetY += it
-//                        }, orientation = Orientation.Vertical)
-                    ) {
+                    var isHover by remember { mutableStateOf(false) }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         //if indexes are used:
                         firstItemIndex?.let { fii ->
                             Text(
@@ -358,8 +293,6 @@ fun <T> DataTable(
                         //render cells row:
                         Surface(elevation = elevation) {
                             Box {
-
-
                                 Row(
                                     modifier = Modifier
                                         .height(UiSettings.DataTable.rowHeight)
@@ -460,8 +393,10 @@ fun <T> DataTable(
                             }
                         }
                     }
+
                 }
             }
+
 
         //footer
         item {

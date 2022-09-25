@@ -27,6 +27,7 @@ import domain.IEntity
 import domain.Specification
 import ui.UiSettings
 import ui.components.Pagination
+import ui.components.VerticalReorderList
 import ui.components.tables.*
 import ui.dialogs.DatePickerDialog
 import ui.dialogs.TimePickerDialog
@@ -150,7 +151,9 @@ private fun <T : IEntity> ShowDataTableForGroup(
 
         //parameters table:
         DataTable(
-            modifier = modifier.horizontalScroll(state = rememberScrollState()),
+            modifier = modifier
+                .horizontalScroll(state = rememberScrollState())
+            ,
             items = entities,
             mapper = mapper,
             onItemChanged = {

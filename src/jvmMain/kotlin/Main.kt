@@ -21,6 +21,7 @@ import persistence.exposed.DbSettings
 import test.SampleTypes
 import ui.RootUi
 import ui.UiSettings
+import ui.components.VerticalReorderList
 import ui.screens.nav_host.INavHost
 import ui.screens.nav_host.NavHostComponent
 import ui.theme.AppTheme
@@ -30,6 +31,7 @@ import ui.theme.AppTheme
 @Preview
 fun App(rootComponent: INavHost) {
     AppTheme(darkTheme = false) {
+//        VerticalReorderList()
         RootUi(rootComponent)
     }
 }
