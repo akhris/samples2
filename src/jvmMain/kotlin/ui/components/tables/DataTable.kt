@@ -36,7 +36,10 @@ import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 import org.burnoutcrew.reorderable.reorderable
 import ui.UiSettings
 import utils.DateTimeConverter
+import utils.log
 import java.time.LocalDateTime
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.reflect.KClass
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
@@ -51,10 +54,10 @@ fun <T> DataTable(
     onHeaderClicked: ((ColumnId) -> Unit)? = null,
     onSortingChanged: ((column: ColumnId, isAsc: Boolean) -> Unit)? = null,
     footer: (@Composable () -> Unit)? = null,
-    firstItemIndex: Int? = null
+    firstItemIndex: Int? = null,
+    onReorder: ((from: T, to: T) -> Unit)? = null
 ) {
 
-    var _items = remember(items) { items.toMutableList() }
 
 
     val selectionMap = remember {
@@ -92,8 +95,11 @@ fun <T> DataTable(
 //    ) {
 
     val listState = rememberReorderableLazyListState(onMove = { from, to ->
-//        _items.add(to.index, _items.removeAt(from.index))
-    })
+//        _items.value = _items.value.toMutableList().apply {
+//            add(max(to.index - 1, 0), removeAt(max(from.index - 1, 0)))
+//        }
+        onReorder?.invoke(items[max(from.index - 1, 0)], items[max(to.index - 1, 0)])
+    }, canDragOver = { it.index > 0 && it.index <= items.size })
     val headerElevation by animateDpAsState(if (listState.listState.firstVisibleItemIndex == 0 && listState.listState.firstVisibleItemScrollOffset == 0) 0.dp else 4.dp)
 
     val selectItem = remember {
@@ -269,13 +275,13 @@ fun <T> DataTable(
 
 
         this
-            .itemsIndexed(items = _items, key = { index, item ->
+            .items(items = items, key = { item ->
                 mapper.getId(item)
-            }) { index, item ->
+            }) { item ->
                 ReorderableItem(listState, key = mapper.getId(item)) { isDragging ->
                     val elevation by animateDpAsState(if (isDragging) 16.dp else 0.dp)
 
-
+                    val index = remember(item) { items.indexOf(item) }
                     var isHover by remember { mutableStateOf(false) }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         //if indexes are used:
