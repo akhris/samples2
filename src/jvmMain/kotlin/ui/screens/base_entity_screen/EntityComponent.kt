@@ -59,6 +59,24 @@ open class EntityComponent<T : IEntity>(
 
     override val dialogStack: Value<ChildStack<*, IEntityComponent.Dialog>> = _dialogStack
 
+    override val onPositionChange: ((item: T, newPosition: Int) -> Unit)? =
+        when (type) {
+            Parameter::class -> {
+                { item, newPosition ->
+                    //make actual parameters reordering here
+                    log("item $item got new pos: $newPosition")
+                    (item as? Parameter)?.let {
+                        scope.launch {
+                            updateEntity(UpdateEntity.Update(it.copy(position = newPosition)))
+                        }
+                    }
+                }
+
+            }
+
+            else -> null
+        }
+
     private val getEntities: GetEntities<T> by when (type) {
         Sample::class -> di.instance<GetEntities<Sample>>()
         SampleType::class -> di.instance<GetEntities<SampleType>>()

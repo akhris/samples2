@@ -152,7 +152,7 @@ private fun <T : IEntity> ShowDataTableForGroup(
         //parameters table:
         DataTable(
             modifier = modifier
-                .horizontalScroll(state = rememberScrollState())
+//                .horizontalScroll(state = rememberScrollState())
             ,
             items = entities,
             mapper = mapper,
@@ -228,7 +228,8 @@ private fun <T : IEntity> ShowDataTableForGroup(
             footer = {
                 Spacer(modifier = Modifier.height(bottomPanelHeight))
             },
-            firstItemIndex = ((pagingSpec.pageNumber - 1) * pagingSpec.itemsPerPage + 1).toInt()
+            firstItemIndex = ((pagingSpec.pageNumber - 1) * pagingSpec.itemsPerPage + 1).toInt(),
+            onPositionChange = component.onPositionChange
         )
 
         if (selectionMode is SelectionMode.Multiple<T> && selectedEntities.isNotEmpty()) {

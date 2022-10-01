@@ -33,6 +33,8 @@ interface IEntityComponent<T : IEntity> {
         val entities: EntitiesList<E> = EntitiesList.empty()
     )
 
+    val onPositionChange: ((item: T, newPosition: Int) -> Unit)?
+
     /**
      * Exposes Router State
      */

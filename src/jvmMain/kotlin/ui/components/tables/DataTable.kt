@@ -1,15 +1,9 @@
 package ui.components.tables
 
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.*
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.mouseClickable
+import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -20,6 +14,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.input.pointer.*
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -39,7 +34,6 @@ import utils.DateTimeConverter
 import utils.log
 import java.time.LocalDateTime
 import kotlin.math.max
-import kotlin.math.min
 import kotlin.reflect.KClass
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
@@ -55,14 +49,14 @@ fun <T> DataTable(
     onSortingChanged: ((column: ColumnId, isAsc: Boolean) -> Unit)? = null,
     footer: (@Composable () -> Unit)? = null,
     firstItemIndex: Int? = null,
-    onReorder: ((from: T, to: T) -> Unit)? = null
+    onPositionChange: ((item: T, newPosition: Int) -> Unit)? = null
 ) {
-
-
+    var _items by remember(items) { mutableStateOf(items) }
 
     val selectionMap = remember {
         mutableStateMapOf<String, Boolean>()
     }
+
 
     LaunchedEffect(selectionMode) {
         val initialSelection: Map<String, Boolean> = when (selectionMode) {
@@ -88,19 +82,17 @@ fun <T> DataTable(
     }
 
     val tableWidth = remember(mapper) { mapper.getTableWidth() }
-//    var windowWidth by remember { mutableStateOf(1.dp) }
-//    Surface(
-//        modifier = modifier.padding(start = 16.dp, top = 16.dp),
-//        shape = MaterialTheme.shapes.medium
-//    ) {
 
-    val listState = rememberReorderableLazyListState(onMove = { from, to ->
-//        _items.value = _items.value.toMutableList().apply {
-//            add(max(to.index - 1, 0), removeAt(max(from.index - 1, 0)))
-//        }
-        onReorder?.invoke(items[max(from.index - 1, 0)], items[max(to.index - 1, 0)])
-    }, canDragOver = { it.index > 0 && it.index <= items.size })
-    val headerElevation by animateDpAsState(if (listState.listState.firstVisibleItemIndex == 0 && listState.listState.firstVisibleItemScrollOffset == 0) 0.dp else 4.dp)
+    val reorderableState = rememberReorderableLazyListState(onMove = { from, to ->
+//        log("moving from $from to $to")
+        _items = _items.toMutableList().apply {
+            add(max(to.index - 1, 0), removeAt(max(from.index - 1, 0)))
+        }
+    }, canDragOver = {
+        it.index > 0 && it.index <= _items.size
+    })
+
+    val headerElevation by animateDpAsState(if (reorderableState.listState.firstVisibleItemIndex == 0 && reorderableState.listState.firstVisibleItemScrollOffset == 0) 0.dp else 4.dp)
 
     val selectItem = remember {
         { item: T ->
@@ -132,26 +124,16 @@ fun <T> DataTable(
         }
     }
 
-//        log("rendering table:\nmap: $selectionMap\nchecks: $checks\ncheckState: $checkState\nheaderElevation: $headerElevation")
 
     var lastClickedIndex by remember(items) { mutableStateOf(-1) }
 
+//    val horizontalScrollState = if (onPositionChange == null) rememberScrollState() else null
 
     LazyColumn(
-        modifier =
-        modifier
-            .reorderable(listState)
-            .detectReorder(listState)
-//            .onSizeChanged {
-//                windowWidth = it.width.dp
-//            }
-//            .scale(if (windowWidth > 1.dp) tableWidth / windowWidth else 1f)
-        ,
-        state = listState.listState
+        modifier = modifier.reorderable(reorderableState),
+        state = reorderableState.listState
     ) {
-
         stickyHeader {
-
             Row(
                 modifier = Modifier.height(UiSettings.DataTable.headerRowHeight),
                 verticalAlignment = Alignment.CenterVertically
@@ -268,23 +250,21 @@ fun <T> DataTable(
                                 }
                             }
                         }
+                        //space for drag item if used:
+                        if (onPositionChange != null) {
+                            Spacer(modifier = Modifier.width(UiSettings.DataTable.additionalRowWidth))
+                        }
                     }
                 }
             }
         }
+        itemsIndexed(_items, key = { index, item -> mapper.getId(item) }) { index, item ->
+            ReorderableItem(reorderableState, key = mapper.getId(item)) { isDragging ->
+                val elevation by animateDpAsState(if (isDragging) 16.dp else 0.dp)
+                RenderRow(
+                    elevation = elevation,
 
-
-        this
-            .items(items = items, key = { item ->
-                mapper.getId(item)
-            }) { item ->
-                ReorderableItem(listState, key = mapper.getId(item)) { isDragging ->
-                    val elevation by animateDpAsState(if (isDragging) 16.dp else 0.dp)
-
-                    val index = remember(item) { items.indexOf(item) }
-                    var isHover by remember { mutableStateOf(false) }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        //if indexes are used:
+                    renderIndex = {
                         firstItemIndex?.let { fii ->
                             Text(
                                 modifier = Modifier.width(UiSettings.DataTable.additionalRowWidth),
@@ -295,120 +275,181 @@ fun <T> DataTable(
                                 )
                             )
                         }
+                    },
+                    renderColumns = {
+                        for (column in mapper.columns) {
+                            //render cell:
+                            val cell = remember(mapper, item, column) {
+                                mapper.getCell(item, column)
+                            }
 
-                        //render cells row:
-                        Surface(elevation = elevation) {
-                            Box {
-                                Row(
-                                    modifier = Modifier
-                                        .height(UiSettings.DataTable.rowHeight)
-                                        .onPointerEvent(PointerEventType.Enter) { isHover = true }
-                                        .onPointerEvent(PointerEventType.Exit) { isHover = false }
-                                        .background(
-                                            color = if (isHover) {
-                                                MaterialTheme.colors.primary.copy(alpha = 0.1f)
-                                            } else MaterialTheme.colors.surface
-                                        )
-                                        .mouseClickable {
-                                            selectItem(item)
-                                            if (lastClickedIndex != -1 && keyboardModifiers.isShiftPressed) {
-                                                for (i in lastClickedIndex + 1 until index) {
-                                                    items.getOrNull(i)?.let {
-                                                        selectItem(it)
-                                                    }
-                                                }
-                                            }
-                                            lastClickedIndex = index
-                                        },
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-
-
-                                    // selection control:
-                                    Box(
-                                        modifier = Modifier.width(UiSettings.DataTable.additionalRowWidth),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        when (selectionMode) {
-                                            is SelectionMode.Multiple -> {
-                                                Checkbox(
-                                                    checked = selectionMap[mapper.getId(item)] == true,
-                                                    onCheckedChange = null
-                                                )
-                                            }
-
-                                            is SelectionMode.Single -> {
-                                                RadioButton(
-                                                    selected = selectionMap[mapper.getId(item)] == true,
-                                                    onClick = null
-                                                )
-                                            }
-
-                                            is SelectionMode.None -> {
-
-                                            }
-                                        }
+                            Box(
+                                modifier = Modifier.width(
+                                    when (column.width) {
+                                        is ColumnWidth.Custom -> column.width.width
+                                        ColumnWidth.Normal -> UiSettings.DataTable.columnWidthNormal
+                                        ColumnWidth.Small -> UiSettings.DataTable.columnWidthSmall
+                                        ColumnWidth.Wide -> UiSettings.DataTable.columnWidthWide
                                     }
-                                    for (column in mapper.columns) {
-                                        //render cell:
-                                        val cell = remember(mapper, item, column) {
-                                            mapper.getCell(item, column)
-                                        }
-
-                                        Box(
-                                            modifier = Modifier.width(
-                                                when (column.width) {
-                                                    is ColumnWidth.Custom -> column.width.width
-                                                    ColumnWidth.Normal -> UiSettings.DataTable.columnWidthNormal
-                                                    ColumnWidth.Small -> UiSettings.DataTable.columnWidthSmall
-                                                    ColumnWidth.Wide -> UiSettings.DataTable.columnWidthWide
-                                                }
-                                            )
-                                                .padding(horizontal = UiSettings.DataTable.columnPadding)
-                                                .clickable {
-                                                    onCellClicked?.invoke(item, cell, column)
-                                                },
-                                            contentAlignment = when (column.alignment) {
-                                                ColumnAlignment.Center -> Alignment.Center
-                                                ColumnAlignment.End -> Alignment.CenterEnd
-                                                ColumnAlignment.Start -> Alignment.CenterStart
-                                            }
-                                        ) {
-
-                                            RenderCell(
-                                                modifier =
-                                                Modifier
-                                                    .padding(all = UiSettings.DataTable.cellPadding),
-                                                cell = cell,
-                                                onCellChanged = { changedCell ->
-                                                    onItemChanged?.invoke(mapper.updateItem(item, column, changedCell))
-                                                },
-                                                columnAlignment = column.alignment
-                                            )
-                                        }
-                                    }
+                                )
+                                    .padding(horizontal = UiSettings.DataTable.columnPadding)
+                                    .clickable {
+                                        onCellClicked?.invoke(item, cell, column)
+                                    },
+                                contentAlignment = when (column.alignment) {
+                                    ColumnAlignment.Center -> Alignment.Center
+                                    ColumnAlignment.End -> Alignment.CenterEnd
+                                    ColumnAlignment.Start -> Alignment.CenterStart
                                 }
-                                //divider:
-                                Box(
-                                    modifier = Modifier
-                                        .align(Alignment.TopCenter)
-                                        .height(1.dp)
-                                        .width(tableWidth + UiSettings.DataTable.additionalRowWidth)
-                                        .background(color = UiSettings.DataTable.dividerColor())
+                            ) {
+
+                                RenderCell(
+                                    modifier =
+                                    Modifier
+                                        .padding(all = UiSettings.DataTable.cellPadding),
+                                    cell = cell,
+                                    onCellChanged = { changedCell ->
+                                        onItemChanged?.invoke(mapper.updateItem(item, column, changedCell))
+                                    },
+                                    columnAlignment = column.alignment
                                 )
                             }
                         }
-                    }
+                    },
+                    renderSelectionControl = {
+                        when (selectionMode) {
+                            is SelectionMode.Multiple -> {
+                                Checkbox(
+                                    checked = selectionMap[mapper.getId(item)] == true,
+                                    onCheckedChange = null
+                                )
+                            }
 
+                            is SelectionMode.Single -> {
+                                RadioButton(
+                                    selected = selectionMap[mapper.getId(item)] == true,
+                                    onClick = null
+                                )
+                            }
+
+                            is SelectionMode.None -> {
+
+                            }
+                        }
+                    },
+                    onMouseClicked = { isShiftPressed ->
+                        selectItem(item)
+                        if (lastClickedIndex != -1 && isShiftPressed) {
+                            for (i in lastClickedIndex + 1 until index) {
+                                items.getOrNull(i)?.let {
+                                    selectItem(it)
+                                }
+                            }
+                        }
+                        lastClickedIndex = index
+                    },
+                    tableWidth = tableWidth,
+                    renderDragHandle = onPositionChange?.let {
+                        {
+                            Icon(
+                                modifier = Modifier.detectReorder(reorderableState),
+                                painter = painterResource("vector/drag_handle_black_24dp.svg"),
+                                contentDescription = "drag handle",
+                                tint = MaterialTheme.colors.secondary
+                            )
+                        }
+                    }
+                )
+            }
+        }
+
+        footer?.let { f -> item { f() } }
+    }
+
+
+    onPositionChange?.let { opc ->
+        // debounce on reordering:
+        LaunchedEffect(_items, reorderableState.draggingItemKey) {
+            if (_items == items || reorderableState.draggingItemKey != null) {
+                // if lists are equal or dragging in progress - do not write changes to db
+                return@LaunchedEffect
+            }
+            delay(UiSettings.Debounce.debounceTime)
+            _items.forEachIndexed { index, _item ->
+                if (items.getOrNull(index) != _item) {
+                    // position of _item was actually changed:
+                    opc(_item, index)
                 }
             }
-
-
-        //footer
-        item {
-            footer?.invoke()
         }
     }
+}
+
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
+@Composable
+private fun RenderRow(
+    elevation: Dp,
+    renderIndex: @Composable RowScope.() -> Unit,
+    renderColumns: @Composable RowScope.() -> Unit,
+    renderSelectionControl: @Composable (BoxScope.() -> Unit)? = null,
+    renderDragHandle: @Composable (BoxScope.() -> Unit)? = null,
+    onMouseClicked: (isShiftPressed: Boolean) -> Unit,
+    tableWidth: Dp
+) {
+
+    var isHover by remember { mutableStateOf(false) }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        //if indexes are used:
+        renderIndex()
+
+        //render cells row:
+        Surface(elevation = elevation) {
+            Box {
+                Row(
+                    modifier = Modifier
+                        .height(UiSettings.DataTable.rowHeight)
+                        .onPointerEvent(PointerEventType.Enter) { isHover = true }
+                        .onPointerEvent(PointerEventType.Exit) { isHover = false }
+                        .background(
+                            color = if (isHover) {
+                                MaterialTheme.colors.primary.copy(alpha = 0.1f)
+                            } else MaterialTheme.colors.surface
+                        )
+                        .onClick {
+                            onMouseClicked(false)
+                        }
+                        .onClick(keyboardModifiers = { isShiftPressed }) {
+                            onMouseClicked(true)
+                        },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // selection control:
+                    Box(
+                        modifier = Modifier.width(UiSettings.DataTable.additionalRowWidth),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        renderSelectionControl?.invoke(this)
+                    }
+                    renderColumns()
+                    Box(
+                        modifier = Modifier.width(UiSettings.DataTable.additionalRowWidth),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        renderDragHandle?.invoke(this)
+                    }
+                }
+                //divider:
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .height(1.dp)
+                        .width(tableWidth + UiSettings.DataTable.additionalRowWidth + (if (renderDragHandle != null) UiSettings.DataTable.additionalRowWidth else 0.dp))
+                        .background(color = UiSettings.DataTable.dividerColor())
+                )
+            }
+        }
+    }
+
 }
 
 
@@ -681,3 +722,5 @@ sealed class SelectionMode<T> {
 
     class None<T> : SelectionMode<T>()
 }
+
+class OrderableItem<T>(val item: T, val pos: Int)
