@@ -10,7 +10,6 @@ import org.kodein.di.instance
 import ui.components.tables.mappers.MeasurementsDataMapper
 import ui.screens.base_entity_screen.EntityComponent
 import utils.log
-import java.util.*
 
 class MeasurementsEntityComponent(
     di: DI,
@@ -35,6 +34,7 @@ class MeasurementsEntityComponent(
     }
 
     override val onPositionChange: ((item: Measurement, newPosition: Int) -> Unit)? = null
+    override val onMove: ((from: Int, to: Int) -> Unit)? = null
 
 //    override fun duplicateEntities(entities: List<Measurement>) {
 //        scope.launch {

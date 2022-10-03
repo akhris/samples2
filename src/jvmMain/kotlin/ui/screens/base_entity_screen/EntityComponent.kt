@@ -12,6 +12,7 @@ import com.arkivanov.essenty.lifecycle.subscribe
 import com.arkivanov.essenty.parcelable.Parcelable
 import com.arkivanov.essenty.parcelable.Parcelize
 import domain.*
+import domain.Unit
 import domain.application.Result
 import domain.application.baseUseCases.GetEntities
 import domain.application.baseUseCases.GetItemsCount
@@ -24,11 +25,19 @@ import org.kodein.di.LazyDelegate
 import org.kodein.di.instance
 import ui.components.tables.Cell
 import ui.components.tables.IDataTableMapper
-import ui.components.tables.mappers.MeasurementsDataMapper
 import utils.DateTimeConverter
 import utils.log
 import java.util.*
+import kotlin.IllegalArgumentException
+import kotlin.Int
+import kotlin.String
+import kotlin.TODO
+import kotlin.Unit
+import kotlin.apply
+import kotlin.getValue
+import kotlin.let
 import kotlin.reflect.KClass
+import kotlin.stackTraceToString
 
 open class EntityComponent<T : IEntity>(
     val type: KClass<out T>,
@@ -76,6 +85,41 @@ open class EntityComponent<T : IEntity>(
 
             else -> null
         }
+
+    override val onMove: ((from: Int, to: Int) -> Unit)? =
+        when (type) {
+            Parameter::class -> {
+                { from, to ->
+                    //make actual parameters reordering here
+                    _state.reduce {
+                        it.copy(
+                            entities =
+                            when (val eList = it.entities) {
+                                is EntitiesList.Grouped -> eList
+                                is EntitiesList.NotGrouped -> eList.copy(
+                                    eList
+                                        .items
+                                        .toMutableList()
+                                        .apply { add(to, removeAt(from)) }
+                                )
+                            }
+
+                        )
+                    }
+
+//                    log("item $item got new pos: $newPosition")
+//                    (item as? Parameter)?.let {
+//                        scope.launch {
+//                            updateEntity(UpdateEntity.Update(it.copy(position = newPosition)))
+//                        }
+//                    }
+                }
+
+            }
+
+            else -> null
+        }
+
 
     private val getEntities: GetEntities<T> by when (type) {
         Sample::class -> di.instance<GetEntities<Sample>>()
@@ -179,7 +223,7 @@ open class EntityComponent<T : IEntity>(
             OperationType::class -> OperationType()
             Worker::class -> Worker()
             Place::class -> Place()
-            domain.Unit::class -> domain.Unit()
+            domain.Unit::class -> Unit()
             Measurement::class -> Measurement()
             else -> throw IllegalArgumentException("cannot create new entity of type: $type!")
         } as? T

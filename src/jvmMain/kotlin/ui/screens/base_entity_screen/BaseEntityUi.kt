@@ -2,9 +2,7 @@ package ui.screens.base_entity_screen
 
 import LocalSamplesType
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
@@ -27,7 +25,6 @@ import domain.IEntity
 import domain.Specification
 import ui.UiSettings
 import ui.components.Pagination
-import ui.components.VerticalReorderList
 import ui.components.tables.*
 import ui.dialogs.DatePickerDialog
 import ui.dialogs.TimePickerDialog
@@ -49,9 +46,9 @@ fun <T : IEntity> BaseEntityUi(
 ) {
     val state by remember(component) { component.state }.subscribeAsState()
     //render samples list:
-    val entities = remember(state) { state.entities }
+//    val entities = remember(state) { state.entities }
 
-    when (entities) {
+    when (val entities = state.entities) {
         is EntitiesList.Grouped -> {
 
         }
@@ -229,7 +226,8 @@ private fun <T : IEntity> ShowDataTableForGroup(
                 Spacer(modifier = Modifier.height(bottomPanelHeight))
             },
             firstItemIndex = ((pagingSpec.pageNumber - 1) * pagingSpec.itemsPerPage + 1).toInt(),
-            onPositionChange = component.onPositionChange
+//            onPositionChange = component.onPositionChange,
+            onMove = component.onMove
         )
 
         if (selectionMode is SelectionMode.Multiple<T> && selectedEntities.isNotEmpty()) {

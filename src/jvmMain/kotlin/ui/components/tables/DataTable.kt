@@ -31,7 +31,10 @@ import domain.IEntity
 import domain.valueobjects.Factor
 import domain.valueobjects.factors
 import kotlinx.coroutines.delay
-import org.burnoutcrew.reorderable.*
+import org.burnoutcrew.reorderable.ReorderableItem
+import org.burnoutcrew.reorderable.detectReorder
+import org.burnoutcrew.reorderable.rememberReorderableLazyListState
+import org.burnoutcrew.reorderable.reorderable
 import ui.UiSettings
 import utils.DateTimeConverter
 import java.time.LocalDateTime
@@ -51,9 +54,8 @@ fun <T> DataTable(
     onSortingChanged: ((column: ColumnId, isAsc: Boolean) -> Unit)? = null,
     footer: (@Composable () -> Unit)? = null,
     firstItemIndex: Int? = null,
-    onPositionChange: ((item: T, newPosition: Int) -> Unit)? = null
+    onMove: ((from: Int, to: Int) -> Unit)? = null
 ) {
-    val _items = remember(items) { mutableStateOf(items.toMutableList()) }
 
     val selectionMap = remember {
         mutableStateMapOf<String, Boolean>()
@@ -85,34 +87,38 @@ fun <T> DataTable(
 
     val tableWidth = remember(mapper) { mapper.getTableWidth() }
 
-    val onMove = remember(_items.value) {
-        { from: ItemPosition, to: ItemPosition ->
-            _items.value = _items.value.apply {
-                add(
-//                (to.index - 1).coerceIn(0, _items.value.size),
-                    max(to.index - 1, 0),
-                    removeAt(
-//                (from.index - 1).coerceIn(0, _items.value.size)
-                        max(from.index - 1, 0)
-                    )
-                )
-            }
-        }
-    }
+//    val onMove = remember(_items.value) {
+//        { from: ItemPosition, to: ItemPosition ->
+//            _items.value = _items.value.apply {
+//                add(
+////                (to.index - 1).coerceIn(0, _items.value.size),
+//                    max(to.index - 1, 0),
+//                    removeAt(
+////                (from.index - 1).coerceIn(0, _items.value.size)
+//                        max(from.index - 1, 0)
+//                    )
+//                )
+//            }
+//        }
+//    }
 
-    val canDragOver = remember(_items.value) {
-        { position: ItemPosition ->
-            position.index > 0
-//                    && position.index <= _items.value.size
-//            val a =
-//                position.index > 0 && position.index <= _items.value.size
-//            log("canDragOver: $a for items size: ${_items.value.size}")
-//            a
-        }
-    }
+//    val canDragOver by remember(items) {
+//        mutableStateOf(
+//        { position: ItemPosition ->
+//            log("canDragOver: $position, $items")
+//            position.index > 0 && position.index <= items.size
+//        })
+//    }
 
 
-    val reorderableState = rememberReorderableLazyListState(onMove = onMove, canDragOver = canDragOver)
+    val reorderableState = rememberReorderableLazyListState(onMove = { from, to ->
+        onMove?.invoke(
+            max(from.index - 1, 0),
+            max(to.index - 1, 0)
+        )
+    }, canDragOver = { position ->
+        position.index > 0 && position.index <= items.size
+    })
 
     val headerElevation by animateDpAsState(if (reorderableState.listState.firstVisibleItemIndex == 0 && reorderableState.listState.firstVisibleItemScrollOffset == 0) 0.dp else 4.dp)
 
@@ -273,14 +279,14 @@ fun <T> DataTable(
                             }
                         }
                         //space for drag item if used:
-                        if (onPositionChange != null) {
+                        if (onMove != null) {
                             Spacer(modifier = Modifier.width(UiSettings.DataTable.additionalRowWidth))
                         }
                     }
                 }
             }
         }
-        itemsIndexed(_items.value, key = { index, item -> mapper.getId(item) }) { index, item ->
+        itemsIndexed(items, key = { index, item -> mapper.getId(item) }) { index, item ->
             ReorderableItem(reorderableState, key = mapper.getId(item)) { isDragging ->
                 val elevation by animateDpAsState(if (isDragging) 16.dp else 0.dp)
                 RenderRow(
@@ -371,7 +377,7 @@ fun <T> DataTable(
                         lastClickedIndex = index
                     },
                     tableWidth = tableWidth,
-                    renderDragHandle = onPositionChange?.let {
+                    renderDragHandle = onMove?.let {
                         {
                             Icon(
                                 modifier = Modifier.detectReorder(reorderableState),
@@ -389,22 +395,22 @@ fun <T> DataTable(
     }
 
 
-    onPositionChange?.let { opc ->
-        // debounce on reordering:
-        LaunchedEffect(_items, reorderableState.draggingItemKey) {
-            if (_items == items || reorderableState.draggingItemKey != null) {
-                // if lists are equal or dragging in progress - do not write changes to db
-                return@LaunchedEffect
-            }
-            delay(UiSettings.Debounce.debounceTime)
-            _items.value.forEachIndexed { index, _item ->
-                if (items.getOrNull(index) != _item) {
-                    // position of _item was actually changed:
-                    opc(_item, index)
-                }
-            }
-        }
-    }
+//    onPositionChange?.let { opc ->
+//        // debounce on reordering:
+//        LaunchedEffect(_items, reorderableState.draggingItemKey) {
+//            if (_items == items || reorderableState.draggingItemKey != null) {
+//                // if lists are equal or dragging in progress - do not write changes to db
+//                return@LaunchedEffect
+//            }
+//            delay(UiSettings.Debounce.debounceTime)
+//            _items.value.forEachIndexed { index, _item ->
+//                if (items.getOrNull(index) != _item) {
+//                    // position of _item was actually changed:
+//                    opc(_item, index)
+//                }
+//            }
+//        }
+//    }
 }
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)

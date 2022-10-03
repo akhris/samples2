@@ -34,6 +34,7 @@ interface IEntityComponent<T : IEntity> {
     )
 
     val onPositionChange: ((item: T, newPosition: Int) -> Unit)?
+    val onMove: ((from: Int, to: Int) -> Unit)?
 
     /**
      * Exposes Router State
