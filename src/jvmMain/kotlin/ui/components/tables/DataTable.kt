@@ -1,9 +1,13 @@
 package ui.components.tables
 
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.*
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.onClick
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -13,7 +17,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.input.pointer.*
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.isShiftPressed
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
@@ -25,13 +31,9 @@ import domain.IEntity
 import domain.valueobjects.Factor
 import domain.valueobjects.factors
 import kotlinx.coroutines.delay
-import org.burnoutcrew.reorderable.ReorderableItem
-import org.burnoutcrew.reorderable.detectReorder
-import org.burnoutcrew.reorderable.rememberReorderableLazyListState
-import org.burnoutcrew.reorderable.reorderable
+import org.burnoutcrew.reorderable.*
 import ui.UiSettings
 import utils.DateTimeConverter
-import utils.log
 import java.time.LocalDateTime
 import kotlin.math.max
 import kotlin.reflect.KClass
@@ -51,7 +53,7 @@ fun <T> DataTable(
     firstItemIndex: Int? = null,
     onPositionChange: ((item: T, newPosition: Int) -> Unit)? = null
 ) {
-    var _items by remember(items) { mutableStateOf(items) }
+    val _items = remember(items) { mutableStateOf(items.toMutableList()) }
 
     val selectionMap = remember {
         mutableStateMapOf<String, Boolean>()
@@ -83,14 +85,34 @@ fun <T> DataTable(
 
     val tableWidth = remember(mapper) { mapper.getTableWidth() }
 
-    val reorderableState = rememberReorderableLazyListState(onMove = { from, to ->
-//        log("moving from $from to $to")
-        _items = _items.toMutableList().apply {
-            add(max(to.index - 1, 0), removeAt(max(from.index - 1, 0)))
+    val onMove = remember(_items.value) {
+        { from: ItemPosition, to: ItemPosition ->
+            _items.value = _items.value.apply {
+                add(
+//                (to.index - 1).coerceIn(0, _items.value.size),
+                    max(to.index - 1, 0),
+                    removeAt(
+//                (from.index - 1).coerceIn(0, _items.value.size)
+                        max(from.index - 1, 0)
+                    )
+                )
+            }
         }
-    }, canDragOver = {
-        it.index > 0 && it.index <= _items.size
-    })
+    }
+
+    val canDragOver = remember(_items.value) {
+        { position: ItemPosition ->
+            position.index > 0
+//                    && position.index <= _items.value.size
+//            val a =
+//                position.index > 0 && position.index <= _items.value.size
+//            log("canDragOver: $a for items size: ${_items.value.size}")
+//            a
+        }
+    }
+
+
+    val reorderableState = rememberReorderableLazyListState(onMove = onMove, canDragOver = canDragOver)
 
     val headerElevation by animateDpAsState(if (reorderableState.listState.firstVisibleItemIndex == 0 && reorderableState.listState.firstVisibleItemScrollOffset == 0) 0.dp else 4.dp)
 
@@ -258,7 +280,7 @@ fun <T> DataTable(
                 }
             }
         }
-        itemsIndexed(_items, key = { index, item -> mapper.getId(item) }) { index, item ->
+        itemsIndexed(_items.value, key = { index, item -> mapper.getId(item) }) { index, item ->
             ReorderableItem(reorderableState, key = mapper.getId(item)) { isDragging ->
                 val elevation by animateDpAsState(if (isDragging) 16.dp else 0.dp)
                 RenderRow(
@@ -375,7 +397,7 @@ fun <T> DataTable(
                 return@LaunchedEffect
             }
             delay(UiSettings.Debounce.debounceTime)
-            _items.forEachIndexed { index, _item ->
+            _items.value.forEachIndexed { index, _item ->
                 if (items.getOrNull(index) != _item) {
                     // position of _item was actually changed:
                     opc(_item, index)
