@@ -16,6 +16,13 @@ interface IBaseDao<ENTITY : IEntity> {
      */
     suspend fun update(entity: ENTITY)
 
+
+    /**
+     * Update Entities (batch)
+     */
+    suspend fun update(entities: List<ENTITY>)
+
+
     /**
      * Remove Entity by [id]
      */

@@ -37,6 +37,15 @@ class BaseRepository<ENTITY : IEntity>(private val baseDao: IBaseDao<ENTITY>) : 
         repoCallbacks.onItemUpdated(t)
     }
 
+
+    override suspend fun update(t: List<ENTITY>) {
+        baseDao.update(t)
+        t.firstOrNull()?.let {
+            repoCallbacks.onItemUpdated(it)
+        }
+    }
+
+
     override suspend fun remove(t: ENTITY) {
         baseDao.removeById(t.id)
         repoCallbacks.onItemUpdated(t)

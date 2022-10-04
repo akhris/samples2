@@ -81,6 +81,33 @@ abstract class BaseExposedDao<ENTITY : IEntity, EXP_ENTITY : UUIDEntity, TABLE :
         }
     }
 
+    override suspend fun update(entities: List<ENTITY>) {
+        log("going to make batch update for $entities")
+        newSuspendedTransaction {
+            addLogger(StdOutSqlLogger)
+            entities.forEach { entity ->
+                table.update(where = { table.id eq entity.id.toUUID() }, body = updateStatement(entity))
+                doAfterUpdate(entity)
+            }
+            if (withCommit)
+                commit()
+//
+//            BatchUpdateStatement(table).apply {
+//                entities.forEach { entity: ENTITY ->
+//                    addBatch(EntityID(entity.id.toUUID(), this@BaseExposedDao.table))
+//                    updateStatement(entity)
+//                    doAfterUpdate(entity)
+//                }
+            //fixme: empty batch data
+//                log("batch data:")
+//                this.data.forEach {
+//                    log(it)
+//                }
+//                execute(this@newSuspendedTransaction)
+//            }
+        }
+    }
+
     override suspend fun insert(entity: ENTITY) {
         newSuspendedTransaction {
             addLogger(StdOutSqlLogger)

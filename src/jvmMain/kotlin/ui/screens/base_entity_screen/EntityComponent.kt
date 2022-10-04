@@ -14,10 +14,7 @@ import com.arkivanov.essenty.parcelable.Parcelize
 import domain.*
 import domain.Unit
 import domain.application.Result
-import domain.application.baseUseCases.GetEntities
-import domain.application.baseUseCases.GetItemsCount
-import domain.application.baseUseCases.InsertEntity
-import domain.application.baseUseCases.UpdateEntity
+import domain.application.baseUseCases.*
 import io.github.evanrupert.excelkt.workbook
 import kotlinx.coroutines.*
 import org.kodein.di.DI
@@ -28,16 +25,8 @@ import ui.components.tables.IDataTableMapper
 import utils.DateTimeConverter
 import utils.log
 import java.util.*
-import kotlin.IllegalArgumentException
-import kotlin.Int
-import kotlin.String
-import kotlin.TODO
 import kotlin.Unit
-import kotlin.apply
-import kotlin.getValue
-import kotlin.let
 import kotlin.reflect.KClass
-import kotlin.stackTraceToString
 
 open class EntityComponent<T : IEntity>(
     val type: KClass<out T>,
@@ -68,51 +57,23 @@ open class EntityComponent<T : IEntity>(
 
     override val dialogStack: Value<ChildStack<*, IEntityComponent.Dialog>> = _dialogStack
 
-    override val onPositionChange: ((item: T, newPosition: Int) -> Unit)? =
+    override val onListReordered: ((Map<T, Int>) -> Unit)? =
         when (type) {
             Parameter::class -> {
-                { item, newPosition ->
-                    //make actual parameters reordering here
-                    log("item $item got new pos: $newPosition")
-                    (item as? Parameter)?.let {
+                { items ->
+                    //update parameters positions:
+
+                    (items as? Map<Parameter, Int>)?.let { _items ->
                         scope.launch {
-                            updateEntity(UpdateEntity.Update(it.copy(position = newPosition)))
+                            updateEntities(
+                                UpdateEntities.Update(entities = _items
+                                    .map {
+                                        it.key.copy(position = it.value)
+                                    })
+                            )
                         }
                     }
-                }
 
-            }
-
-            else -> null
-        }
-
-    override val onMove: ((from: Int, to: Int) -> Unit)? =
-        when (type) {
-            Parameter::class -> {
-                { from, to ->
-                    //make actual parameters reordering here
-                    _state.reduce {
-                        it.copy(
-                            entities =
-                            when (val eList = it.entities) {
-                                is EntitiesList.Grouped -> eList
-                                is EntitiesList.NotGrouped -> eList.copy(
-                                    eList
-                                        .items
-                                        .toMutableList()
-                                        .apply { add(to, removeAt(from)) }
-                                )
-                            }
-
-                        )
-                    }
-
-//                    log("item $item got new pos: $newPosition")
-//                    (item as? Parameter)?.let {
-//                        scope.launch {
-//                            updateEntity(UpdateEntity.Update(it.copy(position = newPosition)))
-//                        }
-//                    }
                 }
 
             }
@@ -160,6 +121,19 @@ open class EntityComponent<T : IEntity>(
         Measurement::class -> di.instance<UpdateEntity<Measurement>>()
         else -> throw IllegalArgumentException("unsupported type: $type")
     } as LazyDelegate<UpdateEntity<T>>
+
+    private val updateEntities: UpdateEntities<T> by when (type) {
+        Sample::class -> di.instance<UpdateEntities<Sample>>()
+        SampleType::class -> di.instance<UpdateEntities<SampleType>>()
+        Parameter::class -> di.instance<UpdateEntities<Parameter>>()
+        Operation::class -> di.instance<UpdateEntities<Operation>>()
+        OperationType::class -> di.instance<UpdateEntities<OperationType>>()
+        Worker::class -> di.instance<UpdateEntities<Worker>>()
+        Place::class -> di.instance<UpdateEntities<Place>>()
+        domain.Unit::class -> di.instance<UpdateEntities<domain.Unit>>()
+        Measurement::class -> di.instance<UpdateEntities<Measurement>>()
+        else -> throw IllegalArgumentException("unsupported type: $type")
+    } as LazyDelegate<UpdateEntities<T>>
 
     private val getItemsCount: GetItemsCount<T> by when (type) {
         Sample::class -> di.instance<GetItemsCount<Sample>>()

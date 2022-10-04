@@ -1,13 +1,12 @@
 package ui.components.tables.mappers
 
 import domain.*
+import domain.valueobjects.Factor
 import persistence.exposed.dto.Tables
 import ui.components.tables.Cell
 import ui.components.tables.ColumnId
 import ui.components.tables.ColumnWidth
 import ui.components.tables.IDataTableMapper
-import utils.log
-import utils.replace
 import utils.replaceOrAdd
 
 data class MeasurementsDataMapper(val parameters: List<Parameter> = listOf()) : IDataTableMapper<Measurement> {
@@ -124,10 +123,10 @@ data class MeasurementsDataMapper(val parameters: List<Parameter> = listOf()) : 
                     parameter.id,
                     title = parameter.name,
                     width = ColumnWidth.Small,
-                    secondaryText = parameter.unit?.unit?.let {
+                    secondaryText = parameter.unit?.unit?.let { unit: String ->
                         ", "
-                            .plus(parameter.factor?.prefix ?: "")
-                            .plus(it)
+                            .plus(parameter.factor?.let { if (it == Factor.NoFactor) "" else it.prefix } ?: "")
+                            .plus(unit)
                     } ?: ""
                 )
             )

@@ -33,8 +33,6 @@ class MeasurementsEntityComponent(
         }
     }
 
-    override val onPositionChange: ((item: Measurement, newPosition: Int) -> Unit)? = null
-    override val onMove: ((from: Int, to: Int) -> Unit)? = null
 
 //    override fun duplicateEntities(entities: List<Measurement>) {
 //        scope.launch {

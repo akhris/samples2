@@ -2,7 +2,9 @@ package ui.screens.base_entity_screen
 
 import LocalSamplesType
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
@@ -149,7 +151,7 @@ private fun <T : IEntity> ShowDataTableForGroup(
         //parameters table:
         DataTable(
             modifier = modifier
-//                .horizontalScroll(state = rememberScrollState())
+                .horizontalScroll(state = rememberScrollState())
             ,
             items = entities,
             mapper = mapper,
@@ -227,7 +229,7 @@ private fun <T : IEntity> ShowDataTableForGroup(
             },
             firstItemIndex = ((pagingSpec.pageNumber - 1) * pagingSpec.itemsPerPage + 1).toInt(),
 //            onPositionChange = component.onPositionChange,
-            onMove = component.onMove
+            onItemsReordered = component.onListReordered
         )
 
         if (selectionMode is SelectionMode.Multiple<T> && selectedEntities.isNotEmpty()) {

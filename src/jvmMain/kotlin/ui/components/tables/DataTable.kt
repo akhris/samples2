@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.onClick
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
@@ -20,7 +21,6 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -31,14 +31,9 @@ import domain.IEntity
 import domain.valueobjects.Factor
 import domain.valueobjects.factors
 import kotlinx.coroutines.delay
-import org.burnoutcrew.reorderable.ReorderableItem
-import org.burnoutcrew.reorderable.detectReorder
-import org.burnoutcrew.reorderable.rememberReorderableLazyListState
-import org.burnoutcrew.reorderable.reorderable
 import ui.UiSettings
 import utils.DateTimeConverter
 import java.time.LocalDateTime
-import kotlin.math.max
 import kotlin.reflect.KClass
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
@@ -54,8 +49,10 @@ fun <T> DataTable(
     onSortingChanged: ((column: ColumnId, isAsc: Boolean) -> Unit)? = null,
     footer: (@Composable () -> Unit)? = null,
     firstItemIndex: Int? = null,
-    onMove: ((from: Int, to: Int) -> Unit)? = null
+    onItemsReordered: ((Map<T, Int>) -> Unit)? = null
 ) {
+
+    var _items by remember(items) { mutableStateOf(items) }
 
     val selectionMap = remember {
         mutableStateMapOf<String, Boolean>()
@@ -85,42 +82,11 @@ fun <T> DataTable(
         }
     }
 
+    val listState = rememberLazyListState()
+
     val tableWidth = remember(mapper) { mapper.getTableWidth() }
 
-//    val onMove = remember(_items.value) {
-//        { from: ItemPosition, to: ItemPosition ->
-//            _items.value = _items.value.apply {
-//                add(
-////                (to.index - 1).coerceIn(0, _items.value.size),
-//                    max(to.index - 1, 0),
-//                    removeAt(
-////                (from.index - 1).coerceIn(0, _items.value.size)
-//                        max(from.index - 1, 0)
-//                    )
-//                )
-//            }
-//        }
-//    }
-
-//    val canDragOver by remember(items) {
-//        mutableStateOf(
-//        { position: ItemPosition ->
-//            log("canDragOver: $position, $items")
-//            position.index > 0 && position.index <= items.size
-//        })
-//    }
-
-
-    val reorderableState = rememberReorderableLazyListState(onMove = { from, to ->
-        onMove?.invoke(
-            max(from.index - 1, 0),
-            max(to.index - 1, 0)
-        )
-    }, canDragOver = { position ->
-        position.index > 0 && position.index <= items.size
-    })
-
-    val headerElevation by animateDpAsState(if (reorderableState.listState.firstVisibleItemIndex == 0 && reorderableState.listState.firstVisibleItemScrollOffset == 0) 0.dp else 4.dp)
+    val headerElevation by animateDpAsState(if (listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0) 0.dp else 4.dp)
 
     val selectItem = remember {
         { item: T ->
@@ -158,8 +124,8 @@ fun <T> DataTable(
 //    val horizontalScrollState = if (onPositionChange == null) rememberScrollState() else null
 
     LazyColumn(
-        modifier = modifier.reorderable(reorderableState),
-        state = reorderableState.listState
+        modifier = modifier,
+        state = listState
     ) {
         stickyHeader {
             Row(
@@ -279,154 +245,183 @@ fun <T> DataTable(
                             }
                         }
                         //space for drag item if used:
-                        if (onMove != null) {
-                            Spacer(modifier = Modifier.width(UiSettings.DataTable.additionalRowWidth))
-                        }
+//                        if (onItemsReordered != null) {
+//                            Spacer(modifier = Modifier.width(UiSettings.DataTable.additionalRowWidth))
+//                        }
                     }
                 }
             }
         }
-        itemsIndexed(items, key = { index, item -> mapper.getId(item) }) { index, item ->
-            ReorderableItem(reorderableState, key = mapper.getId(item)) { isDragging ->
-                val elevation by animateDpAsState(if (isDragging) 16.dp else 0.dp)
-                RenderRow(
-                    elevation = elevation,
-
-                    renderIndex = {
-                        firstItemIndex?.let { fii ->
-                            Text(
-                                modifier = Modifier.width(UiSettings.DataTable.additionalRowWidth),
-                                text = (fii + index).toString(),
-                                style = MaterialTheme.typography.caption.copy(
-                                    color = UiSettings.DataTable.dividerColor(),
-                                    textAlign = TextAlign.Center
-                                )
+        itemsIndexed(_items, key = { index, item -> mapper.getId(item) }) { index, item ->
+            RenderRow(
+                modifier = Modifier.animateItemPlacement(),
+                renderIndex = {
+                    firstItemIndex?.let { fii ->
+                        Text(
+                            modifier = Modifier.width(UiSettings.DataTable.additionalRowWidth),
+                            text = (fii + index).toString(),
+                            style = MaterialTheme.typography.caption.copy(
+                                color = UiSettings.DataTable.dividerColor(),
+                                textAlign = TextAlign.Center
                             )
+                        )
+                    }
+                },
+                renderColumns = {
+                    for (column in mapper.columns) {
+                        //render cell:
+                        val cell = remember(mapper, item, column) {
+                            mapper.getCell(item, column)
                         }
-                    },
-                    renderColumns = {
-                        for (column in mapper.columns) {
-                            //render cell:
-                            val cell = remember(mapper, item, column) {
-                                mapper.getCell(item, column)
-                            }
 
-                            Box(
-                                modifier = Modifier.width(
-                                    when (column.width) {
-                                        is ColumnWidth.Custom -> column.width.width
-                                        ColumnWidth.Normal -> UiSettings.DataTable.columnWidthNormal
-                                        ColumnWidth.Small -> UiSettings.DataTable.columnWidthSmall
-                                        ColumnWidth.Wide -> UiSettings.DataTable.columnWidthWide
-                                    }
-                                )
-                                    .padding(horizontal = UiSettings.DataTable.columnPadding)
-                                    .clickable {
-                                        onCellClicked?.invoke(item, cell, column)
-                                    },
-                                contentAlignment = when (column.alignment) {
-                                    ColumnAlignment.Center -> Alignment.Center
-                                    ColumnAlignment.End -> Alignment.CenterEnd
-                                    ColumnAlignment.Start -> Alignment.CenterStart
+                        Box(
+                            modifier = Modifier.width(
+                                when (column.width) {
+                                    is ColumnWidth.Custom -> column.width.width
+                                    ColumnWidth.Normal -> UiSettings.DataTable.columnWidthNormal
+                                    ColumnWidth.Small -> UiSettings.DataTable.columnWidthSmall
+                                    ColumnWidth.Wide -> UiSettings.DataTable.columnWidthWide
                                 }
-                            ) {
+                            )
+                                .padding(horizontal = UiSettings.DataTable.columnPadding)
+                                .clickable {
+                                    onCellClicked?.invoke(item, cell, column)
+                                },
+                            contentAlignment = when (column.alignment) {
+                                ColumnAlignment.Center -> Alignment.Center
+                                ColumnAlignment.End -> Alignment.CenterEnd
+                                ColumnAlignment.Start -> Alignment.CenterStart
+                            }
+                        ) {
 
-                                RenderCell(
-                                    modifier =
-                                    Modifier
-                                        .padding(all = UiSettings.DataTable.cellPadding),
-                                    cell = cell,
-                                    onCellChanged = { changedCell ->
-                                        onItemChanged?.invoke(mapper.updateItem(item, column, changedCell))
-                                    },
-                                    columnAlignment = column.alignment
-                                )
-                            }
-                        }
-                    },
-                    renderSelectionControl = {
-                        when (selectionMode) {
-                            is SelectionMode.Multiple -> {
-                                Checkbox(
-                                    checked = selectionMap[mapper.getId(item)] == true,
-                                    onCheckedChange = null
-                                )
-                            }
-
-                            is SelectionMode.Single -> {
-                                RadioButton(
-                                    selected = selectionMap[mapper.getId(item)] == true,
-                                    onClick = null
-                                )
-                            }
-
-                            is SelectionMode.None -> {
-
-                            }
-                        }
-                    },
-                    onMouseClicked = { isShiftPressed ->
-                        selectItem(item)
-                        if (lastClickedIndex != -1 && isShiftPressed) {
-                            for (i in lastClickedIndex + 1 until index) {
-                                items.getOrNull(i)?.let {
-                                    selectItem(it)
-                                }
-                            }
-                        }
-                        lastClickedIndex = index
-                    },
-                    tableWidth = tableWidth,
-                    renderDragHandle = onMove?.let {
-                        {
-                            Icon(
-                                modifier = Modifier.detectReorder(reorderableState),
-                                painter = painterResource("vector/drag_handle_black_24dp.svg"),
-                                contentDescription = "drag handle",
-                                tint = MaterialTheme.colors.secondary
+                            RenderCell(
+                                modifier =
+                                Modifier
+                                    .padding(all = UiSettings.DataTable.cellPadding),
+                                cell = cell,
+                                onCellChanged = { changedCell ->
+                                    onItemChanged?.invoke(mapper.updateItem(item, column, changedCell))
+                                },
+                                columnAlignment = column.alignment
                             )
                         }
                     }
-                )
-            }
+                },
+                renderSelectionControl = {
+                    when (selectionMode) {
+                        is SelectionMode.Multiple -> {
+                            Checkbox(
+                                checked = selectionMap[mapper.getId(item)] == true,
+                                onCheckedChange = null
+                            )
+                        }
+
+                        is SelectionMode.Single -> {
+                            RadioButton(
+                                selected = selectionMap[mapper.getId(item)] == true,
+                                onClick = null
+                            )
+                        }
+
+                        is SelectionMode.None -> {
+
+                        }
+                    }
+                },
+                onMouseClicked = { isShiftPressed ->
+                    selectItem(item)
+                    if (lastClickedIndex != -1 && isShiftPressed) {
+                        for (i in lastClickedIndex + 1 until index) {
+                            items.getOrNull(i)?.let {
+                                selectItem(it)
+                            }
+                        }
+                    }
+                    lastClickedIndex = index
+                },
+                tableWidth = tableWidth,
+                renderDragHandle = onItemsReordered?.let {
+                    {
+                        Column(
+                            modifier = Modifier
+                                .width(UiSettings.DataTable.additionalRowWidth)
+                                .height(UiSettings.DataTable.rowHeight),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Box(modifier = Modifier.weight(1f)) {
+                                if (index > 0) {
+                                    Icon(
+                                        modifier = Modifier
+                                            .align(Alignment.Center)
+                                            .rotate(180f)
+                                            .clickable {
+                                                _items =
+                                                    _items.toMutableList().apply { add(index - 1, removeAt(index)) }
+                                            },
+                                        imageVector = Icons.Rounded.ArrowDropDown,
+                                        contentDescription = "move up",
+                                        tint = MaterialTheme.colors.secondary
+                                    )
+                                }
+                            }
+                            Box(modifier = Modifier.weight(1f)) {
+                                if (index < _items.size - 1)
+                                    Icon(
+                                        modifier = Modifier
+                                            .align(Alignment.Center)
+                                            .clickable {
+                                                _items =
+                                                    _items.toMutableList().apply { add(index + 1, removeAt(index)) }
+                                            },
+                                        imageVector = Icons.Rounded.ArrowDropDown,
+                                        contentDescription = "move down",
+                                        tint = MaterialTheme.colors.secondary
+                                    )
+                            }
+                        }
+                    }
+                }
+            )
         }
 
         footer?.let { f -> item { f() } }
     }
 
 
-//    onPositionChange?.let { opc ->
-//        // debounce on reordering:
-//        LaunchedEffect(_items, reorderableState.draggingItemKey) {
-//            if (_items == items || reorderableState.draggingItemKey != null) {
-//                // if lists are equal or dragging in progress - do not write changes to db
-//                return@LaunchedEffect
-//            }
-//            delay(UiSettings.Debounce.debounceTime)
-//            _items.value.forEachIndexed { index, _item ->
-//                if (items.getOrNull(index) != _item) {
-//                    // position of _item was actually changed:
-//                    opc(_item, index)
-//                }
-//            }
-//        }
-//    }
+    onItemsReordered?.let { oir ->
+        // debounce on reordering:
+        LaunchedEffect(_items) {
+            if (_items == items) {
+                // if lists are equal or dragging in progress - do not write changes to db
+                return@LaunchedEffect
+            }
+            delay(UiSettings.Debounce.debounceTime * 2)
+            val reorderedItems = _items.filterIndexed { index, t ->
+                items.getOrNull(index) != t
+            }.associateWith { _items.indexOf(it) }
+
+            if (reorderedItems.isNotEmpty()) {
+                oir(reorderedItems)
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
 private fun RenderRow(
-    elevation: Dp,
+    modifier: Modifier = Modifier,
+    elevation: Dp = 0.dp,
     renderIndex: @Composable RowScope.() -> Unit,
     renderColumns: @Composable RowScope.() -> Unit,
     renderSelectionControl: @Composable (BoxScope.() -> Unit)? = null,
-    renderDragHandle: @Composable (BoxScope.() -> Unit)? = null,
+    renderDragHandle: @Composable (RowScope.() -> Unit)? = null,
     onMouseClicked: (isShiftPressed: Boolean) -> Unit,
     tableWidth: Dp
 ) {
 
     var isHover by remember { mutableStateOf(false) }
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
         //if indexes are used:
         renderIndex()
 
@@ -459,23 +454,25 @@ private fun RenderRow(
                         renderSelectionControl?.invoke(this)
                     }
                     renderColumns()
-                    Box(
-                        modifier = Modifier.width(UiSettings.DataTable.additionalRowWidth),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        renderDragHandle?.invoke(this)
-                    }
+
                 }
                 //divider:
                 Box(
                     modifier = Modifier
-                        .align(Alignment.TopCenter)
+                        .align(Alignment.TopStart)
                         .height(1.dp)
-                        .width(tableWidth + UiSettings.DataTable.additionalRowWidth + (if (renderDragHandle != null) UiSettings.DataTable.additionalRowWidth else 0.dp))
+                        .width(
+                            tableWidth + UiSettings.DataTable.additionalRowWidth
+//                                + (if (renderDragHandle != null) UiSettings.DataTable.additionalRowWidth else 0.dp)
+                        )
                         .background(color = UiSettings.DataTable.dividerColor())
                 )
             }
         }
+
+
+
+        renderDragHandle?.invoke(this)
     }
 
 }
@@ -720,6 +717,7 @@ fun IDataTableMapper<*>.getTableWidth(): Dp {
 }
 
 sealed class Cell {
+
     data class EditTextCell(val value: String) : Cell()
     data class EntityCell(
         val entity: IEntity?,

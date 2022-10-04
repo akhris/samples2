@@ -1,7 +1,7 @@
 package domain.valueobjects
 
 sealed class Factor(val factor: Int, val prefix: String, val name: String) {
-    object NoFactor : Factor(1, "—", "no factor")
+    object NoFactor : Factor(1, "_", "no factor")
     object Femto : Factor(-15, "f", "femto")
     object Pico : Factor(-12, "p", "pico")
     object Nano : Factor(-9, "n", "nano")

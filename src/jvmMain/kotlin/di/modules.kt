@@ -1,9 +1,15 @@
 package di
 
-import domain.*
+import domain.IBaseDao
+import domain.IEntity
+import domain.IRepository
+import domain.IRepositoryCallback
 import domain.application.baseUseCases.*
 import kotlinx.coroutines.Dispatchers
-import org.kodein.di.*
+import org.kodein.di.DI
+import org.kodein.di.DirectDI
+import org.kodein.di.bindSingleton
+import org.kodein.di.instance
 import persistence.exposed.dao.*
 import persistence.repositories.BaseRepository
 import ui.components.tables.IDataTableMapper
@@ -28,6 +34,7 @@ inline fun <reified ENTITY : IEntity> getEntityModule(
     bindSingleton<GetEntities<ENTITY>> { GetEntities(repo = instance(), ioDispatcher = Dispatchers.IO) }
     bindSingleton<RemoveEntity<ENTITY>> { RemoveEntity(repo = instance(), ioDispatcher = Dispatchers.IO) }
     bindSingleton<UpdateEntity<ENTITY>> { UpdateEntity(repo = instance(), ioDispatcher = Dispatchers.IO) }
+    bindSingleton<UpdateEntities<ENTITY>> { UpdateEntities(repo = instance(), ioDispatcher = Dispatchers.IO) }
     bindSingleton<InsertEntity<ENTITY>> { InsertEntity(repo = instance(), ioDispatcher = Dispatchers.IO) }
     additionalBindings()
 }
