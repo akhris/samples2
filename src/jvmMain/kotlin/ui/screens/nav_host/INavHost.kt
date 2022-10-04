@@ -4,6 +4,7 @@ import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
 import domain.*
 import navigation.NavItem
+import ui.screens.base_entity_screen.EntityComponentWithFab
 import ui.screens.base_entity_screen.IEntityComponent
 
 /**
@@ -38,12 +39,12 @@ interface INavHost {
 
         //        class Samples(val component: ISamples) : Child()
         class Workers(val component: IEntityComponent<Worker>) : Child()
-        class Operations(val component: IEntityComponent<Operation>) : Child()
+        class Operations(val component: EntityComponentWithFab<Operation>) : Child()
         class OperationTypes(val component: IEntityComponent<OperationType>) : Child()
         class Norms(val component: IEntityComponent<Norm>) : Child()
-        class Parameters(val component: IEntityComponent<Parameter>) : Child()
-        class Samples(val component: IEntityComponent<Sample>) : Child()
-        class Measurements(val component: IEntityComponent<Measurement>) : Child()
+        class Parameters(val component: EntityComponentWithFab<Parameter>) : Child()
+        class Samples(val component: EntityComponentWithFab<Sample>) : Child()
+        class Measurements(val component: EntityComponentWithFab<Measurement>) : Child()
 
 
     }

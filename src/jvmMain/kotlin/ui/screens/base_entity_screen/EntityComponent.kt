@@ -20,6 +20,7 @@ import kotlinx.coroutines.*
 import org.kodein.di.DI
 import org.kodein.di.LazyDelegate
 import org.kodein.di.instance
+import ui.OperationState
 import ui.components.tables.Cell
 import ui.components.tables.IDataTableMapper
 import utils.DateTimeConverter
@@ -57,6 +58,12 @@ open class EntityComponent<T : IEntity>(
 
     override val dialogStack: Value<ChildStack<*, IEntityComponent.Dialog>> = _dialogStack
 
+
+    private val _operationState =
+        MutableValue<OperationState<T>>(OperationState.Empty())
+
+    override val operationState: Value<OperationState<T>> = _operationState
+
     override val onListReordered: ((Map<T, Int>) -> Unit)? =
         when (type) {
             Parameter::class -> {
@@ -65,12 +72,21 @@ open class EntityComponent<T : IEntity>(
 
                     (items as? Map<Parameter, Int>)?.let { _items ->
                         scope.launch {
-                            updateEntities(
-                                UpdateEntities.Update(entities = _items
+                            val updatedEntities =
+                                _items
                                     .map {
                                         it.key.copy(position = it.value)
-                                    })
+                                    }
+                                    .mapNotNull { it as? T }
+                            updateEntities(
+                                UpdateEntities.Update(entities = updatedEntities)
                             )
+                            updatedEntities
+                                .forEach { p ->
+                                    _operationState.reduce {
+                                        OperationState.UpdatedSuccessfully(p)
+                                    }
+                                }
                         }
                     }
 
@@ -216,7 +232,20 @@ open class EntityComponent<T : IEntity>(
 
     override fun updateEntity(entity: T) {
         scope.launch {
-            updateEntity(UpdateEntity.Update(entity))
+            val result = updateEntity(UpdateEntity.Update(entity))
+            when (result) {
+                is Result.Failure -> {
+                    _operationState.reduce {
+                        OperationState.UpdateFailure(entity, result.throwable)
+                    }
+                }
+
+                is Result.Success -> {
+                    _operationState.reduce {
+                        OperationState.UpdatedSuccessfully(result.value)
+                    }
+                }
+            }
         }
     }
 

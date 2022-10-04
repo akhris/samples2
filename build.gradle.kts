@@ -62,8 +62,6 @@ kotlin {
                 //reorderable compose lists:
                 implementation("org.burnoutcrew.composereorderable:reorderable:0.9.2")
 
-                //multi floating action button
-                implementation("academy.compose.companion:multi-fab:1.2")
             }
         }
         val jvmTest by getting

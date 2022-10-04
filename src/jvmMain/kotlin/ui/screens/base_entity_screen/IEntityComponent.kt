@@ -6,11 +6,14 @@ import domain.EntitiesList
 import domain.IEntity
 import domain.SampleType
 import domain.Specification
+import ui.OperationState
 import ui.components.tables.IDataTableMapper
 import kotlin.reflect.KClass
 
 interface IEntityComponent<T : IEntity> {
     val state: Value<State<T>>
+
+    val operationState: Value<OperationState<T>>
 
     val pagingSpec: Value<Specification.Paginated>
 
@@ -58,4 +61,5 @@ interface IEntityComponent<T : IEntity> {
             val columnName: String = ""
         ) : Dialog()
     }
+
 }
