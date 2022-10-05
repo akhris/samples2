@@ -8,10 +8,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowDropDown
+import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -34,6 +34,7 @@ import domain.valueobjects.Factor
 import domain.valueobjects.factors
 import kotlinx.coroutines.delay
 import ui.UiSettings
+import ui.components.DataTableEditTextField
 import utils.DateTimeConverter
 import utils.moveDown
 import utils.moveUp
@@ -581,18 +582,41 @@ private fun BoxScope.RenderEditTextCell(
 
     var value by remember(cell) { mutableStateOf(cell.value) }
 
-    BasicTextField(
+    DataTableEditTextField(
         modifier = modifier,
         value = value,
         onValueChange = { value = it },
-        singleLine = true,
-        textStyle = LocalTextStyle.current.copy(
-            textAlign = when (columnAlignment) {
-                ColumnAlignment.Center -> TextAlign.Center
-                ColumnAlignment.End -> TextAlign.End
-                ColumnAlignment.Start -> TextAlign.Start
+
+//        textStyle =
+////        LocalTextStyle.current.copy(
+//        MaterialTheme
+//            .typography
+//            .caption
+//            .copy(
+//            textAlign = when (columnAlignment) {
+//                ColumnAlignment.Center -> TextAlign.Center
+//                ColumnAlignment.End -> TextAlign.End
+//                ColumnAlignment.Start -> TextAlign.Start
+//            },
+//
+//        ),
+        trailingIcon = if (value.isNotEmpty()) {
+            {
+                Icon(
+                    Icons.Rounded.Clear,
+                    contentDescription = "clear text",
+                    modifier = Modifier.clickable {
+                        value = ""
+                    }
+                )
             }
-        )
+        } else null
+//        colors = TextFieldDefaults.textFieldColors(
+//            backgroundColor = Color.Transparent,
+//            cursorColor = Color.Black,
+//            focusedIndicatorColor = Color.Transparent,
+//            unfocusedIndicatorColor = Color.Transparent
+//        )
     )
 
 
