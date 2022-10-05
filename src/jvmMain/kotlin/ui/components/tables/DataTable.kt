@@ -2,6 +2,7 @@ package ui.components.tables
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -327,6 +328,7 @@ fun <T> DataTable(
                                 Modifier
                                     .padding(all = UiSettings.DataTable.cellPadding),
                                 cell = cell,
+                                columnId = column,
                                 onCellChanged = { changedCell ->
                                     _items.replace(
                                         mapper.updateItem(
@@ -539,39 +541,74 @@ private fun RenderRow(
 }
 
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun BoxScope.RenderCell(
     modifier: Modifier = Modifier,
     cell: Cell,
+    columnId: ColumnId,
     onCellChanged: (Cell) -> Unit,
     columnAlignment: ColumnAlignment
 ) {
-    when (cell) {
-        is Cell.EditTextCell -> RenderEditTextCell(
-            modifier = modifier,
-            cell = cell,
-            onCellChanged = onCellChanged,
-            columnAlignment = columnAlignment
-        )
 
-        is Cell.EntityCell -> RenderEntityCell(
-            modifier, cell,
-            onCellChanged = onCellChanged,
-            columnAlignment = columnAlignment
-        )
+    TooltipArea(
+        tooltip = {
+            // TODO: Show more info in tooltip (not just .toString())
+            if (cell.toString().isNotEmpty()) {
+                Surface(
+                    modifier = Modifier.widthIn(max = UiSettings.DataTable.toolTipWidth),
+                    elevation = 16.dp
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Text(text = columnId.title, style = MaterialTheme.typography.h4)
+                        Text(text = cell.toString(), style = MaterialTheme.typography.body1)
+                    }
+                }
+            }
+        }, content = {
+            when (cell) {
+                is Cell.EditTextCell -> RenderEditTextCell(
+                    modifier = modifier,
+                    cell = cell,
+                    onCellChanged = onCellChanged,
+                    columnAlignment = columnAlignment
+                )
 
-        is Cell.DateTimeCell -> RenderDateTimeCell(modifier, cell, columnAlignment)
-        is Cell.BooleanCell -> RenderBooleanCell(
-            modifier = modifier,
-            cell = cell,
-            onCellChanged = onCellChanged,
-            columnAlignment = columnAlignment
-        )
+                is Cell.EntityCell -> RenderEntityCell(
+                    modifier, cell,
+                    onCellChanged = onCellChanged,
+                    columnAlignment = columnAlignment
+                )
 
-        is Cell.ListCell -> TODO()
-    }
+                is Cell.DateTimeCell -> RenderDateTimeCell(modifier, cell, columnAlignment)
+                is Cell.BooleanCell -> RenderBooleanCell(
+                    modifier = modifier,
+                    cell = cell,
+                    onCellChanged = onCellChanged,
+                    columnAlignment = columnAlignment
+                )
+
+                is Cell.ListCell -> TODO()
+            }
+        })
 }
 
+@Composable
+private fun getCellTextStyle(columnAlignment: ColumnAlignment = ColumnAlignment.Start) = MaterialTheme
+    .typography
+    .caption
+    .copy(
+        textAlign = when (columnAlignment) {
+            ColumnAlignment.Center -> TextAlign.Center
+            ColumnAlignment.End -> TextAlign.End
+            ColumnAlignment.Start -> TextAlign.Start
+        }
+    )
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun BoxScope.RenderEditTextCell(
     modifier: Modifier = Modifier,
@@ -585,38 +622,22 @@ private fun BoxScope.RenderEditTextCell(
     DataTableEditTextField(
         modifier = modifier,
         value = value,
+        singleLine = false,
         onValueChange = { value = it },
-
-//        textStyle =
-////        LocalTextStyle.current.copy(
-//        MaterialTheme
-//            .typography
-//            .caption
-//            .copy(
-//            textAlign = when (columnAlignment) {
-//                ColumnAlignment.Center -> TextAlign.Center
-//                ColumnAlignment.End -> TextAlign.End
-//                ColumnAlignment.Start -> TextAlign.Start
-//            },
-//
-//        ),
+        textStyle = getCellTextStyle(columnAlignment),
         trailingIcon = if (value.isNotEmpty()) {
             {
                 Icon(
                     Icons.Rounded.Clear,
                     contentDescription = "clear text",
-                    modifier = Modifier.clickable {
-                        value = ""
-                    }
+                    modifier = Modifier
+                        .size(18.dp)
+                        .clickable {
+                            value = ""
+                        }
                 )
             }
         } else null
-//        colors = TextFieldDefaults.textFieldColors(
-//            backgroundColor = Color.Transparent,
-//            cursorColor = Color.Black,
-//            focusedIndicatorColor = Color.Transparent,
-//            unfocusedIndicatorColor = Color.Transparent
-//        )
     )
 
 
@@ -662,13 +683,7 @@ private fun BoxScope.RenderDateTimeCell(
     Text(
         modifier = modifier,
         text = cell.value?.let { DateTimeConverter.dateTimeToString(it) } ?: "",
-        style = LocalTextStyle.current.copy(
-            textAlign = when (columnAlignment) {
-                ColumnAlignment.Center -> TextAlign.Center
-                ColumnAlignment.End -> TextAlign.End
-                ColumnAlignment.Start -> TextAlign.Start
-            }
-        )
+        style = getCellTextStyle(columnAlignment)
     )
 
 }
@@ -698,14 +713,9 @@ private fun BoxScope.RenderEntityCell(
 
         else -> {
             Text(
-                modifier = modifier, text = cell.entity?.toString() ?: "",
-                style = LocalTextStyle.current.copy(
-                    textAlign = when (columnAlignment) {
-                        ColumnAlignment.Center -> TextAlign.Center
-                        ColumnAlignment.End -> TextAlign.End
-                        ColumnAlignment.Start -> TextAlign.Start
-                    }
-                )
+                modifier = modifier,
+                text = cell.entity?.toString() ?: "",
+                style = getCellTextStyle(columnAlignment)
             )
         }
     }
@@ -735,7 +745,8 @@ private fun BoxScope.RenderUnitCell(
                         //show factors list to choose from:
                         showFactorsList = true
                     }.padding(horizontal = 2.dp),
-                color = MaterialTheme.colors.secondary
+                color = MaterialTheme.colors.secondary,
+                style = getCellTextStyle(columnAlignment)
             )
 
             DropdownMenu(
@@ -820,15 +831,35 @@ fun IDataTableMapper<*>.getTableWidth(): Dp {
 
 sealed class Cell {
 
-    data class EditTextCell(val value: String) : Cell()
+    data class EditTextCell(val value: String) : Cell() {
+        override fun toString() = value
+    }
+
     data class EntityCell(
         val entity: IEntity?,
         val entityClass: KClass<out IEntity>,
         val tag: Any? = null
-    ) : Cell()
+    ) : Cell() {
+        override fun toString(): String {
+            val builder = StringBuilder()
+            entity?.let {
+                builder.appendLine(it.toString())
+            }
+            tag?.let {
+                builder.appendLine()
+                builder.appendLine(it.toString())    //used for factor in units
+            }
+            return builder.toString()
+        }
+    }
 
-    data class DateTimeCell(val value: LocalDateTime?) : Cell()
-    data class BooleanCell(val value: Boolean) : Cell()
+    data class DateTimeCell(val value: LocalDateTime?) : Cell() {
+        override fun toString() = value?.let { DateTimeConverter.dateTimeToString(it) } ?: ""
+    }
+
+    data class BooleanCell(val value: Boolean) : Cell() {
+        override fun toString() = value.toString()
+    }
 
     data class ListCell(val values: List<String>) : Cell()
 

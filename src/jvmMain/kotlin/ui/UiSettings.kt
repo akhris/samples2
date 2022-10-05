@@ -35,8 +35,6 @@ object UiSettings {
     }
 
     object DataTable {
-        val gridLinesColor = Color.LightGray.copy(alpha = 0.5f)
-        val gridLinesWidth = 1.dp
         val cellPadding: Dp = 4.dp
         val additionalRowWidth: Dp = 48.dp
 
@@ -45,11 +43,14 @@ object UiSettings {
         val headerRowHeight: Dp = 56.dp
         val columnPadding: Dp = 16.dp
 
-        val columnWidthNormal: Dp = 180.dp
-        val columnWidthWide: Dp = 240.dp
-        val columnWidthSmall: Dp = 120.dp
+        val columnWidthNormal: Dp = 140.dp
+        val columnWidthWide: Dp = 180.dp
+        val columnWidthSmall: Dp = 100.dp
 
         private val dividerAlpha = 0.12f
+
+        val toolTipWidth = 360.dp
+        val toolTipHeight = 240.dp
 
         @Composable
         fun dividerColor() = MaterialTheme.colors.onSurface.copy(alpha = dividerAlpha)

@@ -14,6 +14,8 @@ sealed class Factor(val factor: Int, val prefix: String, val name: String) {
     object Tera : Factor(12, "T", "tera")
     object Peta : Factor(15, "P", "peta")
 
+    override fun toString(): String = name
+
     companion object {
         fun parse(factor: Int?): Factor {
             return factors.find { it.factor == factor } ?: NoFactor
