@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.onClick
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -19,8 +18,9 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.isShiftPressed
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
@@ -33,10 +33,11 @@ import domain.IEntity
 import domain.valueobjects.Factor
 import domain.valueobjects.factors
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import ui.OperationState
 import ui.UiSettings
 import utils.DateTimeConverter
+import utils.moveDown
+import utils.moveUp
+import utils.replace
 import java.time.LocalDateTime
 import kotlin.reflect.KClass
 
@@ -45,19 +46,18 @@ import kotlin.reflect.KClass
 fun <T> DataTable(
     modifier: Modifier = Modifier,
     items: List<T>,
-    operationState: State<OperationState<T>>,
     mapper: IDataTableMapper<T>,
     onItemChanged: ((T) -> Unit)? = null,
     selectionMode: SelectionMode<T> = SelectionMode.Multiple(),
     onCellClicked: ((T, Cell, ColumnId) -> Unit)? = null,
     onHeaderClicked: ((ColumnId) -> Unit)? = null,
     onSortingChanged: ((column: ColumnId, isAsc: Boolean) -> Unit)? = null,
-    footer: (@Composable () -> Unit)? = null,
+    footer: @Composable() (() -> Unit)? = null,
     firstItemIndex: Int? = null,
-    onItemsReordered: ((Map<T, Int>) -> Unit)? = null
+    isReorderable: Boolean = false
 ) {
 
-    var _items by remember(items) { mutableStateOf(items) }
+    val _items = remember(items) { items.toMutableStateList() }
 
     val selectionMap = remember {
         mutableStateMapOf<String, Boolean>()
@@ -65,38 +65,6 @@ fun <T> DataTable(
 
     val indicators = remember {
         mutableStateMapOf<String, OperationIndicator>()
-    }
-
-
-    val scope = rememberCoroutineScope()
-    //update indicators on operation state changed:
-    //LaunchEffect not working here since it gets cancelled on state value change
-    scope.launch {
-        val id =
-            when (val state = operationState.value) {
-                is OperationState.UpdateFailure -> {
-                    mapper.getId(state.entity).also {
-                        indicators[it] = OperationIndicator.UpdatedWithError
-                    }
-                }
-
-                is OperationState.UpdatedSuccessfully -> {
-                    mapper.getId(state.entity).also {
-                        indicators[it] = OperationIndicator.UpdatedSuccessfully
-                    }
-                }
-
-                else -> null
-            }
-
-        id?.let {
-            // 2. wait for debounce time
-            delay(UiSettings.Debounce.debounceTime)
-
-            // 3. clear the indicator
-            indicators.remove(it)
-        }
-
     }
 
     LaunchedEffect(selectionMode) {
@@ -159,12 +127,15 @@ fun <T> DataTable(
     }
 
 
+    var isShiftPressed by remember { mutableStateOf(false) }
     var lastClickedIndex by remember(items) { mutableStateOf(-1) }
 
-//    val horizontalScrollState = if (onPositionChange == null) rememberScrollState() else null
-
     LazyColumn(
-        modifier = modifier,
+        modifier = modifier
+            .onKeyEvent {
+                isShiftPressed = it.isShiftPressed
+                true
+            },
         state = listState
     ) {
         stickyHeader {
@@ -314,7 +285,7 @@ fun <T> DataTable(
                                 .matchParentSize()
                                 .background(
                                     color = when (indicator) {
-                                        OperationIndicator.GoingToSave -> Color.Yellow
+                                        OperationIndicator.ChangedItem -> Color.Yellow
                                         OperationIndicator.UpdatedSuccessfully -> Color.Green
                                         OperationIndicator.UpdatedWithError -> Color.Red
                                     }
@@ -355,20 +326,17 @@ fun <T> DataTable(
                                 Modifier
                                     .padding(all = UiSettings.DataTable.cellPadding),
                                 cell = cell,
-                                onCellChangedInitially = { wasChanged ->
-                                    when (wasChanged) {
-                                        true -> {
-                                            indicators[mapper.getId(item)] = OperationIndicator.GoingToSave
-                                        }
-
-                                        false -> {
-                                            indicators.remove(mapper.getId(item))
-                                        }
+                                onCellChanged = { changedCell ->
+                                    _items.replace(
+                                        mapper.updateItem(
+                                            item = item,
+                                            columnId = column,
+                                            cell = changedCell
+                                        )
+                                    ) {
+                                        mapper.getId(it) == mapper.getId(item)
                                     }
-
-                                },
-                                onCellChangedFinally = { changedCell ->
-                                    onItemChanged?.invoke(mapper.updateItem(item, column, changedCell))
+//                                    onItemChanged?.invoke(mapper.updateItem(item, column, changedCell))
                                 },
                                 columnAlignment = column.alignment
                             )
@@ -380,14 +348,26 @@ fun <T> DataTable(
                         is SelectionMode.Multiple -> {
                             Checkbox(
                                 checked = selectionMap[mapper.getId(item)] == true,
-                                onCheckedChange = null
+                                onCheckedChange = {
+                                    selectItem(item)
+                                    if (lastClickedIndex != -1 && isShiftPressed) {
+                                        for (i in lastClickedIndex + 1 until index) {
+                                            items.getOrNull(i)?.let {
+                                                selectItem(it)
+                                            }
+                                        }
+                                    }
+                                    lastClickedIndex = index
+                                }
                             )
                         }
 
                         is SelectionMode.Single -> {
                             RadioButton(
                                 selected = selectionMap[mapper.getId(item)] == true,
-                                onClick = null
+                                onClick = {
+                                    selectItem(item)
+                                }
                             )
                         }
 
@@ -396,19 +376,7 @@ fun <T> DataTable(
                         }
                     }
                 },
-                onMouseClicked = { isShiftPressed ->
-                    selectItem(item)
-                    if (lastClickedIndex != -1 && isShiftPressed) {
-                        for (i in lastClickedIndex + 1 until index) {
-                            items.getOrNull(i)?.let {
-                                selectItem(it)
-                            }
-                        }
-                    }
-                    lastClickedIndex = index
-                },
-                tableWidth = tableWidth,
-                renderDragHandle = onItemsReordered?.let {
+                renderDragHandle = if (isReorderable) {
                     {
                         Column(
                             modifier = Modifier
@@ -422,10 +390,7 @@ fun <T> DataTable(
                                         modifier = Modifier
                                             .align(Alignment.Center)
                                             .rotate(180f)
-                                            .clickable {
-                                                _items =
-                                                    _items.toMutableList().apply { add(index - 1, removeAt(index)) }
-                                            },
+                                            .clickable { _items.moveUp(index) },
                                         imageVector = Icons.Rounded.ArrowDropDown,
                                         contentDescription = "move up",
                                         tint = MaterialTheme.colors.secondary
@@ -437,10 +402,7 @@ fun <T> DataTable(
                                     Icon(
                                         modifier = Modifier
                                             .align(Alignment.Center)
-                                            .clickable {
-                                                _items =
-                                                    _items.toMutableList().apply { add(index + 1, removeAt(index)) }
-                                            },
+                                            .clickable { _items.moveDown(index) },
                                         imageVector = Icons.Rounded.ArrowDropDown,
                                         contentDescription = "move down",
                                         tint = MaterialTheme.colors.secondary
@@ -448,7 +410,13 @@ fun <T> DataTable(
                             }
                         }
                     }
-                }
+                } else null,
+                onRowClicked = {
+                    if (selectionMode is SelectionMode.Single) {
+                        selectItem(item)
+                    }
+                },
+                tableWidth = tableWidth
             )
         }
 
@@ -456,34 +424,37 @@ fun <T> DataTable(
     }
 
 
+    // debounce on reordering:
+    LaunchedEffect(_items.toList(), items) {
+        if (_items.toList() == items) {
+            // if lists are equal - do not write changes to db
+            indicators.clear()
+            return@LaunchedEffect
+        }
 
-
-    onItemsReordered?.let { oir ->
-        // debounce on reordering:
-        LaunchedEffect(_items) {
-            if (_items == items) {
-                // if lists are equal or dragging in progress - do not write changes to db
-                return@LaunchedEffect
-            }
-
-            val reorderedItems = _items.filterIndexed { index, t ->
-                items.getOrNull(index) != t
-            }.associateWith { _items.indexOf(it) }
-
-            reorderedItems.forEach {
-                indicators[mapper.getId(it.key)] = OperationIndicator.GoingToSave
-            }
-
-            delay(UiSettings.Debounce.debounceTime * 2)
-
-
-            if (reorderedItems.isNotEmpty()) {
-                reorderedItems.forEach {
-                    indicators[mapper.getId(it.key)] = OperationIndicator.GoingToSave
+        //compare items one by one:
+        val changedItems =
+            _items
+                .mapIndexed { index, t ->
+                    mapper.updatePosition(t, index)
                 }
-                oir(reorderedItems)
+                .filterIndexed { index, t ->
+                    items.getOrNull(index) != t
+                }
+
+        changedItems.forEach {
+            indicators[mapper.getId(it)] = OperationIndicator.ChangedItem
+        }
+
+        delay(UiSettings.Debounce.debounceTime)
+
+
+        if (changedItems.isNotEmpty() && onItemChanged != null) {
+            changedItems.forEach {
+                onItemChanged(it)
             }
         }
+
     }
 }
 
@@ -492,12 +463,12 @@ fun <T> DataTable(
 private fun RenderRow(
     modifier: Modifier = Modifier,
     elevation: Dp = 0.dp,
-    renderIndex: @Composable RowScope.() -> Unit,
-    renderIndicator: @Composable (BoxScope.() -> Unit)? = null,
-    renderColumns: @Composable RowScope.() -> Unit,
-    renderSelectionControl: @Composable (BoxScope.() -> Unit)? = null,
-    renderDragHandle: @Composable (RowScope.() -> Unit)? = null,
-    onMouseClicked: (isShiftPressed: Boolean) -> Unit,
+    renderIndex: @Composable() (RowScope.() -> Unit),
+    renderIndicator: @Composable() (BoxScope.() -> Unit)? = null,
+    renderColumns: @Composable() (RowScope.() -> Unit),
+    renderSelectionControl: @Composable() (BoxScope.() -> Unit)? = null,
+    renderDragHandle: @Composable() (RowScope.() -> Unit)? = null,
+    onRowClicked: () -> Unit,
     tableWidth: Dp
 ) {
 
@@ -532,12 +503,7 @@ private fun RenderRow(
                                 MaterialTheme.colors.primary.copy(alpha = 0.1f)
                             } else MaterialTheme.colors.surface
                         )
-                        .onClick {
-                            onMouseClicked(false)
-                        }
-                        .onClick(keyboardModifiers = { isShiftPressed }) {
-                            onMouseClicked(true)
-                        },
+                        .clickable { onRowClicked() },
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // selection control:
@@ -576,23 +542,20 @@ private fun RenderRow(
 private fun BoxScope.RenderCell(
     modifier: Modifier = Modifier,
     cell: Cell,
-    onCellChangedInitially: (wasChanged: Boolean) -> Unit,
-    onCellChangedFinally: (Cell) -> Unit,
+    onCellChanged: (Cell) -> Unit,
     columnAlignment: ColumnAlignment
 ) {
     when (cell) {
         is Cell.EditTextCell -> RenderEditTextCell(
             modifier = modifier,
             cell = cell,
-            onCellChangedInitially = onCellChangedInitially,
-            onCellChangedFinally = onCellChangedFinally,
+            onCellChanged = onCellChanged,
             columnAlignment = columnAlignment
         )
 
         is Cell.EntityCell -> RenderEntityCell(
             modifier, cell,
-            onCellChangedInitially = onCellChangedInitially,
-            onCellChangedFinally = onCellChangedFinally,
+            onCellChanged = onCellChanged,
             columnAlignment = columnAlignment
         )
 
@@ -600,8 +563,7 @@ private fun BoxScope.RenderCell(
         is Cell.BooleanCell -> RenderBooleanCell(
             modifier = modifier,
             cell = cell,
-            onCellChangedInitially = onCellChangedInitially,
-            onCellChangedFinally = onCellChangedFinally,
+            onCellChanged = onCellChanged,
             columnAlignment = columnAlignment
         )
 
@@ -613,8 +575,7 @@ private fun BoxScope.RenderCell(
 private fun BoxScope.RenderEditTextCell(
     modifier: Modifier = Modifier,
     cell: Cell.EditTextCell,
-    onCellChangedInitially: (wasChanged: Boolean) -> Unit,
-    onCellChangedFinally: (Cell) -> Unit,
+    onCellChanged: (Cell) -> Unit,
     columnAlignment: ColumnAlignment
 ) {
 
@@ -637,12 +598,11 @@ private fun BoxScope.RenderEditTextCell(
 
     //debounce:
     LaunchedEffect(value) {
-        onCellChangedInitially(value != cell.value)
         if (value == cell.value) {
             return@LaunchedEffect
         }
         delay(UiSettings.Debounce.debounceTime)
-        onCellChangedFinally(cell.copy(value = value))
+        onCellChanged(cell.copy(value = value))
     }
 }
 
@@ -650,8 +610,7 @@ private fun BoxScope.RenderEditTextCell(
 private fun BoxScope.RenderBooleanCell(
     modifier: Modifier = Modifier,
     cell: Cell.BooleanCell,
-    onCellChangedInitially: (wasChanged: Boolean) -> Unit,
-    onCellChangedFinally: (Cell) -> Unit,
+    onCellChanged: (Cell) -> Unit,
     columnAlignment: ColumnAlignment
 ) {
     var value by remember(cell) { mutableStateOf(cell.value) }
@@ -660,12 +619,11 @@ private fun BoxScope.RenderBooleanCell(
 
     //debounce:
     LaunchedEffect(value) {
-        onCellChangedInitially(value != cell.value)
         if (value == cell.value) {
             return@LaunchedEffect
         }
         delay(UiSettings.Debounce.debounceTime)
-        onCellChangedFinally(cell.copy(value = value))
+        onCellChanged(cell.copy(value = value))
     }
 }
 
@@ -696,8 +654,7 @@ private fun BoxScope.RenderDateTimeCell(
 private fun BoxScope.RenderEntityCell(
     modifier: Modifier = Modifier,
     cell: Cell.EntityCell,
-    onCellChangedInitially: (wasChanged: Boolean) -> Unit,
-    onCellChangedFinally: (Cell) -> Unit,
+    onCellChanged: (Cell) -> Unit,
     columnAlignment: ColumnAlignment
 ) {
 
@@ -709,8 +666,7 @@ private fun BoxScope.RenderEntityCell(
                 unit = cell.entity as? domain.Unit,
                 factor = cell.tag as? Factor,
                 onFactorChanged = {
-                    onCellChangedInitially(cell.tag != it)
-                    onCellChangedFinally(cell.copy(tag = it))
+                    onCellChanged(cell.copy(tag = it))
                 },
                 columnAlignment = columnAlignment
             )
@@ -820,6 +776,7 @@ interface IDataTableMapper<T> {
     val columns: List<ColumnId>
     fun getCell(item: T, columnId: ColumnId): Cell
     fun updateItem(item: T, columnId: ColumnId, cell: Cell): T
+    fun updatePosition(item: T, position: Int): T = item
     fun getId(item: T): String
 }
 
@@ -876,5 +833,5 @@ sealed class OperationIndicator {
     object UpdatedSuccessfully : OperationIndicator()
     object UpdatedWithError : OperationIndicator()
 
-    object GoingToSave : OperationIndicator()
+    object ChangedItem : OperationIndicator()
 }

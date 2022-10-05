@@ -27,6 +27,10 @@ class ParametersDataMapper : IDataTableMapper<Parameter> {
         } ?: item
     }
 
+    override fun updatePosition(item: Parameter, position: Int): Parameter {
+        return item.copy(position = position)
+    }
+
     override fun getCell(item: Parameter, columnId: ColumnId): Cell {
         return when (Column.requireColumn(columnId)) {
             Column.Description -> Cell.EditTextCell(value = item.description)

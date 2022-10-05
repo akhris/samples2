@@ -64,39 +64,10 @@ open class EntityComponent<T : IEntity>(
 
     override val operationState: Value<OperationState<T>> = _operationState
 
-    override val onListReordered: ((Map<T, Int>) -> Unit)? =
-        when (type) {
-            Parameter::class -> {
-                { items ->
-                    //update parameters positions:
-
-                    (items as? Map<Parameter, Int>)?.let { _items ->
-                        scope.launch {
-                            val updatedEntities =
-                                _items
-                                    .map {
-                                        it.key.copy(position = it.value)
-                                    }
-                                    .mapNotNull { it as? T }
-                            updateEntities(
-                                UpdateEntities.Update(entities = updatedEntities)
-                            )
-                            updatedEntities
-                                .forEach { p ->
-                                    _operationState.reduce {
-                                        OperationState.UpdatedSuccessfully(p)
-                                    }
-                                }
-                        }
-                    }
-
-                }
-
-            }
-
-            else -> null
-        }
-
+    override val isReorderable: Boolean = when (type) {
+        Parameter::class -> true
+        else -> false
+    }
 
     private val getEntities: GetEntities<T> by when (type) {
         Sample::class -> di.instance<GetEntities<Sample>>()

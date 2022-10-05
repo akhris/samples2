@@ -6,6 +6,23 @@ fun <T> List<T>.replace(newValue: T, block: (T) -> Boolean): List<T> {
     }
 }
 
+fun <T> MutableList<T>.replace(newValue: T, block: (T) -> Boolean) {
+    val oldItem = this.find { block(it) } ?: return
+    val oldItemPos = indexOf(oldItem)
+    this[oldItemPos] = newValue
+}
+
+fun <T> MutableList<T>.moveDown(index: Int) {
+    if (index in indices)
+        add(index + 1, removeAt(index))
+}
+
+fun <T> MutableList<T>.moveUp(index: Int) {
+    if (index in indices)
+        add(index - 1, removeAt(index))
+}
+
+
 fun <T> List<T>.replaceOrAdd(newValue: T, block: (T) -> Boolean): List<T> {
     var wasReplaced: Boolean = false
 

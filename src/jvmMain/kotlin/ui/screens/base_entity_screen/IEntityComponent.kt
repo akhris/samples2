@@ -36,7 +36,7 @@ interface IEntityComponent<T : IEntity> {
         val entities: EntitiesList<E> = EntitiesList.empty()
     )
 
-    val onListReordered: ((Map<T, Int>) -> Unit)?
+    val isReorderable: Boolean
 
     /**
      * Exposes Router State

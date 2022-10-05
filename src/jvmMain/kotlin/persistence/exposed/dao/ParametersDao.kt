@@ -4,6 +4,7 @@ import domain.EntitiesList
 import domain.ISpecification
 import domain.Parameter
 import domain.Specification
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.statements.InsertStatement
 import org.jetbrains.exposed.sql.statements.UpdateStatement
 import persistence.exposed.dto.EntityParameter
@@ -18,9 +19,11 @@ class ParametersDao : BaseExposedDao<Parameter, EntityParameter, Tables.Paramete
 ) {
 
     override fun insertStatement(entity: Parameter): Tables.Parameters.(InsertStatement<Number>) -> Unit = {
+
         it[name] = entity.name
         it[description] = entity.description
         it[position] = entity.position
+            ?: ((table.slice(table.position).selectAll().maxOfOrNull { row -> row[table.position] ?: 0 } ?: 0) + 1)
         it[sampleType] = entity.sampleType.id.toUUID()
         it[unit] = entity.unit?.id?.toUUID()
         it[factor] = entity.factor?.factor

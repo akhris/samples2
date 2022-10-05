@@ -153,7 +153,6 @@ private fun <T : IEntity> ShowDataTableForGroup(
             modifier = modifier
                 .horizontalScroll(state = rememberScrollState()),
             items = entities,
-            mapper = mapper,
             onItemChanged = {
                 component.updateEntity(it)
             },
@@ -170,7 +169,7 @@ private fun <T : IEntity> ShowDataTableForGroup(
                                 val updatedItem = mapper.updateItem(
                                     item = item,
                                     columnId = column,
-                                    cell = cell.copy(entity = it)
+                                    cell = cell.copy(entity = it),
                                 )
                                 component.updateEntity(updatedItem)
                             },
@@ -186,7 +185,7 @@ private fun <T : IEntity> ShowDataTableForGroup(
                                         mapper.updateItem(
                                             item,
                                             columnId = column,
-                                            cell = cell.copy(value = it)
+                                            cell = cell.copy(value = it),
                                         )
                                     component.updateEntity(updatedItem)
                                 })
@@ -201,35 +200,36 @@ private fun <T : IEntity> ShowDataTableForGroup(
                 }
             },
             //wrapping selection mode to make additional actions available (duplicating/deleting)
-            selectionMode = when (selectionMode) {
-                is SelectionMode.Multiple -> SelectionMode.Multiple(
-                    initialSelection = selectionMode.initialSelection,
-                    onItemsSelected = {
-                        selectionMode.onItemsSelected?.invoke(it)
-                        selectedEntities.clear()
-                        selectedEntities.addAll(it)
-                    }
-                )
-
-                is SelectionMode.None -> SelectionMode.None()
-                is SelectionMode.Single -> SelectionMode.Single(
-                    initialSelection = selectionMode.initialSelection,
-                    onItemSelected = {
-                        selectionMode.onItemSelected?.invoke(it)
-                        selectedEntities.clear()
-                        it?.let {
-                            selectedEntities.add(it)
+            selectionMode = remember(selectionMode) {
+                when (selectionMode) {
+                    is SelectionMode.Multiple -> SelectionMode.Multiple(
+                        initialSelection = selectionMode.initialSelection,
+                        onItemsSelected = {
+                            selectionMode.onItemsSelected?.invoke(it)
+                            selectedEntities.clear()
+                            selectedEntities.addAll(it)
                         }
-                    }
-                )
+                    )
+
+                    is SelectionMode.None -> SelectionMode.None()
+                    is SelectionMode.Single -> SelectionMode.Single(
+                        initialSelection = selectionMode.initialSelection,
+                        onItemSelected = {
+                            selectionMode.onItemSelected?.invoke(it)
+                            selectedEntities.clear()
+                            it?.let {
+                                selectedEntities.add(it)
+                            }
+                        }
+                    )
+                }
             },
             footer = {
                 Spacer(modifier = Modifier.height(bottomPanelHeight))
             },
-            firstItemIndex = ((pagingSpec.pageNumber - 1) * pagingSpec.itemsPerPage + 1).toInt(),
-//            onPositionChange = component.onPositionChange,
-            onItemsReordered = component.onListReordered,
-            operationState = remember(component) { component.operationState }.subscribeAsState()
+            firstItemIndex = remember(pagingSpec) { ((pagingSpec.pageNumber - 1) * pagingSpec.itemsPerPage + 1).toInt() },
+            isReorderable = remember(component) { component.isReorderable },
+            mapper = mapper
         )
 
         if (selectionMode is SelectionMode.Multiple<T> && selectedEntities.isNotEmpty()) {
