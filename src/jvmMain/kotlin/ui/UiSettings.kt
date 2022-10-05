@@ -2,7 +2,6 @@ package ui
 
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -41,11 +40,11 @@ object UiSettings {
         //material specs: https://material.io/components/data-tables#specs
         val rowHeight: Dp = 52.dp
         val headerRowHeight: Dp = 56.dp
-        val columnPadding: Dp = 16.dp
+        val columnPadding: Dp = 4.dp
 
-        val columnWidthNormal: Dp = 140.dp
-        val columnWidthWide: Dp = 180.dp
-        val columnWidthSmall: Dp = 100.dp
+        val columnDefaultWidthNormal: Dp = 180.dp
+        val columnDefaultWidthWide: Dp = 240.dp
+        val columnDefaultWidthSmall: Dp = 100.dp
 
         private val dividerAlpha = 0.12f
 

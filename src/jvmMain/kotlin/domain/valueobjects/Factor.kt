@@ -1,18 +1,18 @@
 package domain.valueobjects
 
 sealed class Factor(val factor: Int, val prefix: String, val name: String) {
-    object NoFactor : Factor(1, "_", "no factor")
-    object Femto : Factor(-15, "f", "femto")
-    object Pico : Factor(-12, "p", "pico")
-    object Nano : Factor(-9, "n", "nano")
-    object Micro : Factor(-6, "u", "micro")
-    object Milli : Factor(-3, "m", "milli")
-    object Centi : Factor(-2, "c", "centi")
-    object Kilo : Factor(3, "k", "kilo")
-    object Mega : Factor(6, "M", "mega")
-    object Giga : Factor(9, "G", "giga")
-    object Tera : Factor(12, "T", "tera")
-    object Peta : Factor(15, "P", "peta")
+    object NoFactor : Factor(1, "_", "без приставки")
+    object Femto : Factor(-15, "ф", "фемто")
+    object Pico : Factor(-12, "п", "пико")
+    object Nano : Factor(-9, "н", "нано")
+    object Micro : Factor(-6, "мк", "микро")
+    object Milli : Factor(-3, "м", "милли")
+    object Centi : Factor(-2, "с", "санти")
+    object Kilo : Factor(3, "к", "кило")
+    object Mega : Factor(6, "М", "мега")
+    object Giga : Factor(9, "Г", "гига")
+    object Tera : Factor(12, "Т", "тера")
+    object Peta : Factor(15, "П", "пета")
 
     override fun toString(): String = name
 

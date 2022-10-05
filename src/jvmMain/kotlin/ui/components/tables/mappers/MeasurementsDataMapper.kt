@@ -112,9 +112,9 @@ data class MeasurementsDataMapper(val parameters: List<Parameter> = listOf()) : 
     private sealed class Column(val id: ColumnId) {
 
         object Sample : Column(ColumnId(Tables.Measurements.sample.name, "Образец", width = ColumnWidth.Small))
-        object DateTime : Column(ColumnId(Tables.Measurements.dateTime.name, "Дата"))
+        object DateTime : Column(ColumnId(Tables.Measurements.dateTime.name, "Дата", width = ColumnWidth.Normal))
         object Operator : Column(ColumnId(Tables.Measurements.operator.name, "Оператор"))
-        object Place : Column(ColumnId(Tables.Measurements.place.name, "Место"))
+        object Place : Column(ColumnId(Tables.Measurements.place.name, "Место", width = ColumnWidth.Small))
         object Comment : Column(ColumnId(Tables.Measurements.comment.name, "Комментарий"))
         object Conditions : Column(ColumnId(Tables.Measurements.conditions.name, "Условия"))
         class Result(val parameter: Parameter) :
