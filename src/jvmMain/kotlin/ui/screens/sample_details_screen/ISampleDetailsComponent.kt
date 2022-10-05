@@ -1,0 +1,3 @@
+package ui.screens.sample_details_screen
+
+interface ISampleDetailsComponent

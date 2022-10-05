@@ -6,6 +6,7 @@ import domain.*
 import navigation.NavItem
 import ui.screens.base_entity_screen.EntityComponentWithFab
 import ui.screens.base_entity_screen.IEntityComponent
+import ui.screens.sample_details_screen.ISampleDetailsComponent
 
 /**
  * Interface for Navigation Host
@@ -45,7 +46,7 @@ interface INavHost {
         class Parameters(val component: EntityComponentWithFab<Parameter>) : Child()
         class Samples(val component: EntityComponentWithFab<Sample>) : Child()
         class Measurements(val component: EntityComponentWithFab<Measurement>) : Child()
-
+        class SampleDetails(val component: ISampleDetailsComponent) : Child()
 
     }
 

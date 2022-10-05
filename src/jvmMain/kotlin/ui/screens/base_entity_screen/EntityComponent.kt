@@ -172,6 +172,10 @@ open class EntityComponent<T : IEntity>(
         _mutableDataMapper.reduce(reducer)
     }
 
+    override fun onEntitySelected(entity: T) {
+        //do nothing
+    }
+
 
     override fun insertNewEntity(sampleType: SampleType) {
 

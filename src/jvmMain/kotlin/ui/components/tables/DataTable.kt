@@ -55,6 +55,7 @@ fun <T> DataTable(
     selectionMode: SelectionMode<T> = SelectionMode.Multiple(),
     onCellClicked: ((T, Cell, ColumnId) -> Unit)? = null,
     onHeaderClicked: ((ColumnId) -> Unit)? = null,
+    onItemRowClicked: ((T) -> Unit)? = null,
     onSortingChanged: ((column: ColumnId, isAsc: Boolean) -> Unit)? = null,
     footer: @Composable() (() -> Unit)? = null,
     firstItemIndex: Int? = null,
@@ -476,6 +477,8 @@ fun <T> DataTable(
                 onRowClicked = {
                     if (selectionMode is SelectionMode.Single) {
                         selectItem(item)
+                    } else {
+                        onItemRowClicked?.invoke(item)
                     }
                 },
                 tableWidth = tableWidth

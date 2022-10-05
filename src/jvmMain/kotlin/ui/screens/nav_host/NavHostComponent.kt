@@ -25,6 +25,7 @@ import ui.screens.base_entity_screen.entityComponents.MeasurementsEntityComponen
 import ui.screens.base_entity_screen.entityComponents.OperationsComponent
 import ui.screens.base_entity_screen.entityComponents.ParametersComponent
 import ui.screens.base_entity_screen.entityComponents.SamplesComponent
+import ui.screens.sample_details_screen.SampleDetailsComponent
 
 /**
  * Main navigation component that holds all destinations
@@ -80,6 +81,10 @@ class NavHostComponent constructor(
                     componentContext = componentContext
                 )
             )
+
+            Config.SampleDetails -> INavHost.Child.SampleDetails(
+                SampleDetailsComponent(di = di, componentContext = componentContext)
+            )
         }
     }
 
@@ -133,6 +138,9 @@ class NavHostComponent constructor(
 
         @Parcelize
         object Measurements : Config()
+
+        @Parcelize
+        object SampleDetails : Config()
 
     }
 

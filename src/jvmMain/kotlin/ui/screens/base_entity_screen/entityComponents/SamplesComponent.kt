@@ -7,6 +7,7 @@ import org.kodein.di.DI
 import ui.components.IconResource
 import ui.screens.base_entity_screen.EntityComponentWithFab
 import ui.screens.base_entity_screen.FABParams
+import utils.log
 
 class SamplesComponent(
     di: DI,
@@ -38,6 +39,11 @@ class SamplesComponent(
 
             }
         }
+    }
+
+    override fun onEntitySelected(entity: Sample) {
+        // TODO: Navigate to sample details screen here
+        log("going to navigate to details screen for: $entity")
     }
 
     companion object {

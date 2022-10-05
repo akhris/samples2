@@ -199,6 +199,9 @@ private fun <T : IEntity> ShowDataTableForGroup(
                     is Cell.ListCell -> TODO()
                 }
             },
+            onItemRowClicked = {
+                component.onEntitySelected(it)
+            },
             //wrapping selection mode to make additional actions available (duplicating/deleting)
             selectionMode = remember(selectionMode) {
                 when (selectionMode) {

@@ -38,6 +38,8 @@ interface IEntityComponent<T : IEntity> {
 
     val isReorderable: Boolean
 
+    fun onEntitySelected(entity: T)
+
     /**
      * Exposes Router State
      */
