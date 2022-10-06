@@ -1,4 +1,4 @@
-package ui.theme.builder
+package ui.theme
 
 import androidx.compose.ui.graphics.Color
 
@@ -19,7 +19,7 @@ val md_theme_light_error = Color(0xFFba1b1b)
 val md_theme_light_errorContainer = Color(0xFFffdad4)
 val md_theme_light_onError = Color(0xFFffffff)
 val md_theme_light_onErrorContainer = Color(0xFF410001)
-val md_theme_light_background = Color(0xFFfdfef6)
+val md_theme_light_background = Color(0xFFe5e5e5)
 val md_theme_light_onBackground = Color(0xFF1a1c19)
 
 //val md_theme_light_surface = Color(0xFFfcfdf7)

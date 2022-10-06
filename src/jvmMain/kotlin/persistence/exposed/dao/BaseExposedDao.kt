@@ -139,6 +139,7 @@ abstract class BaseExposedDao<ENTITY : IEntity, EXP_ENTITY : UUIDEntity, TABLE :
         }
         (specs.filterIsInstance<Specification.Filtered>().firstOrNull())?.let {
             //add filtering
+            query.addFiltering(it)
         }
         (specs.filterIsInstance<Specification.Sorted>().firstOrNull())?.let {
             //add sorting
@@ -228,6 +229,23 @@ abstract class BaseExposedDao<ENTITY : IEntity, EXP_ENTITY : UUIDEntity, TABLE :
             orderBy(column to SortOrder.DESC)
         }
     }
+
+    private fun Query.addFiltering(filterSpec: Specification.Filtered) {
+        filterSpec.filters.forEach { fSpec ->
+            val column = table.columns.find { it.name == fSpec.columnName } as? Column<Any> ?: return@forEach
+            when (fSpec) {
+                is FilterSpec.Range<*> -> {}
+                is FilterSpec.Values -> {
+                    fSpec
+                        .filteredValues
+                        .forEach {
+                            orWhere { column eq it }
+                        }
+                }
+            }
+        }
+    }
+
 
     /**
      * Try to get name for current value from foreign table for given column and it's value.

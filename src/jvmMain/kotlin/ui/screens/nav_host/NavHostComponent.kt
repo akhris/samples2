@@ -36,6 +36,8 @@ class NavHostComponent constructor(
 ) :
     INavHost, ComponentContext by componentContext {
 
+//    private val backCallback = BackCall { /* Handle the back button */ }
+
     private val scope =
         CoroutineScope(Dispatchers.Default + SupervisorJob())
 
@@ -53,7 +55,6 @@ class NavHostComponent constructor(
         childStack(
             source = navigation,
             initialConfiguration = Config.Samples,
-            handleBackButton = true,
             childFactory = ::createChild,
             key = "nav host stack"
         )
@@ -73,7 +74,11 @@ class NavHostComponent constructor(
             Config.Norms -> INavHost.Child.Norms(EntityComponent(di = di, componentContext))
             Config.Parameters -> INavHost.Child.Parameters(ParametersComponent(di = di, componentContext))
             Config.Operations -> INavHost.Child.Operations(OperationsComponent(di = di, componentContext))
-            Config.Samples -> INavHost.Child.Samples(SamplesComponent(di = di, componentContext))
+            Config.Samples -> INavHost.Child.Samples(SamplesComponent(di = di, componentContext, onSampleSelected = {
+                //navigate to sample details here
+                setDestination(NavItem.SampleDetails(it))
+            }))
+
             Config.OperationTypes -> INavHost.Child.OperationTypes(EntityComponent(di = di, componentContext))
             Config.Measurements -> INavHost.Child.Measurements(
                 MeasurementsEntityComponent(
@@ -82,8 +87,8 @@ class NavHostComponent constructor(
                 )
             )
 
-            Config.SampleDetails -> INavHost.Child.SampleDetails(
-                SampleDetailsComponent(di = di, componentContext = componentContext)
+            is Config.SampleDetails -> INavHost.Child.SampleDetails(
+                SampleDetailsComponent(di = di, componentContext = componentContext, sample = config.sample)
             )
         }
     }
@@ -103,6 +108,7 @@ class NavHostComponent constructor(
             NavItem.Workers -> Config.Workers
             NavItem.OperationTypes -> Config.OperationTypes
             NavItem.AppSettings -> null
+            is NavItem.SampleDetails -> Config.SampleDetails(navItem.sample)
         }
         if (newConf != null && navItem != _state.value.currentDestination) {
             navigation.replaceCurrent(newConf)
@@ -134,13 +140,13 @@ class NavHostComponent constructor(
         object OperationTypes : Config()
 
         @Parcelize
+        data class SampleDetails(val sample: Sample) : Config()
+
+        @Parcelize
         object Samples : Config()
 
         @Parcelize
         object Measurements : Config()
-
-        @Parcelize
-        object SampleDetails : Config()
 
     }
 
@@ -173,7 +179,9 @@ class NavHostComponent constructor(
         }
     }
 
+
     init {
+
         lifecycle.subscribe(onDestroy = {
             scope.coroutineContext.cancelChildren()
         })

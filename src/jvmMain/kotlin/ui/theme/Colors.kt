@@ -1,7 +1,6 @@
 package ui.theme
 
 import androidx.compose.ui.graphics.Color
-import ui.theme.builder.*
 
 /**
  * Interface that defines theme colors
@@ -39,18 +38,18 @@ object ThemeGreenLight : ITheme {
 }
 
 object ThemeGreenDark : ITheme {
-    override val primary: Color = Color(0xFF27292b)
-    override val primaryVariant: Color = Color(0xFF6C7D88)
-    override val secondary: Color = Color(0xFFE040FB)
-    override val secondaryVariant: Color = Color(0xFFEA80FC)
-    override val surface: Color = Color(0xFF303335)
-    override val error: Color = Color(0xFFF50057)
-    override val background: Color = Color(0xFF000000)
+    override val primary: Color = Color(0x27292b)
+    override val primaryVariant: Color = Color(0x6C7D88)
+    override val secondary: Color = Color(0xE040FB)
+    override val secondaryVariant: Color = Color(0xEA80FC)
+    override val surface: Color = Color(0x303335)
+    override val error: Color = Color(0xF50057)
+    override val background: Color = Color(0x000000)
 
-    override val onPrimary: Color = Color(0xFF4e5a60)
-    override val onSecondary: Color = Color(0xFF2979FF)
-    override val onSurface: Color = Color(0xFFC4C4C4)
-    override val onError: Color = Color(0xFF702320)
-    override val onBackground: Color = Color(0xFFCACACA)
+    override val onPrimary: Color = Color(0x4e5a60)
+    override val onSecondary: Color = Color(0x2979FF)
+    override val onSurface: Color = Color(0xC4C4C4)
+    override val onError: Color = Color(0x702320)
+    override val onBackground: Color = Color(0xCACACA)
 
 }

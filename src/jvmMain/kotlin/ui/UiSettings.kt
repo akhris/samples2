@@ -34,6 +34,7 @@ object UiSettings {
     }
 
     object DataTable {
+        val draggableAreaWidth: Dp = 10.dp
         val cellPadding: Dp = 4.dp
         val additionalRowWidth: Dp = 48.dp
 
@@ -51,8 +52,11 @@ object UiSettings {
         val toolTipWidth = 360.dp
         val toolTipHeight = 240.dp
 
+        val cornerRadius = 4.dp
+
         @Composable
-        fun dividerColor() = MaterialTheme.colors.onSurface.copy(alpha = dividerAlpha)
+//        fun dividerColor() = MaterialTheme.colors.onSurface.copy(alpha = dividerAlpha)
+        fun dividerColor() = MaterialTheme.colors.background
     }
 
     object PaginationPanel {

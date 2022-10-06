@@ -12,8 +12,11 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.TextStyle
+import java.awt.Cursor
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -63,7 +66,10 @@ fun DataTableEditTextField(
                 }
                 if (trailingIcon != null && isHover) {
                     Box(
-                        Modifier.alpha(if (isHover) 1f else 0.1f), contentAlignment = Alignment.Center
+                        Modifier
+                            .alpha(if (isHover) 1f else 0.1f)
+                            .pointerHoverIcon(PointerIcon(Cursor(Cursor.DEFAULT_CURSOR))),
+                        contentAlignment = Alignment.Center
                     ) {
                         trailingIcon()
                     }

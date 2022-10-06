@@ -11,7 +11,8 @@ import utils.log
 
 class SamplesComponent(
     di: DI,
-    componentContext: ComponentContext
+    componentContext: ComponentContext,
+    private val onSampleSelected: (Sample) -> Unit
 ) : EntityComponentWithFab<Sample>(Sample::class, di, componentContext) {
 
     override fun getFabParams(): List<FABParams> = listOf(
@@ -44,6 +45,7 @@ class SamplesComponent(
     override fun onEntitySelected(entity: Sample) {
         // TODO: Navigate to sample details screen here
         log("going to navigate to details screen for: $entity")
+        onSampleSelected(entity)
     }
 
     companion object {

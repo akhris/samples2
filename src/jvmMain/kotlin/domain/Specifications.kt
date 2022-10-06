@@ -16,17 +16,17 @@ sealed class Specification : ISpecification {
 }
 
 sealed class FilterSpec {
-    abstract val columnId: ColumnId
+    abstract val columnName: String
 
     data class Values(
-        val filteredValues: List<SliceValue<Any>>,
-        override val columnId: ColumnId
+        val filteredValues: List<Any>,
+        override val columnName: String
     ) : FilterSpec()
 
     data class Range<T>(
         val fromValue: T?,
         val toValue: T?,
-        override val columnId: ColumnId
+        override val columnName: String
     ) : FilterSpec()
 }
 

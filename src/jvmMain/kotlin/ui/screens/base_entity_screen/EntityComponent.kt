@@ -31,7 +31,8 @@ import kotlin.reflect.KClass
 open class EntityComponent<T : IEntity>(
     val type: KClass<out T>,
     private val di: DI,
-    componentContext: ComponentContext
+    componentContext: ComponentContext,
+    initialFilterSpec: Specification.Filtered = Specification.Filtered(listOf())
 ) : IEntityComponent<T>,
     ComponentContext by componentContext {
 
@@ -40,6 +41,8 @@ open class EntityComponent<T : IEntity>(
 
     private val _spec = MutableValue<Specification>(Specification.QueryAll)
     private val _pagingSpec = MutableValue<Specification.Paginated>(Specification.Paginated(1L, 25L, null))
+    private val _filterSpec = MutableValue<Specification.Filtered>(initialFilterSpec)
+
 
     override val pagingSpec: Value<Specification.Paginated> = _pagingSpec
 
@@ -50,7 +53,7 @@ open class EntityComponent<T : IEntity>(
         childStack(
             source = dialogNav,
             initialConfiguration = Config.None,
-            handleBackButton = true,
+//            handleBackButton = true,
             childFactory = ::createChild,
             key = "entity picker dialog stack"
         )
@@ -312,7 +315,8 @@ open class EntityComponent<T : IEntity>(
 
     private suspend fun invalidateEntities() {
         //get all samples
-        val entities = getEntities(GetEntities.Params.GetWithSpecification(_spec.value, _pagingSpec.value))
+        val entities =
+            getEntities(GetEntities.Params.GetWithSpecification(_spec.value, _pagingSpec.value, _filterSpec.value))
 
         when (entities) {
             is Result.Success -> {
@@ -368,7 +372,6 @@ open class EntityComponent<T : IEntity>(
             }
 
             is Result.Success -> {
-                log("got items count: ${itemsCount.value}")
                 _pagingSpec.reduce {
                     it.copy(totalItems = itemsCount.value)
                 }

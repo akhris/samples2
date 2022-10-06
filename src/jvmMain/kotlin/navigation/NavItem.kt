@@ -1,7 +1,9 @@
 package navigation
 
+import domain.Sample
+
 /**
- * Class representing navigation items for using in navigation component (such as Navigation Rail).
+ * Class representing navigation items for using in NavHost navigation.
  * Each Item has title, icon and route String.
  */
 sealed class NavItem(val pathToIcon: String, val title: String) {
@@ -56,9 +58,14 @@ sealed class NavItem(val pathToIcon: String, val title: String) {
         title = "Условия"
     )
 
-    object AppSettings: NavItem(
+    object AppSettings : NavItem(
         pathToIcon = "vector/settings_black_24dp.svg",
         title = "Настройки"
+    )
+
+    class SampleDetails(val sample: Sample) : NavItem(
+        pathToIcon = "vector/memory_black_24dp.svg",
+        title = "Образец #${sample.identifier ?: ""}"
     )
 
     companion object {

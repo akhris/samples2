@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowDropDown
@@ -57,7 +58,8 @@ fun <T> DataTable(
     onHeaderClicked: ((ColumnId) -> Unit)? = null,
     onItemRowClicked: ((T) -> Unit)? = null,
     onSortingChanged: ((column: ColumnId, isAsc: Boolean) -> Unit)? = null,
-    footer: @Composable() (() -> Unit)? = null,
+    utilitiesPanel: @Composable (BoxScope.() -> Unit)? = null,
+    footer: @Composable (() -> Unit)? = null,
     firstItemIndex: Int? = null,
     isReorderable: Boolean = false
 ) {
@@ -83,20 +85,6 @@ fun <T> DataTable(
 
 
     val columnWidths = remember { mutableStateMapOf<ColumnId, Dp>() }
-
-//    LaunchedEffect(mapper) {
-//        //new mapper came -> init column widths
-//        mapper
-//            .columns
-//            .forEach {
-//                columnWidths[it] = when (it.width) {
-//                    is ColumnWidth.Custom -> it.width.width
-//                    ColumnWidth.Normal -> UiSettings.DataTable.columnWidthNormal
-//                    ColumnWidth.Small -> UiSettings.DataTable.columnWidthSmall
-//                    ColumnWidth.Wide -> UiSettings.DataTable.columnWidthWide
-//                }
-//            }
-//    }
 
     //all items are selected:
     val checks = items
@@ -166,12 +154,13 @@ fun <T> DataTable(
             .onKeyEvent {
                 isShiftPressed = it.isShiftPressed
                 true
-            },
+            }
+            .border(width = 1.dp, color = UiSettings.DataTable.dividerColor()),
         state = listState
     ) {
         stickyHeader {
             Row(
-                modifier = Modifier.height(UiSettings.DataTable.headerRowHeight),
+//                modifier = Modifier.height(UiSettings.DataTable.headerRowHeight),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 //render header:
@@ -180,144 +169,170 @@ fun <T> DataTable(
                 firstItemIndex?.let {
                     Spacer(modifier = Modifier.width(UiSettings.DataTable.additionalRowWidth))
                 }
-                Surface(elevation = headerElevation) {
-                    Row(
-                        modifier = Modifier.height(
-                            UiSettings.DataTable.headerRowHeight
-                        ),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        //selection box:
-                        Box(modifier = Modifier.width(UiSettings.DataTable.additionalRowWidth)) {
-                            if (selectionMode is SelectionMode.Multiple && items.size > 1) {
-                                TriStateCheckbox(state = checkState, onClick = {
-                                    when (checkState) {
-                                        ToggleableState.On -> {
-                                            selectionMap.clear()
-                                            selectionMode.onItemsSelected?.invoke(listOf())
-                                        }
+                Surface(
+                    elevation = headerElevation,
+                    shape = RoundedCornerShape(
+                        topStart = UiSettings.DataTable.cornerRadius,
+                        topEnd = UiSettings.DataTable.cornerRadius
+                    )
+                ) {
+                    Column {
+                        //additional panel (for filtering and other utilities)
 
-                                        ToggleableState.Off,
-                                        ToggleableState.Indeterminate -> {
-                                            items.forEach {
-                                                selectionMap[mapper.getId(it)] = true
-                                            }
-                                            selectionMode.onItemsSelected?.invoke(
-                                                selectionMap.filterValues { it }.keys.mapNotNull { key ->
-                                                    items.find {
-                                                        mapper.getId(
-                                                            it
-                                                        ) == key
-                                                    }
-                                                }
-                                            )
-                                        }
-                                    }
-                                }, modifier = Modifier.align(Alignment.Center))
+                        utilitiesPanel?.let { up ->
+                            Box(modifier = Modifier.fillMaxWidth().height(UiSettings.DataTable.headerRowHeight)) {
+                                up()
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.BottomStart)
+                                        .height(1.dp)
+                                        .width(tableWidth + UiSettings.DataTable.additionalRowWidth)
+                                        .background(color = UiSettings.DataTable.dividerColor())
+                                )
                             }
                         }
 
-                        var sorting by remember { mutableStateOf<Pair<ColumnId, Boolean>?>(null) }
+                        //table header:
+                        Row(
+                            modifier = Modifier.height(UiSettings.DataTable.headerRowHeight),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            //selection box:
+                            Box(modifier = Modifier.width(UiSettings.DataTable.additionalRowWidth)) {
+                                if (selectionMode is SelectionMode.Multiple && items.size > 1) {
+                                    TriStateCheckbox(state = checkState, onClick = {
+                                        when (checkState) {
+                                            ToggleableState.On -> {
+                                                selectionMap.clear()
+                                                selectionMode.onItemsSelected?.invoke(listOf())
+                                            }
 
-                        for (column in mapper.columns) {
-                            Box(
-                                modifier = Modifier
-                                    .width(
-                                        columnWidths[column] ?: when (column.width) {
-                                            is ColumnWidth.Custom -> column.width.width
-                                            ColumnWidth.Normal -> UiSettings.DataTable.columnDefaultWidthNormal
-                                            ColumnWidth.Small -> UiSettings.DataTable.columnDefaultWidthSmall
-                                            ColumnWidth.Wide -> UiSettings.DataTable.columnDefaultWidthWide
+                                            ToggleableState.Off,
+                                            ToggleableState.Indeterminate -> {
+                                                items.forEach {
+                                                    selectionMap[mapper.getId(it)] = true
+                                                }
+                                                selectionMode.onItemsSelected?.invoke(
+                                                    selectionMap.filterValues { it }.keys.mapNotNull { key ->
+                                                        items.find {
+                                                            mapper.getId(
+                                                                it
+                                                            ) == key
+                                                        }
+                                                    }
+                                                )
+                                            }
                                         }
-                                    )
-                                    .fillMaxHeight()
-                                    .padding(horizontal = UiSettings.DataTable.columnPadding)
-                            ) {
-                                CompositionLocalProvider(
-                                    LocalLayoutDirection provides when (column.alignment) {
-                                        ColumnAlignment.Start,
-                                        ColumnAlignment.Center -> LayoutDirection.Ltr
+                                    }, modifier = Modifier.align(Alignment.Center))
+                                }
+                            }
 
-                                        ColumnAlignment.End -> LayoutDirection.Rtl
-                                    }
+                            var sorting by remember { mutableStateOf<Pair<ColumnId, Boolean>?>(null) }
+
+                            for (column in mapper.columns) {
+                                Box(
+                                    modifier = Modifier
+                                        .width(
+                                            columnWidths[column] ?: when (column.width) {
+                                                is ColumnWidth.Custom -> column.width.width
+                                                ColumnWidth.Normal -> UiSettings.DataTable.columnDefaultWidthNormal
+                                                ColumnWidth.Small -> UiSettings.DataTable.columnDefaultWidthSmall
+                                                ColumnWidth.Wide -> UiSettings.DataTable.columnDefaultWidthWide
+                                            }
+                                        )
+                                        .fillMaxHeight()
+                                        .padding(horizontal = UiSettings.DataTable.columnPadding)
                                 ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .clickable {
-                                                onHeaderClicked?.invoke(column)
-                                                if (onSortingChanged != null) {
+                                    CompositionLocalProvider(
+                                        LocalLayoutDirection provides when (column.alignment) {
+                                            ColumnAlignment.Start,
+                                            ColumnAlignment.Center -> LayoutDirection.Ltr
+
+                                            ColumnAlignment.End -> LayoutDirection.Rtl
+                                        }
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .clickable {
+                                                    onHeaderClicked?.invoke(column)
+                                                    if (onSortingChanged != null) {
+                                                        sorting = column to !(sorting?.second ?: false)
+                                                        sorting?.let {
+                                                            onSortingChanged(it.first, it.second)
+                                                        }
+                                                    }
+                                                }, verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceAround
+                                        ) {
+                                            Row(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = column.title,
+                                                    style = MaterialTheme.typography.subtitle2,
+                                                    fontWeight = FontWeight.Bold,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                                if (column.secondaryText.isNotEmpty()) {
+                                                    Text(
+                                                        text = column.secondaryText,
+                                                        style = MaterialTheme.typography.caption.copy(
+                                                            color = MaterialTheme.colors.primaryVariant
+                                                        ),
+//                                        fontWeight = FontWeight.Bold,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                }
+                                            }
+                                            //menu icon:
+                                            // TODO: instead of sorting icon make menu icon that opens menu: sort, filter, search, e.t.c
+
+                                            //sorting icon:
+                                            if (onSortingChanged != null && sorting?.first == column) {
+                                                IconButton(onClick = {
                                                     sorting = column to !(sorting?.second ?: false)
                                                     sorting?.let {
                                                         onSortingChanged(it.first, it.second)
                                                     }
+                                                }) {
+                                                    Icon(
+                                                        Icons.Rounded.ArrowDropDown,
+                                                        "sort items",
+                                                        tint = MaterialTheme.colors.secondary,
+                                                        modifier = Modifier.rotate(if (sorting?.second == true) 180f else 0f)
+                                                    )
                                                 }
-                                            }, verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.SpaceAround
-                                    ) {
-                                        Row(modifier = Modifier.weight(1f)) {
-                                            Text(
-                                                text = column.title,
-                                                style = MaterialTheme.typography.subtitle2,
-                                                fontWeight = FontWeight.Bold,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                            if (column.secondaryText.isNotEmpty()) {
-                                                Text(
-                                                    text = column.secondaryText,
-                                                    style = MaterialTheme.typography.caption.copy(
-                                                        color = MaterialTheme.colors.primaryVariant
-                                                    ),
-//                                        fontWeight = FontWeight.Bold,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                            }
-                                        }
-                                        //sorting icon:
-                                        if (onSortingChanged != null && sorting?.first == column) {
-                                            IconButton(onClick = {
-                                                sorting = column to !(sorting?.second ?: false)
-                                                sorting?.let {
-                                                    onSortingChanged(it.first, it.second)
-                                                }
-                                            }) {
-                                                Icon(
-                                                    Icons.Rounded.ArrowDropDown,
-                                                    "sort items",
-                                                    tint = MaterialTheme.colors.secondary,
-                                                    modifier = Modifier.rotate(if (sorting?.second == true) 180f else 0f)
-                                                )
                                             }
                                         }
                                     }
-                                }
-                                //column resize area:
-                                Box(
-                                    modifier =
-                                    Modifier
-                                        .align(Alignment.CenterEnd)
-                                        .fillMaxHeight()
-                                        .width(3.dp)
+                                    //column resize area:
+                                    Box(
+                                        modifier =
+                                        Modifier
+                                            .align(Alignment.CenterEnd)
+                                            .fillMaxHeight()
+                                            .width(UiSettings.DataTable.draggableAreaWidth)
 //                                        .background(color = Color.Red)
-                                        .pointerHoverIcon(PointerIcon(Cursor(Cursor.E_RESIZE_CURSOR)))
-                                        .combinedClickable(onDoubleClick = {
-                                            // reset to default width:
-                                            columnWidths.remove(column)
-                                        }, onClick = {})
-                                        .draggable(
-                                            state = rememberDraggableState { onDelta ->
-                                                columnWidths[column] = (columnWidths[column] ?: when (column.width) {
-                                                    is ColumnWidth.Custom -> column.width.width
-                                                    ColumnWidth.Normal -> UiSettings.DataTable.columnDefaultWidthNormal
-                                                    ColumnWidth.Small -> UiSettings.DataTable.columnDefaultWidthSmall
-                                                    ColumnWidth.Wide -> UiSettings.DataTable.columnDefaultWidthWide
-                                                }) + onDelta.dp
-                                            },
-                                            orientation = Orientation.Horizontal
-                                        )
-                                )
+                                            .pointerHoverIcon(PointerIcon(Cursor(Cursor.E_RESIZE_CURSOR)))
+                                            .combinedClickable(onDoubleClick = {
+                                                // reset to default width:
+                                                columnWidths.remove(column)
+                                            }, onClick = {})
+                                            .draggable(
+                                                state = rememberDraggableState { onDelta ->
+                                                    columnWidths[column] =
+                                                        (columnWidths[column] ?: when (column.width) {
+                                                            is ColumnWidth.Custom -> column.width.width
+                                                            ColumnWidth.Normal -> UiSettings.DataTable.columnDefaultWidthNormal
+                                                            ColumnWidth.Small -> UiSettings.DataTable.columnDefaultWidthSmall
+                                                            ColumnWidth.Wide -> UiSettings.DataTable.columnDefaultWidthWide
+                                                        }) + onDelta.dp
+                                                },
+                                                orientation = Orientation.Horizontal
+                                            )
+                                    )
+                                }
                             }
                         }
                     }
@@ -333,7 +348,7 @@ fun <T> DataTable(
                             modifier = Modifier.width(UiSettings.DataTable.additionalRowWidth),
                             text = (fii + index).toString(),
                             style = MaterialTheme.typography.caption.copy(
-                                color = UiSettings.DataTable.dividerColor(),
+                                color = MaterialTheme.colors.onBackground,
                                 textAlign = TextAlign.Center
                             )
                         )
@@ -481,7 +496,8 @@ fun <T> DataTable(
                         onItemRowClicked?.invoke(item)
                     }
                 },
-                tableWidth = tableWidth
+                tableWidth = tableWidth,
+                isLastRow = index == _items.size - 1
             )
         }
 
@@ -534,7 +550,8 @@ private fun RenderRow(
     renderSelectionControl: @Composable() (BoxScope.() -> Unit)? = null,
     renderDragHandle: @Composable() (RowScope.() -> Unit)? = null,
     onRowClicked: () -> Unit,
-    tableWidth: Dp
+    tableWidth: Dp,
+    isLastRow: Boolean = false
 ) {
 
     var isHover by remember { mutableStateOf(false) }
@@ -543,7 +560,13 @@ private fun RenderRow(
         renderIndex()
 
         //render cells row:
-        Surface(elevation = elevation) {
+        Surface(
+            elevation = elevation,
+            shape = RoundedCornerShape(
+                bottomStart = if (isLastRow) UiSettings.DataTable.cornerRadius else 0.dp,
+                bottomEnd = if (isLastRow) UiSettings.DataTable.cornerRadius else 0.dp
+            )
+        ) {
             Box {
                 //indicator:
                 renderIndicator?.let { ri ->
@@ -850,7 +873,7 @@ private fun BoxScope.RenderUnitCell(
 
 data class ColumnId(
     val key: String,    //might correspond to exposed column name for working filtering, sorting and grouping
-    val title: String,
+    val title: String = "",
     val secondaryText: String = "",
     val width: ColumnWidth = ColumnWidth.Normal,
     val alignment: ColumnAlignment = ColumnAlignment.Start

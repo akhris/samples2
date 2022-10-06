@@ -150,12 +150,9 @@ private fun <T : IEntity> ShowDataTableForGroup(
 
         //parameters table:
         DataTable(
-            modifier = modifier
-                .horizontalScroll(state = rememberScrollState()),
+            modifier = modifier.horizontalScroll(state = rememberScrollState()),
             items = entities,
-            onItemChanged = {
-                component.updateEntity(it)
-            },
+            onItemChanged = { component.updateEntity(it) },
             onSortingChanged = { column, isAsc ->
                 component.setQuerySpec(Specification.Sorted(column, isAsc))
             },
@@ -230,6 +227,9 @@ private fun <T : IEntity> ShowDataTableForGroup(
             footer = {
                 Spacer(modifier = Modifier.height(bottomPanelHeight))
             },
+            utilitiesPanel = {
+                Text("filtering")
+            },
             firstItemIndex = remember(pagingSpec) { ((pagingSpec.pageNumber - 1) * pagingSpec.itemsPerPage + 1).toInt() },
             isReorderable = remember(component) { component.isReorderable },
             mapper = mapper
@@ -238,12 +238,15 @@ private fun <T : IEntity> ShowDataTableForGroup(
         if (selectionMode is SelectionMode.Multiple<T> && selectedEntities.isNotEmpty()) {
             //show control buttons:
             Surface(
-                modifier = Modifier.align(Alignment.BottomCenter).onSizeChanged { bottomPanelHeight = it.height.dp }) {
+                modifier = Modifier.align(Alignment.BottomCenter).onSizeChanged { bottomPanelHeight = it.height.dp },
+                shape = MaterialTheme.shapes.medium,
+                elevation = 16.dp
+            ) {
                 Row(
+                    modifier = Modifier.padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
-
-                    ) {
+                ) {
                     Button(onClick = {
                         component.duplicateEntities(selectedEntities)
                     }) {
@@ -279,7 +282,9 @@ private fun <T : IEntity> ShowDataTableForGroup(
                 Surface(modifier = Modifier.align(Alignment.BottomCenter).onSizeChanged {
                     bottomPanelHeight = it.height.dp
                 }.onPointerEvent(PointerEventType.Enter) { isHovered = true }
-                    .onPointerEvent(PointerEventType.Exit) { isHovered = false }.alpha(alpha)) {
+                    .onPointerEvent(PointerEventType.Exit) { isHovered = false }.alpha(alpha),
+                    shape = MaterialTheme.shapes.medium
+                ) {
                     Pagination(
                         modifier = modifier,
                         currentPage = pagingSpec.pageNumber.toInt(),
