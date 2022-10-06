@@ -7,15 +7,18 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.rememberDialogState
@@ -23,9 +26,11 @@ import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.jetbrains.stack.Children
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import domain.EntitiesList
+import domain.FilterSpec
 import domain.IEntity
 import domain.Specification
 import ui.UiSettings
+import ui.components.DropdownMenuItemWithIcon
 import ui.components.Pagination
 import ui.components.tables.*
 import ui.dialogs.DatePickerDialog
@@ -146,6 +151,14 @@ private fun <T : IEntity> ShowDataTableForGroup(
 
     val mapper by remember(component) { component.dataMapper }.subscribeAsState()
 
+    val filters = remember {
+        mutableStateMapOf<ColumnId, List<FilterSpec>>()
+    }
+
+    val sorting = remember {
+        mutableStateMapOf<ColumnId, Boolean>()
+    }
+
     Box(modifier = modifier.fillMaxHeight()) {
 
         //parameters table:
@@ -229,6 +242,53 @@ private fun <T : IEntity> ShowDataTableForGroup(
             },
             utilitiesPanel = {
                 Text("filtering")
+            },
+            headerMenu = { column ->
+                DropdownMenuItemWithIcon(onClick = {
+                    //trigger sorting
+                    val sortingAsc = sorting[column] ?: false
+                    sorting[column] = !sortingAsc
+                }, text = {
+                    Text("Сортировка")
+                }, icon = {
+                    val sortingState = remember(sorting.values.toList(), column) {
+                        sorting[column]
+                    }
+                    Icon(
+                        modifier = Modifier.scale(scaleY = if (sortingState == true) -1f else 1f, scaleX = 1f),
+                        painter = painterResource("vector/sort_black_24dp.svg"),
+                        contentDescription = "sort",
+                        tint = when (sortingState) {
+                            null -> contentColorFor(
+                                MaterialTheme.colors.background
+                            ).copy(alpha = 0.5f)
+
+                            else -> MaterialTheme.colors.secondary
+                        }
+                    )
+                })
+                DropdownMenuItemWithIcon(onClick = {
+                    //show menu for filtering selection
+                    val columnFilters = filters[column] ?: listOf()
+                    if (columnFilters.isNotEmpty()) {
+                        //filters not empty:
+                        filters.remove(column)
+                    } else {
+                        //filters are empty:
+                        filters[column] = listOf(FilterSpec.Values(columnName = column.key, filteredValues = listOf()))
+                    }
+                }, text = {
+                    Text("Фильтр")
+                }, icon = {
+                    val columnFilters = remember(filters.values.toList(), column) { filters[column] ?: listOf() }
+                    Icon(
+                        painterResource("vector/filter_list_black_24dp.svg"),
+                        contentDescription = "filter",
+                        tint = if (columnFilters.isNotEmpty()) MaterialTheme.colors.secondary else contentColorFor(
+                            MaterialTheme.colors.background
+                        ).copy(alpha = 0.5f)
+                    )
+                })
             },
             firstItemIndex = remember(pagingSpec) { ((pagingSpec.pageNumber - 1) * pagingSpec.itemsPerPage + 1).toInt() },
             isReorderable = remember(component) { component.isReorderable },

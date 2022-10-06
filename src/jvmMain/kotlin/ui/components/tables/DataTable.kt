@@ -14,10 +14,12 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.Clear
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.isShiftPressed
@@ -60,6 +62,7 @@ fun <T> DataTable(
     onSortingChanged: ((column: ColumnId, isAsc: Boolean) -> Unit)? = null,
     utilitiesPanel: @Composable (BoxScope.() -> Unit)? = null,
     footer: @Composable (() -> Unit)? = null,
+    headerMenu: @Composable (ColumnScope.(column: ColumnId) -> Unit)? = null,
     firstItemIndex: Int? = null,
     isReorderable: Boolean = false
 ) {
@@ -288,7 +291,33 @@ fun <T> DataTable(
                                             //menu icon:
                                             // TODO: instead of sorting icon make menu icon that opens menu: sort, filter, search, e.t.c
 
+                                            headerMenu?.let { hm ->
+                                                var isHovered by remember { mutableStateOf(false) }
+                                                var showMenu by remember { mutableStateOf(false) }
+                                                Box {
+                                                    Icon(
+                                                        modifier = Modifier
+                                                            .onHover { isHovered = it }
+                                                            .alpha(if (isHovered) 1f else 0.05f)
+                                                            .clickable {
+                                                                showMenu = true
+                                                            },
+                                                        imageVector = Icons.Rounded.MoreVert,
+                                                        contentDescription = "column menu"
+                                                    )
+
+                                                    DropdownMenu(
+                                                        modifier = Modifier.align(Alignment.BottomEnd),
+                                                        expanded = showMenu,
+                                                        onDismissRequest = { showMenu = false },
+                                                        content = { hm(column) }
+                                                    )
+                                                }
+
+                                            }
+
                                             //sorting icon:
+                                            /*
                                             if (onSortingChanged != null && sorting?.first == column) {
                                                 IconButton(onClick = {
                                                     sorting = column to !(sorting?.second ?: false)
@@ -304,6 +333,8 @@ fun <T> DataTable(
                                                     )
                                                 }
                                             }
+
+                                             */
                                         }
                                     }
                                     //column resize area:
