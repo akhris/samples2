@@ -7,7 +7,7 @@ sealed class Specification : ISpecification {
     object QueryAll : Specification()
     data class Search(val searchString: String = "") : Specification()
     data class Paginated(val pageNumber: Long, val itemsPerPage: Long, val totalItems: Long?) : Specification()
-    data class Filtered(val filters: List<FilterSpec> = listOf()) : Specification()
+    data class Filtered(val filters: List<FilterSpec> = listOf(), val isFilteredOut: Boolean = false) : Specification()
     data class Grouped(val groupingSpec: GroupingSpec) : Specification()
     data class Sorted(
         val columnId: ColumnId,

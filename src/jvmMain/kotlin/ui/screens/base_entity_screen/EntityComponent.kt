@@ -33,7 +33,7 @@ open class EntityComponent<T : IEntity>(
     val type: KClass<out T>,
     private val di: DI,
     componentContext: ComponentContext,
-    initialFilterSpec: Specification.Filtered = Specification.Filtered(listOf())
+    initialFilterSpec: Specification.Filtered = Specification.Filtered(listOf(), true)
 ) : IEntityComponent<T>,
     ComponentContext by componentContext {
 

@@ -239,7 +239,10 @@ abstract class BaseExposedDao<ENTITY : IEntity, EXP_ENTITY : UUIDEntity, TABLE :
                     fSpec
                         .filteredValues
                         .forEach {
-                            orWhere { column eq it }
+                            when (filterSpec.isFilteredOut) {
+                                true -> andWhere { column neq it }
+                                false -> orWhere { column eq it }
+                            }
                         }
                 }
             }

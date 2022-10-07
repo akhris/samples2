@@ -13,9 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.rememberDialogState
 import ui.theme.DialogSettings
-import utils.log
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun <T> ListMultiPickerDialog(
     items: List<T>,
@@ -23,37 +21,11 @@ fun <T> ListMultiPickerDialog(
     initialSelection: List<T> = listOf(),
     mapper: ((T) -> String)? = null,
     onItemsPicked: (List<T>) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    isInverted: Boolean = false
 ) {
 
     val selectedItems = remember(initialSelection) { initialSelection.toMutableStateList() }
-
-//    AlertDialog(
-//        onDismissRequest = onDismiss,
-//        title = {
-//            Text(title)
-//        },
-//        text = {
-//            ItemsPickerDialogContent(
-//                items = items,
-//                selectedItems = selectedItems,
-//                onSelectionChanged = {
-//                    selectedItems.clear()
-//                    selectedItems.addAll(it)
-//                },
-//                mapper = mapper
-//            )
-//        },
-//        confirmButton = {
-//            Button(onClick = { onItemsPicked(selectedItems) }) {
-//                Text("Выбрать")
-//            }
-//        },
-//        dismissButton = {
-//            onDismiss()
-//        }
-//    )
-
 
     val state = rememberDialogState(
         size = DpSize(
@@ -79,7 +51,8 @@ fun <T> ListMultiPickerDialog(
                         selectedItems.clear()
                         selectedItems.addAll(it)
                     },
-                    mapper = mapper
+                    mapper = mapper,
+                    isInverted = isInverted
                 )
 
                 Row(
@@ -108,20 +81,26 @@ private fun <T> ItemsPickerDialogContent(
     items: List<T>,
     selectedItems: List<T>,
     mapper: ((T) -> String)? = null,
-    onSelectionChanged: (List<T>) -> Unit
+    onSelectionChanged: (List<T>) -> Unit,
+    isInverted: Boolean
 ) {
 
     Column(
         modifier = modifier.fillMaxWidth().verticalScroll(rememberScrollState())
     ) {
         items.forEach { item ->
-            SelectableItem(item, isSelected = selectedItems.contains(item), onSelectionChanged = {
-                if (it) {
-                    onSelectionChanged(selectedItems.plus(item))
-                } else {
-                    onSelectionChanged(selectedItems.minus(item))
-                }
-            }, mapper = mapper)
+            SelectableItem(
+                item,
+                isSelected = if (!isInverted) selectedItems.contains(item) else !selectedItems.contains(item),
+                onSelectionChanged = {
+                    if (it) {
+                        onSelectionChanged(if (!isInverted) selectedItems.plus(item) else selectedItems.minus(item))
+                    } else {
+                        onSelectionChanged(if (!isInverted) selectedItems.minus(item) else selectedItems.plus(item))
+                    }
+                },
+                mapper = mapper
+            )
         }
     }
 

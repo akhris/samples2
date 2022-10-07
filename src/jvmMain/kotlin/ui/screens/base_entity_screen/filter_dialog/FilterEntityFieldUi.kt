@@ -14,6 +14,7 @@ import utils.log
 
 @Composable
 fun <T : IEntity> FilterEntityFieldUi(component: IFilterEntityFieldComponent<T>, onDismissDialog: () -> Unit) {
+
     val filterSpec by remember(component) { component.filterSpec }.subscribeAsState()
     val slice by remember(component) { component.slice }.subscribeAsState()
 
@@ -30,9 +31,14 @@ fun <T : IEntity> FilterEntityFieldUi(component: IFilterEntityFieldComponent<T>,
             is FilterSpec.Values -> spec.filteredValues
         },
         onItemsPicked = {
-            log("picked items: $it")
+            // TODO: add callback to [IEntityComponent.addFilter]
+            log("picked items: ")
+            it.forEach {
+                log(it)
+            }
         },
-        onDismiss = onDismissDialog
+        onDismiss = onDismissDialog,
+        isInverted = true
     )
 
 //
