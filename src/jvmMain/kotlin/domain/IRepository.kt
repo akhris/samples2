@@ -17,6 +17,7 @@ interface IRepository<ENTITY : IEntity> {
     suspend fun remove(specifications: List<ISpecification>)
     suspend fun query(specifications: List<ISpecification>): EntitiesList<ENTITY>
     suspend fun getItemsCount(specifications: List<ISpecification>): Long
+    suspend fun getSlice(columnName: String): List<Any>
 }
 
 

@@ -14,12 +14,10 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.Clear
-import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.isShiftPressed
@@ -48,7 +46,7 @@ import utils.*
 import java.time.LocalDateTime
 import kotlin.reflect.KClass
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun <T> DataTable(
     modifier: Modifier = Modifier,
@@ -57,12 +55,11 @@ fun <T> DataTable(
     onItemChanged: ((T) -> Unit)? = null,
     selectionMode: SelectionMode<T> = SelectionMode.Multiple(),
     onCellClicked: ((T, Cell, ColumnId) -> Unit)? = null,
-    onHeaderClicked: ((ColumnId) -> Unit)? = null,
     onItemRowClicked: ((T) -> Unit)? = null,
-    onSortingChanged: ((column: ColumnId, isAsc: Boolean) -> Unit)? = null,
-    utilitiesPanel: @Composable (BoxScope.() -> Unit)? = null,
-    footer: @Composable (() -> Unit)? = null,
-    headerMenu: @Composable (ColumnScope.(column: ColumnId) -> Unit)? = null,
+    utilitiesPanel: @Composable() (BoxScope.() -> Unit)? = null,
+    footer: @Composable() (() -> Unit)? = null,
+    headerMenu: @Composable() (ColumnScope.(column: ColumnId) -> Unit)? = null,
+    headerStateIcons: @Composable() (RowScope.(column: ColumnId) -> Unit)? = null,
     firstItemIndex: Int? = null,
     isReorderable: Boolean = false
 ) {
@@ -230,8 +227,6 @@ fun <T> DataTable(
                                 }
                             }
 
-                            var sorting by remember { mutableStateOf<Pair<ColumnId, Boolean>?>(null) }
-
                             for (column in mapper.columns) {
                                 Box(
                                     modifier = Modifier
@@ -246,6 +241,8 @@ fun <T> DataTable(
                                         .fillMaxHeight()
                                         .padding(horizontal = UiSettings.DataTable.columnPadding)
                                 ) {
+                                    var showMenu by remember(column) { mutableStateOf(false) }
+
                                     CompositionLocalProvider(
                                         LocalLayoutDirection provides when (column.alignment) {
                                             ColumnAlignment.Start,
@@ -258,84 +255,46 @@ fun <T> DataTable(
                                             modifier = Modifier
                                                 .fillMaxSize()
                                                 .clickable {
-                                                    onHeaderClicked?.invoke(column)
-                                                    if (onSortingChanged != null) {
-                                                        sorting = column to !(sorting?.second ?: false)
-                                                        sorting?.let {
-                                                            onSortingChanged(it.first, it.second)
-                                                        }
+                                                    if (headerMenu != null) {
+                                                        showMenu = true
                                                     }
-                                                }, verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.SpaceAround
+                                                },
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Row(modifier = Modifier.weight(1f)) {
+                                            if (LocalLayoutDirection.current == LayoutDirection.Rtl)
+                                                Spacer(modifier = Modifier.width(UiSettings.DataTable.draggableAreaWidth))
+                                            //primary title
+                                            Text(
+                                                modifier = Modifier.weight(1f),
+                                                text = column.title,
+                                                style = MaterialTheme.typography.subtitle2,
+                                                fontWeight = FontWeight.Bold,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+
+                                            //secondary title
+                                            if (column.secondaryText.isNotEmpty()) {
                                                 Text(
-                                                    text = column.title,
-                                                    style = MaterialTheme.typography.subtitle2,
-                                                    fontWeight = FontWeight.Bold,
+                                                    modifier = Modifier.border(width = 1.dp, color = Color.DarkGray),
+                                                    text = column.secondaryText,
+                                                    style = MaterialTheme.typography.caption.copy(
+                                                        color = MaterialTheme.colors.primaryVariant
+                                                    ),
                                                     maxLines = 1,
                                                     overflow = TextOverflow.Ellipsis
                                                 )
-                                                if (column.secondaryText.isNotEmpty()) {
-                                                    Text(
-                                                        text = column.secondaryText,
-                                                        style = MaterialTheme.typography.caption.copy(
-                                                            color = MaterialTheme.colors.primaryVariant
-                                                        ),
-//                                        fontWeight = FontWeight.Bold,
-                                                        maxLines = 1,
-                                                        overflow = TextOverflow.Ellipsis
-                                                    )
-                                                }
-                                            }
-                                            //menu icon:
-                                            // TODO: instead of sorting icon make menu icon that opens menu: sort, filter, search, e.t.c
-
-                                            headerMenu?.let { hm ->
-                                                var isHovered by remember { mutableStateOf(false) }
-                                                var showMenu by remember { mutableStateOf(false) }
-                                                Box {
-                                                    Icon(
-                                                        modifier = Modifier
-                                                            .onHover { isHovered = it }
-                                                            .alpha(if (isHovered) 1f else 0.05f)
-                                                            .clickable {
-                                                                showMenu = true
-                                                            },
-                                                        imageVector = Icons.Rounded.MoreVert,
-                                                        contentDescription = "column menu"
-                                                    )
-
-                                                    DropdownMenu(
-                                                        modifier = Modifier.align(Alignment.BottomEnd),
-                                                        expanded = showMenu,
-                                                        onDismissRequest = { showMenu = false },
-                                                        content = { hm(column) }
-                                                    )
-                                                }
-
                                             }
 
-                                            //sorting icon:
-                                            /*
-                                            if (onSortingChanged != null && sorting?.first == column) {
-                                                IconButton(onClick = {
-                                                    sorting = column to !(sorting?.second ?: false)
-                                                    sorting?.let {
-                                                        onSortingChanged(it.first, it.second)
-                                                    }
-                                                }) {
-                                                    Icon(
-                                                        Icons.Rounded.ArrowDropDown,
-                                                        "sort items",
-                                                        tint = MaterialTheme.colors.secondary,
-                                                        modifier = Modifier.rotate(if (sorting?.second == true) 180f else 0f)
-                                                    )
-                                                }
+                                            headerStateIcons?.let { hsi ->
+                                                hsi(column)
+                                                if (LocalLayoutDirection.current == LayoutDirection.Ltr)
+                                                    Spacer(modifier = Modifier.width(UiSettings.DataTable.draggableAreaWidth))
                                             }
 
-                                             */
+
                                         }
+
                                     }
                                     //column resize area:
                                     Box(
@@ -344,7 +303,6 @@ fun <T> DataTable(
                                             .align(Alignment.CenterEnd)
                                             .fillMaxHeight()
                                             .width(UiSettings.DataTable.draggableAreaWidth)
-//                                        .background(color = Color.Red)
                                             .pointerHoverIcon(PointerIcon(Cursor(Cursor.E_RESIZE_CURSOR)))
                                             .combinedClickable(onDoubleClick = {
                                                 // reset to default width:
@@ -363,6 +321,18 @@ fun <T> DataTable(
                                                 orientation = Orientation.Horizontal
                                             )
                                     )
+
+
+                                    if (showMenu)
+                                        headerMenu?.let { hm ->
+                                            DropdownMenu(
+                                                modifier = Modifier.align(Alignment.BottomEnd),
+                                                expanded = showMenu,
+                                                onDismissRequest = { showMenu = false },
+                                                content = { hm(column) }
+                                            )
+                                        }
+
                                 }
                             }
                         }
@@ -428,27 +398,35 @@ fun <T> DataTable(
                                 ColumnAlignment.Start -> Alignment.CenterStart
                             }
                         ) {
+                            CompositionLocalProvider(
+                                LocalLayoutDirection provides when (column.alignment) {
+                                    ColumnAlignment.Start,
+                                    ColumnAlignment.Center -> LayoutDirection.Ltr
 
-                            RenderCell(
-                                modifier =
-                                Modifier
-                                    .padding(all = UiSettings.DataTable.cellPadding),
-                                cell = cell,
-                                columnId = column,
-                                onCellChanged = { changedCell ->
-                                    _items.replace(
-                                        mapper.updateItem(
-                                            item = item,
-                                            columnId = column,
-                                            cell = changedCell
-                                        )
-                                    ) {
-                                        mapper.getId(it) == mapper.getId(item)
-                                    }
+                                    ColumnAlignment.End -> LayoutDirection.Rtl
+                                }
+                            ) {
+                                RenderCell(
+                                    modifier =
+                                    Modifier
+                                        .padding(all = UiSettings.DataTable.cellPadding),
+                                    cell = cell,
+                                    columnId = column,
+                                    onCellChanged = { changedCell ->
+                                        _items.replace(
+                                            mapper.updateItem(
+                                                item = item,
+                                                columnId = column,
+                                                cell = changedCell
+                                            )
+                                        ) {
+                                            mapper.getId(it) == mapper.getId(item)
+                                        }
 //                                    onItemChanged?.invoke(mapper.updateItem(item, column, changedCell))
-                                },
-                                columnAlignment = column.alignment
-                            )
+                                    },
+                                    columnAlignment = column.alignment
+                                )
+                            }
                         }
                     }
                 },
@@ -695,16 +673,14 @@ private fun BoxScope.RenderCell(
 
                 is Cell.EntityCell -> RenderEntityCell(
                     modifier, cell,
-                    onCellChanged = onCellChanged,
-                    columnAlignment = columnAlignment
+                    onCellChanged = onCellChanged
                 )
 
-                is Cell.DateTimeCell -> RenderDateTimeCell(modifier, cell, columnAlignment)
+                is Cell.DateTimeCell -> RenderDateTimeCell(modifier, cell)
                 is Cell.BooleanCell -> RenderBooleanCell(
                     modifier = modifier,
                     cell = cell,
-                    onCellChanged = onCellChanged,
-                    columnAlignment = columnAlignment
+                    onCellChanged = onCellChanged
                 )
 
                 is Cell.ListCell -> TODO()
@@ -713,16 +689,16 @@ private fun BoxScope.RenderCell(
 }
 
 @Composable
-private fun getCellTextStyle(columnAlignment: ColumnAlignment = ColumnAlignment.Start) = MaterialTheme
+private fun getCellTextStyle() = MaterialTheme
     .typography
     .caption
-    .copy(
-        textAlign = when (columnAlignment) {
-            ColumnAlignment.Center -> TextAlign.Center
-            ColumnAlignment.End -> TextAlign.End
-            ColumnAlignment.Start -> TextAlign.Start
-        }
-    )
+//    .copy(
+//        textAlign = when (columnAlignment) {
+//            ColumnAlignment.Center -> TextAlign.Center
+//            ColumnAlignment.End -> TextAlign.End
+//            ColumnAlignment.Start -> TextAlign.Start
+//        }
+//    )
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -740,7 +716,7 @@ private fun BoxScope.RenderEditTextCell(
         value = value,
         singleLine = false,
         onValueChange = { value = it },
-        textStyle = getCellTextStyle(columnAlignment),
+        textStyle = getCellTextStyle(),
         trailingIcon = if (value.isNotEmpty()) {
             {
                 Icon(
@@ -771,8 +747,7 @@ private fun BoxScope.RenderEditTextCell(
 private fun BoxScope.RenderBooleanCell(
     modifier: Modifier = Modifier,
     cell: Cell.BooleanCell,
-    onCellChanged: (Cell) -> Unit,
-    columnAlignment: ColumnAlignment
+    onCellChanged: (Cell) -> Unit
 ) {
     var value by remember(cell) { mutableStateOf(cell.value) }
 
@@ -792,14 +767,13 @@ private fun BoxScope.RenderBooleanCell(
 @Composable
 private fun BoxScope.RenderDateTimeCell(
     modifier: Modifier = Modifier,
-    cell: Cell.DateTimeCell,
-    columnAlignment: ColumnAlignment
+    cell: Cell.DateTimeCell
 ) {
 
     Text(
         modifier = modifier,
         text = cell.value?.let { DateTimeConverter.dateTimeToString(it) } ?: "",
-        style = getCellTextStyle(columnAlignment)
+        style = getCellTextStyle()
     )
 
 }
@@ -809,8 +783,7 @@ private fun BoxScope.RenderDateTimeCell(
 private fun BoxScope.RenderEntityCell(
     modifier: Modifier = Modifier,
     cell: Cell.EntityCell,
-    onCellChanged: (Cell) -> Unit,
-    columnAlignment: ColumnAlignment
+    onCellChanged: (Cell) -> Unit
 ) {
 
     when (cell.entityClass) {
@@ -819,19 +792,17 @@ private fun BoxScope.RenderEntityCell(
                 modifier = modifier,
                 cell = cell,
                 unit = cell.entity as? domain.Unit,
-                factor = cell.tag as? Factor,
-                onFactorChanged = {
-                    onCellChanged(cell.copy(tag = it))
-                },
-                columnAlignment = columnAlignment
-            )
+                factor = cell.tag as? Factor
+            ) {
+                onCellChanged(cell.copy(tag = it))
+            }
         }
 
         else -> {
             Text(
                 modifier = modifier,
                 text = cell.entity?.toString() ?: "",
-                style = getCellTextStyle(columnAlignment)
+                style = getCellTextStyle()
             )
         }
     }
@@ -844,8 +815,7 @@ private fun BoxScope.RenderUnitCell(
     cell: Cell.EntityCell,
     unit: domain.Unit?,
     factor: Factor?,
-    onFactorChanged: (Factor) -> Unit,
-    columnAlignment: ColumnAlignment
+    onFactorChanged: (Factor) -> Unit
 ) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         if (unit?.isMultipliable == true) {
@@ -862,7 +832,7 @@ private fun BoxScope.RenderUnitCell(
                         showFactorsList = true
                     }.padding(horizontal = 2.dp),
                 color = MaterialTheme.colors.secondary,
-                style = getCellTextStyle(columnAlignment)
+                style = getCellTextStyle()
             )
 
             DropdownMenu(
@@ -890,13 +860,7 @@ private fun BoxScope.RenderUnitCell(
         }
         Text(
             modifier = modifier, text = cell.entity?.toString() ?: "",
-            style = LocalTextStyle.current.copy(
-                textAlign = when (columnAlignment) {
-                    ColumnAlignment.Center -> TextAlign.Center
-                    ColumnAlignment.End -> TextAlign.End
-                    ColumnAlignment.Start -> TextAlign.Start
-                }
-            )
+            style = getCellTextStyle()
         )
     }
 }

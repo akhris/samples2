@@ -34,6 +34,7 @@ object UiSettings {
     }
 
     object DataTable {
+        val headerStateIconsSize: Dp = 18.dp
         val draggableAreaWidth: Dp = 10.dp
         val cellPadding: Dp = 4.dp
         val additionalRowWidth: Dp = 48.dp

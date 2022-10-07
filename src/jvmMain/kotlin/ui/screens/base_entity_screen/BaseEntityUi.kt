@@ -7,9 +7,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -35,6 +36,7 @@ import ui.components.Pagination
 import ui.components.tables.*
 import ui.dialogs.DatePickerDialog
 import ui.dialogs.TimePickerDialog
+import ui.screens.base_entity_screen.filter_dialog.FilterEntityFieldUi
 import java.time.LocalDateTime
 import java.time.temporal.TemporalAdjusters
 
@@ -127,10 +129,18 @@ fun <T : IEntity> BaseEntityUi(
             IEntityComponent.Dialog.None -> {
                 //render nothing
             }
+
+            is IEntityComponent.Dialog.FieldFilter<*> -> {
+                //show filtering dialog ui here:
+                FilterEntityFieldUi(component = child.component, onDismissDialog = {
+                    component.dismissDialog()
+                })
+            }
         }
     }
 
 }
+
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -138,12 +148,11 @@ private fun <T : IEntity> ShowDataTableForGroup(
     modifier: Modifier = Modifier,
     entities: List<T>,
     component: IEntityComponent<T>,
-    onHeaderClicked: ((ColumnId) -> Unit)? = null,
     selectionMode: SelectionMode<T>
 ) {
     var dateTimePickerParams by remember { mutableStateOf<DateTimePickerDialogParams?>(null) }
 
-    var selectedEntities = remember { mutableStateListOf<T>() }
+    val selectedEntities = remember { mutableStateListOf<T>() }
 
     var bottomPanelHeight by remember { mutableStateOf(0.dp) }
 
@@ -151,24 +160,53 @@ private fun <T : IEntity> ShowDataTableForGroup(
 
     val mapper by remember(component) { component.dataMapper }.subscribeAsState()
 
+    val filterSpec by remember(component) { component.filterSpec }.subscribeAsState()
+
     val filters = remember {
         mutableStateMapOf<ColumnId, List<FilterSpec>>()
     }
 
-    val sorting = remember {
-        mutableStateMapOf<ColumnId, Boolean>()
+    var sorting by remember { mutableStateOf<Pair<ColumnId, Boolean>?>(null) }
+
+    LaunchedEffect(sorting) {
+        //change query spec on sorting changed:
+        sorting?.let { s ->
+            component.setQuerySpec(Specification.Sorted(s.first, s.second))
+        }
     }
 
     Box(modifier = modifier.fillMaxHeight()) {
-
         //parameters table:
         DataTable(
             modifier = modifier.horizontalScroll(state = rememberScrollState()),
             items = entities,
+            mapper = mapper,
             onItemChanged = { component.updateEntity(it) },
-            onSortingChanged = { column, isAsc ->
-                component.setQuerySpec(Specification.Sorted(column, isAsc))
+            selectionMode = remember(selectionMode) {
+                when (selectionMode) {
+                    is SelectionMode.Multiple -> SelectionMode.Multiple(
+                        initialSelection = selectionMode.initialSelection,
+                        onItemsSelected = {
+                            selectionMode.onItemsSelected?.invoke(it)
+                            selectedEntities.clear()
+                            selectedEntities.addAll(it)
+                        }
+                    )
+
+                    is SelectionMode.None -> SelectionMode.None()
+                    is SelectionMode.Single -> SelectionMode.Single(
+                        initialSelection = selectionMode.initialSelection,
+                        onItemSelected = {
+                            selectionMode.onItemSelected?.invoke(it)
+                            selectedEntities.clear()
+                            it?.let {
+                                selectedEntities.add(it)
+                            }
+                        }
+                    )
+                }
             },
+            //wrapping selection mode to make additional actions available (duplicating/deleting)
             onCellClicked = { item, cell, column ->
                 when (cell) {
                     is Cell.EntityCell -> {
@@ -202,7 +240,6 @@ private fun <T : IEntity> ShowDataTableForGroup(
                     }
 
                     is Cell.EditTextCell -> {
-
                     }
 
                     is Cell.BooleanCell -> TODO()
@@ -212,53 +249,31 @@ private fun <T : IEntity> ShowDataTableForGroup(
             onItemRowClicked = {
                 component.onEntitySelected(it)
             },
-            //wrapping selection mode to make additional actions available (duplicating/deleting)
-            selectionMode = remember(selectionMode) {
-                when (selectionMode) {
-                    is SelectionMode.Multiple -> SelectionMode.Multiple(
-                        initialSelection = selectionMode.initialSelection,
-                        onItemsSelected = {
-                            selectionMode.onItemsSelected?.invoke(it)
-                            selectedEntities.clear()
-                            selectedEntities.addAll(it)
-                        }
-                    )
-
-                    is SelectionMode.None -> SelectionMode.None()
-                    is SelectionMode.Single -> SelectionMode.Single(
-                        initialSelection = selectionMode.initialSelection,
-                        onItemSelected = {
-                            selectionMode.onItemSelected?.invoke(it)
-                            selectedEntities.clear()
-                            it?.let {
-                                selectedEntities.add(it)
-                            }
-                        }
-                    )
-                }
+            utilitiesPanel = {
+                Text("filtering")
             },
             footer = {
                 Spacer(modifier = Modifier.height(bottomPanelHeight))
             },
-            utilitiesPanel = {
-                Text("filtering")
-            },
             headerMenu = { column ->
+
+                val sortingAsc = remember(sorting, column) {
+                    if (sorting?.first == column) {
+                        sorting?.second
+                    } else null
+                }
+
                 DropdownMenuItemWithIcon(onClick = {
                     //trigger sorting
-                    val sortingAsc = sorting[column] ?: false
-                    sorting[column] = !sortingAsc
+                    sorting = column to !(sortingAsc ?: false)
                 }, text = {
                     Text("Сортировка")
                 }, icon = {
-                    val sortingState = remember(sorting.values.toList(), column) {
-                        sorting[column]
-                    }
                     Icon(
-                        modifier = Modifier.scale(scaleY = if (sortingState == true) -1f else 1f, scaleX = 1f),
+                        modifier = Modifier.scale(scaleY = if (sortingAsc == true) -1f else 1f, scaleX = 1f),
                         painter = painterResource("vector/sort_black_24dp.svg"),
                         contentDescription = "sort",
-                        tint = when (sortingState) {
+                        tint = when (sortingAsc) {
                             null -> contentColorFor(
                                 MaterialTheme.colors.background
                             ).copy(alpha = 0.5f)
@@ -269,14 +284,23 @@ private fun <T : IEntity> ShowDataTableForGroup(
                 })
                 DropdownMenuItemWithIcon(onClick = {
                     //show menu for filtering selection
-                    val columnFilters = filters[column] ?: listOf()
-                    if (columnFilters.isNotEmpty()) {
-                        //filters not empty:
-                        filters.remove(column)
-                    } else {
-                        //filters are empty:
-                        filters[column] = listOf(FilterSpec.Values(columnName = column.key, filteredValues = listOf()))
-                    }
+                    val columnFiltersSpec =
+                        filterSpec.filters.firstOrNull { it.columnName == column.key } ?: FilterSpec.Values(
+                            listOf(),
+                            columnName = column.key
+                        )
+                    component.showFilterDialog(columnFiltersSpec)
+//
+//                    if (columnFilters.isNotEmpty()) {
+//                        //filters not empty:
+//                        component.removeFilter()
+//                        filters.remove(column)
+//
+//                    } else {
+//                        //filters are empty:
+//                        //show filtering dialog:
+//                        filters[column] = listOf(FilterSpec.Values(columnName = column.key, filteredValues = listOf()))
+//                    }
                 }, text = {
                     Text("Фильтр")
                 }, icon = {
@@ -290,9 +314,35 @@ private fun <T : IEntity> ShowDataTableForGroup(
                     )
                 })
             },
+            headerStateIcons = { column ->
+                //show filter icon:
+                if (filters[column] != null) {
+                    Icon(
+                        modifier = Modifier.size(UiSettings.DataTable.headerStateIconsSize),
+                        painter = painterResource("vector/filter_list_black_24dp.svg"),
+                        contentDescription = "filter is active",
+                        tint = MaterialTheme.colors.secondary
+                    )
+                }
+                //show sorting icon:
+                val sortingAsc = remember(sorting, column) {
+                    if (sorting?.first == column) {
+                        sorting?.second
+                    } else null
+                }
+                sortingAsc?.let { isAsc ->
+                    Icon(
+                        modifier = Modifier.scale(scaleY = if (isAsc) -1f else 1f, scaleX = 1f)
+                            .size(UiSettings.DataTable.headerStateIconsSize),
+                        painter = painterResource("vector/sort_black_24dp.svg"),
+                        contentDescription = "sorting is active",
+                        tint = MaterialTheme.colors.secondary
+                    )
+                }
+
+            },
             firstItemIndex = remember(pagingSpec) { ((pagingSpec.pageNumber - 1) * pagingSpec.itemsPerPage + 1).toInt() },
-            isReorderable = remember(component) { component.isReorderable },
-            mapper = mapper
+            isReorderable = remember(component) { component.isReorderable }
         )
 
         if (selectionMode is SelectionMode.Multiple<T> && selectedEntities.isNotEmpty()) {

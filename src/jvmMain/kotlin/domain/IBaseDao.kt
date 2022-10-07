@@ -42,5 +42,5 @@ interface IBaseDao<ENTITY : IEntity> {
         specs: List<ISpecification> = listOf()
     ): Long
 
-//    suspend fun slice(columnName: String, existedSlices: List<SliceValue<Any>> = listOf()): List<SliceValue<*>>
+    suspend fun slice(columnName: String): List<Any>
 }

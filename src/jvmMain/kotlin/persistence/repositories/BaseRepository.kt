@@ -51,5 +51,9 @@ class BaseRepository<ENTITY : IEntity>(private val baseDao: IBaseDao<ENTITY>) : 
         repoCallbacks.onItemUpdated(t)
     }
 
+    override suspend fun getSlice(columnName: String): List<Any> {
+        return baseDao.slice(columnName)
+    }
+
 
 }

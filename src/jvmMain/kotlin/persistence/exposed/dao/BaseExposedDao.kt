@@ -280,4 +280,22 @@ abstract class BaseExposedDao<ENTITY : IEntity, EXP_ENTITY : UUIDEntity, TABLE :
         return refName
     }
 
+
+    override suspend fun slice(columnName: String): List<Any> {
+        return newSuspendedTransaction {
+            val column =
+                table.columns.find { it.name == columnName } as? Column<Any?> ?: return@newSuspendedTransaction listOf()
+
+            val sliceItems =
+                table
+                    .slice(column)
+                    .selectAll()
+                    .withDistinct(true)
+                    .mapNotNull { rr ->
+                        rr.getOrNull(column)
+                    }
+            sliceItems
+        }
+    }
+
 }

@@ -2,12 +2,10 @@ package ui.screens.base_entity_screen
 
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
-import domain.EntitiesList
-import domain.IEntity
-import domain.SampleType
-import domain.Specification
+import domain.*
 import ui.OperationState
 import ui.components.tables.IDataTableMapper
+import ui.screens.base_entity_screen.filter_dialog.IFilterEntityFieldComponent
 import kotlin.reflect.KClass
 
 interface IEntityComponent<T : IEntity> {
@@ -16,6 +14,8 @@ interface IEntityComponent<T : IEntity> {
     val operationState: Value<OperationState<T>>
 
     val pagingSpec: Value<Specification.Paginated>
+
+    val filterSpec: Value<Specification.Filtered>
 
     fun insertNewEntity(entity: T)
     fun insertNewEntity(sampleType: SampleType)
@@ -27,6 +27,10 @@ interface IEntityComponent<T : IEntity> {
 
     fun setQuerySpec(spec: Specification)
     fun resetQuerySpec(spec: Specification)
+
+    fun addFilter(filterSpec: FilterSpec)
+
+    fun removeFilter(filterSpec: FilterSpec)
 
     fun setPagingSpec(spec: Specification.Paginated)
 
@@ -54,6 +58,8 @@ interface IEntityComponent<T : IEntity> {
         columnName: String
     )
 
+    fun showFilterDialog(columnFilters: FilterSpec)
+
     sealed class Dialog {
         object None : Dialog()
         class EntityPicker<T : IEntity>(
@@ -62,6 +68,8 @@ interface IEntityComponent<T : IEntity> {
             val onSelectionChanged: (IEntity?) -> Unit,
             val columnName: String = ""
         ) : Dialog()
+
+        class FieldFilter<T : IEntity>(val component: IFilterEntityFieldComponent<T>) : Dialog()
     }
 
 }

@@ -22,6 +22,7 @@ import org.kodein.di.instance
 import ui.OperationState
 import ui.components.tables.Cell
 import ui.components.tables.IDataTableMapper
+import ui.screens.base_entity_screen.filter_dialog.FilterEntityFieldComponent
 import utils.DateTimeConverter
 import utils.log
 import java.util.*
@@ -45,6 +46,8 @@ open class EntityComponent<T : IEntity>(
 
 
     override val pagingSpec: Value<Specification.Paginated> = _pagingSpec
+
+    override val filterSpec: Value<Specification.Filtered> = _filterSpec
 
     private val dialogNav = StackNavigation<Config>()
 
@@ -277,6 +280,19 @@ open class EntityComponent<T : IEntity>(
         setQuerySpec(Specification.QueryAll)
     }
 
+
+    override fun addFilter(filterSpec: FilterSpec) {
+        _filterSpec.reduce {
+            it.copy(filters = it.filters.plus(filterSpec))
+        }
+    }
+
+    override fun removeFilter(filterSpec: FilterSpec) {
+        _filterSpec.reduce {
+            it.copy(filters = it.filters.minus(filterSpec))
+        }
+    }
+
     override fun saveRowsToExcel(entities: List<T>) {
         scope.launch {
             workbook {
@@ -347,6 +363,15 @@ open class EntityComponent<T : IEntity>(
                 columnName = config.columnName
             )
 
+            is Config.FieldFilterDialog -> IEntityComponent.Dialog.FieldFilter(
+                component = FilterEntityFieldComponent(
+                    type = type,
+                    di = di,
+                    componentContext = componentContext,
+                    initialSpec = config.initialSpec
+                )
+            )
+
             Config.None -> IEntityComponent.Dialog.None
         }
     }
@@ -362,6 +387,10 @@ open class EntityComponent<T : IEntity>(
         columnName: String
     ) {
         dialogNav.replaceCurrent(Config.EntityPickerDialog(entity, entityClass, onSelectionChanged, columnName))
+    }
+
+    override fun showFilterDialog(columnFilters: FilterSpec) {
+        dialogNav.replaceCurrent(Config.FieldFilterDialog(columnFilters))
     }
 
     private suspend fun invalidateItemsCount() {
@@ -421,6 +450,8 @@ open class EntityComponent<T : IEntity>(
             val onSelectionChanged: (IEntity?) -> Unit,
             val columnName: String
         ) : Config()
+
+        class FieldFilterDialog(val initialSpec: FilterSpec) : Config()
     }
 
 

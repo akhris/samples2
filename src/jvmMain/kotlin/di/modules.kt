@@ -36,6 +36,7 @@ inline fun <reified ENTITY : IEntity> getEntityModule(
     bindSingleton<UpdateEntity<ENTITY>> { UpdateEntity(repo = instance(), ioDispatcher = Dispatchers.IO) }
     bindSingleton<UpdateEntities<ENTITY>> { UpdateEntities(repo = instance(), ioDispatcher = Dispatchers.IO) }
     bindSingleton<InsertEntity<ENTITY>> { InsertEntity(repo = instance(), ioDispatcher = Dispatchers.IO) }
+    bindSingleton<GetSlice<ENTITY>> { GetSlice(repo = instance(), ioDispatcher = Dispatchers.IO) }
     additionalBindings()
 }
 
