@@ -8,4 +8,6 @@ interface IFilterEntityFieldComponent<T : IEntity> {
     val filterSpec: Value<FilterSpec>
 
     val slice: Value<List<String>>
+
+    fun onFilterSpecChanged(filterSpec: FilterSpec)
 }

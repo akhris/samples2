@@ -1,5 +1,7 @@
 package domain
 
+import domain.valueobjects.SliceResult
+
 interface IBaseDao<ENTITY : IEntity> {
     /**
      * Get single Entity by [id]
@@ -42,5 +44,6 @@ interface IBaseDao<ENTITY : IEntity> {
         specs: List<ISpecification> = listOf()
     ): Long
 
-    suspend fun slice(columnName: String): List<Any>
+    suspend fun slice(columnName: String): List<SliceResult>
 }
+

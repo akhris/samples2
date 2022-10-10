@@ -1,6 +1,7 @@
 package persistence.exposed.dao
 
 import domain.*
+import domain.valueobjects.SliceResult
 import org.jetbrains.exposed.dao.UUIDEntity
 import org.jetbrains.exposed.dao.UUIDEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -158,7 +159,7 @@ abstract class BaseExposedDao<ENTITY : IEntity, EXP_ENTITY : UUIDEntity, TABLE :
             ?: return EntitiesList.Grouped(listOf())
 
         val column =
-            (table.columns.find { it.name == groupedBy.key } as? Column<Any>) ?: return EntitiesList.Grouped(listOf())
+            (table.columns.find { it.name == groupedBy.key } as? Column<Any?>) ?: return EntitiesList.Grouped(listOf())
 
         val groupsKeys =
             table
@@ -257,37 +258,72 @@ abstract class BaseExposedDao<ENTITY : IEntity, EXP_ENTITY : UUIDEntity, TABLE :
      *  @return value of column with name "name" or other text type if it's valid or null if not
      *  (no text type column was found, given [column] is not reference column or given [value] is not valid ID
      */
-    private fun getNameFromForeignTable(column: Column<Any>, value: Any): Any? {
+    private fun getNameFromForeignTable(column: Column<Any?>, value: Any?): Any? {
         // if column has foreign key:
         // then it's reference. get target table:
-        val refTable = column.foreignKey?.targetTable as? IdTable<Comparable<Any>>
+        val refTable = column.foreignKey?.targetTable as? IdTable<Comparable<Any>> ?: return null
         // then value is reference id:
-        val refID = value as? EntityID<Comparable<Any>>
+        val refID = value as? EntityID<Comparable<Any>> ?: return null
         // find readable name as ref.table's column with name == "name" or any text column type:
         val refNameColumn =
-            refTable?.columns?.find { it.name.lowercase() == "name" || it.columnType is TextColumnType } as? Column<Any>
+            refTable.columns.find { it.name.lowercase() == "name" } as? Column<Any>
 
         log("trying to get name from foreign table for $value: $refTable nameColumn: $refNameColumn uuid: $refID")
-        val refName = if (refTable != null && refID != null && refNameColumn != null) {
-            // if given column is reference - slice ref.table for given ID and get first result (it has to be one result here):
-            refTable
-                .select { refTable.id eq refID }
-                .firstNotNullOfOrNull { result ->
-                    // save id in reference table, readable name and column
-                    result[refNameColumn]
-                }
-        } else {
-            null
-        }
+        val refName = refTable
+            .select { refTable.id eq refID }
+            .firstNotNullOfOrNull { result ->
+                // save id in reference table, readable name and column
+                // if name column was found - get it
+                (refNameColumn?.let { result[it].toString() } ?: "").ifEmpty {
+                    val stringBuilder = StringBuilder()
+                    refTable
+                        .columns
+                        .forEachIndexed { index, it ->
 
+                            val text = result[it].toString()
+                            if (text.isNotEmpty() && text != value.toString()) {
+                                stringBuilder.append(text)
+                                if (index < refTable.columns.size - 1) {
+                                    stringBuilder.append(" ")
+                                }
+                            }
+                        }
+                    stringBuilder.toString()
+                }
+            }
         return refName
     }
 
+    private fun getAllValuesFromForeignTable(column: Column<Any?>, id: Any?): List<Any> {
+        // if column has foreign key:
+        // then it's reference. get target table:
+        val refTable = column.foreignKey?.targetTable as? IdTable<Comparable<Any>> ?: return listOf()
+        // then value is reference id:
+        val refID = id as? EntityID<Comparable<Any>> ?: return listOf()
 
-    override suspend fun slice(columnName: String): List<Any> {
+        log("trying to get all values from foreign table for $refID: $refTable")
+        val refValues = refTable
+            .select { refTable.id eq refID }
+            .firstNotNullOfOrNull { result ->
+                // save id in reference table, readable name and column
+                refTable
+                    .columns
+                    .mapNotNull { c: Column<*> ->
+                        //if c is also a foreign reference - try to get name from it
+                        (c as? Column<Any?>)?.let {
+                            getNameFromForeignTable(c, result[c])
+                        } ?: result[c]
+                    }
+            } ?: listOf()
+        return refValues
+    }
+
+    override suspend fun slice(columnName: String): List<SliceResult> {
         return newSuspendedTransaction {
             val column =
                 table.columns.find { it.name == columnName } as? Column<Any?> ?: return@newSuspendedTransaction listOf()
+
+            val refTable = column.foreignKey?.targetTable
 
             val sliceItems =
                 table
@@ -295,8 +331,16 @@ abstract class BaseExposedDao<ENTITY : IEntity, EXP_ENTITY : UUIDEntity, TABLE :
                     .selectAll()
                     .withDistinct(true)
                     .mapNotNull { rr ->
-                        rr.getOrNull(column)
+                        val a = rr.getOrNull(column) ?: return@mapNotNull null
+                        if (refTable != null) {
+                            SliceResult(
+                                a,
+                                getAllValuesFromForeignTable(column, a)
+                            )
+                        } else SliceResult(a)
                     }
+
+
             sliceItems
         }
     }

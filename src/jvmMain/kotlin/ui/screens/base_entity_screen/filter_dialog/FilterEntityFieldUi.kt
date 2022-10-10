@@ -30,30 +30,21 @@ fun <T : IEntity> FilterEntityFieldUi(component: IFilterEntityFieldComponent<T>,
 
             is FilterSpec.Values -> spec.filteredValues
         },
-        onItemsPicked = {
-            // TODO: add callback to [IEntityComponent.addFilter]
+        onItemsPicked = { pickedItems: List<Any> ->
             log("picked items: ")
-            it.forEach {
+            pickedItems.forEach {
                 log(it)
             }
+            component.onFilterSpecChanged(
+                when (val fSpec = filterSpec) {
+                    is FilterSpec.Range<*> -> TODO()
+                    is FilterSpec.Values -> fSpec.copy(filteredValues = pickedItems)
+                }
+            )
+            onDismissDialog()
         },
         onDismiss = onDismissDialog,
         isInverted = true
     )
 
-//
-//    Dialog(onCloseRequest = onDismissDialog, title = "Фильтры для ${filterSpec.columnName}") {
-//        FilterEntityFieldContent(filterSpec, slice)
-//    }
-}
-
-@Composable
-private fun FilterEntityFieldContent(filterSpec: FilterSpec, slice: List<String>) {
-    Text("filtering test")
-
-    Column {
-        slice.forEach {
-            Text(it)
-        }
-    }
 }

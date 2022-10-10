@@ -162,8 +162,8 @@ private fun <T : IEntity> ShowDataTableForGroup(
 
     val filterSpec by remember(component) { component.filterSpec }.subscribeAsState()
 
-    val filters = remember {
-        mutableStateMapOf<ColumnId, List<FilterSpec>>()
+    val filters = remember(filterSpec) {
+        filterSpec.filters.associateBy { it.columnName }.toList().toMutableStateMap()
     }
 
     var sorting by remember { mutableStateOf<Pair<ColumnId, Boolean>?>(null) }
@@ -249,9 +249,7 @@ private fun <T : IEntity> ShowDataTableForGroup(
             onItemRowClicked = {
                 component.onEntitySelected(it)
             },
-            utilitiesPanel = {
-                Text("filtering")
-            },
+            utilitiesPanel = null,
             footer = {
                 Spacer(modifier = Modifier.height(bottomPanelHeight))
             },
@@ -290,25 +288,14 @@ private fun <T : IEntity> ShowDataTableForGroup(
                             columnName = column.key
                         )
                     component.showFilterDialog(columnFiltersSpec)
-//
-//                    if (columnFilters.isNotEmpty()) {
-//                        //filters not empty:
-//                        component.removeFilter()
-//                        filters.remove(column)
-//
-//                    } else {
-//                        //filters are empty:
-//                        //show filtering dialog:
-//                        filters[column] = listOf(FilterSpec.Values(columnName = column.key, filteredValues = listOf()))
-//                    }
                 }, text = {
                     Text("Фильтр")
                 }, icon = {
-                    val columnFilters = remember(filters.values.toList(), column) { filters[column] ?: listOf() }
+                    val columnFilters = remember(filters.values.toList(), column) { filters[column.key] }
                     Icon(
                         painterResource("vector/filter_list_black_24dp.svg"),
                         contentDescription = "filter",
-                        tint = if (columnFilters.isNotEmpty()) MaterialTheme.colors.secondary else contentColorFor(
+                        tint = if (columnFilters != null) MaterialTheme.colors.secondary else contentColorFor(
                             MaterialTheme.colors.background
                         ).copy(alpha = 0.5f)
                     )
@@ -316,7 +303,7 @@ private fun <T : IEntity> ShowDataTableForGroup(
             },
             headerStateIcons = { column ->
                 //show filter icon:
-                if (filters[column] != null) {
+                if (filters[column.key] != null) {
                     Icon(
                         modifier = Modifier.size(UiSettings.DataTable.headerStateIconsSize),
                         painter = painterResource("vector/filter_list_black_24dp.svg"),

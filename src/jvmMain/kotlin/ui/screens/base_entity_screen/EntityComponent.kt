@@ -25,6 +25,7 @@ import ui.components.tables.IDataTableMapper
 import ui.screens.base_entity_screen.filter_dialog.FilterEntityFieldComponent
 import utils.DateTimeConverter
 import utils.log
+import utils.replaceOrAdd
 import java.util.*
 import kotlin.Unit
 import kotlin.reflect.KClass
@@ -283,13 +284,21 @@ open class EntityComponent<T : IEntity>(
 
     override fun addFilter(filterSpec: FilterSpec) {
         _filterSpec.reduce {
-            it.copy(filters = it.filters.plus(filterSpec))
+            it.copy(filters = it.filters.replaceOrAdd(filterSpec) {
+                it.columnName == filterSpec.columnName
+            })
+        }
+        scope.launch {
+            invalidateEntities()
         }
     }
 
     override fun removeFilter(filterSpec: FilterSpec) {
-        _filterSpec.reduce {
-            it.copy(filters = it.filters.minus(filterSpec))
+        _filterSpec.reduce { spec: Specification.Filtered ->
+            spec.copy(filters = spec.filters.filter { it.columnName != filterSpec.columnName })
+        }
+        scope.launch {
+            invalidateEntities()
         }
     }
 
@@ -368,7 +377,10 @@ open class EntityComponent<T : IEntity>(
                     type = type,
                     di = di,
                     componentContext = componentContext,
-                    initialSpec = config.initialSpec
+                    initialSpec = config.initialSpec,
+                    onSpecChanged = {
+                        addFilter(it)
+                    }
                 )
             )
 

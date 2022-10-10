@@ -1,18 +1,26 @@
 package ui.components
 
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.rememberDialogState
 import ui.theme.DialogSettings
+import utils.log
 
 @Composable
 fun <T> ListMultiPickerDialog(
@@ -40,7 +48,7 @@ fun <T> ListMultiPickerDialog(
         onCloseRequest = onDismiss,
         content = {
 
-            Box {
+            Box(modifier = Modifier.fillMaxSize()) {
                 var buttonsHeight by remember { mutableStateOf(0.dp) }
 
                 ItemsPickerDialogContent(
@@ -75,20 +83,80 @@ fun <T> ListMultiPickerDialog(
         })
 }
 
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
 @Composable
 private fun <T> ItemsPickerDialogContent(
     modifier: Modifier = Modifier,
     items: List<T>,
-    selectedItems: List<T>,
+    selectedItems: SnapshotStateList<T>,
     mapper: ((T) -> String)? = null,
     onSelectionChanged: (List<T>) -> Unit,
     isInverted: Boolean
 ) {
 
-    Column(
-        modifier = modifier.fillMaxWidth().verticalScroll(rememberScrollState())
+    val state = rememberLazyListState()
+
+    val headerElevation by animateDpAsState(if (state.firstVisibleItemIndex == 0 && state.firstVisibleItemScrollOffset == 0) 0.dp else 4.dp)
+
+    val selectedCount = remember(selectedItems.toList(), items, isInverted) {
+        log("calculating selectedCount=${items.size}-${selectedItems.size}")
+        when (isInverted) {
+            false -> selectedItems.size
+            true -> items.size - selectedItems.size
+        }
+    }
+
+    LazyColumn(
+        state = state,
+        modifier = modifier.fillMaxWidth()
     ) {
-        items.forEach { item ->
+        if (items.size > 1) {
+            stickyHeader {
+                Surface(elevation = headerElevation) {
+                    ListItem(
+                        modifier = Modifier.fillMaxWidth(),
+                        text = {
+
+                            Text("Выбрано: $selectedCount")
+                        }, icon = {
+                            TriStateCheckbox(
+                                state = when (isInverted) {
+                                    true -> when (selectedItems.size) {
+                                        items.size -> ToggleableState.Off
+                                        0 -> ToggleableState.On
+                                        else -> ToggleableState.Indeterminate
+                                    }
+
+                                    false -> when (selectedItems.size) {
+                                        items.size -> ToggleableState.On
+                                        0 -> ToggleableState.Off
+                                        else -> ToggleableState.Indeterminate
+                                    }
+                                },
+                                onClick = {
+                                    when (isInverted) {
+                                        true -> onSelectionChanged(
+                                            when (selectedItems.size) {
+                                                0 -> items
+                                                else -> listOf()
+                                            }
+                                        )
+
+                                        false -> onSelectionChanged(
+                                            when (selectedItems.size) {
+                                                0 -> listOf()
+                                                else -> items
+                                            }
+                                        )
+                                    }
+                                }
+                            )
+                        })
+                }
+            }
+        }
+
+        itemsIndexed(items, key = { index, item -> index }) { index, item ->
             SelectableItem(
                 item,
                 isSelected = if (!isInverted) selectedItems.contains(item) else !selectedItems.contains(item),
@@ -109,7 +177,7 @@ private fun <T> ItemsPickerDialogContent(
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-private fun <T> ColumnScope.SelectableItem(
+private fun <T> SelectableItem(
     item: T,
     isSelected: Boolean,
     mapper: ((T) -> String)? = null,
@@ -119,7 +187,7 @@ private fun <T> ColumnScope.SelectableItem(
     ListItem(
         modifier = Modifier.fillMaxWidth(),
         text = {
-            Text(mapper?.invoke(item) ?: item.toString())
+            Text((mapper?.invoke(item) ?: item.toString()).ifEmpty { "<пустая строка>" })
         }, icon = {
             Checkbox(checked = isSelected, onCheckedChange = { onSelectionChanged(it) })
         })

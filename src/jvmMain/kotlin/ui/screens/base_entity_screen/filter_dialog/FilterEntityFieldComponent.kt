@@ -6,7 +6,6 @@ import com.arkivanov.decompose.value.Value
 import com.arkivanov.decompose.value.reduce
 import com.arkivanov.essenty.lifecycle.subscribe
 import domain.*
-import domain.Unit
 import domain.application.Result
 import domain.application.baseUseCases.GetSlice
 import kotlinx.coroutines.*
@@ -18,9 +17,10 @@ import kotlin.reflect.KClass
 
 class FilterEntityFieldComponent<T : IEntity>(
     val type: KClass<out T>,
-    private val di: DI,
+    di: DI,
     componentContext: ComponentContext,
     initialSpec: FilterSpec,
+    private val onSpecChanged: (FilterSpec) -> Unit
 ) : IFilterEntityFieldComponent<T>, ComponentContext by componentContext {
     private val scope =
         CoroutineScope(Dispatchers.Default + SupervisorJob())
@@ -40,7 +40,7 @@ class FilterEntityFieldComponent<T : IEntity>(
         OperationType::class -> di.instance<GetSlice<OperationType>>()
         Worker::class -> di.instance<GetSlice<Worker>>()
         Place::class -> di.instance<GetSlice<Place>>()
-        Unit::class -> di.instance<GetSlice<Unit>>()
+        domain.Unit::class -> di.instance<GetSlice<domain.Unit>>()
         Measurement::class -> di.instance<GetSlice<Measurement>>()
         else -> throw IllegalArgumentException("unsupported type: $type")
     } as LazyDelegate<GetSlice<T>>
@@ -55,7 +55,24 @@ class FilterEntityFieldComponent<T : IEntity>(
 
             is Result.Success -> {
                 _slice.reduce {
-                    sliceResult.value.map { it.toString() }
+                    sliceResult
+                        .value
+                        .map { sliceResult ->
+                            if (sliceResult.foreingValues.isEmpty()) {
+                                sliceResult.value.toString()
+                            } else {
+                                val stringBuilder = StringBuilder()
+                                sliceResult.foreingValues.forEachIndexed { index, value ->
+                                    if (value.toString().isNotEmpty() && value != sliceResult.value)
+                                        stringBuilder.append(value.toString())
+
+                                    if (index < sliceResult.foreingValues.size - 1) {
+                                        stringBuilder.append(" ")
+                                    }
+                                }
+                                stringBuilder.toString()
+                            }
+                        }
                 }
             }
         }
@@ -74,18 +91,24 @@ class FilterEntityFieldComponent<T : IEntity>(
 
     }
 
+    override fun onFilterSpecChanged(filterSpec: FilterSpec) {
+        onSpecChanged(filterSpec)
+    }
+
 
     companion object {
         inline operator fun <reified T : IEntity> invoke(
             di: DI,
             componentContext: ComponentContext,
             initialSpec: FilterSpec,
+            noinline onSpecChanged: (FilterSpec) -> Unit
         ): FilterEntityFieldComponent<T> {
             return FilterEntityFieldComponent(
                 type = T::class,
                 di = di,
                 componentContext = componentContext,
-                initialSpec = initialSpec
+                initialSpec = initialSpec,
+                onSpecChanged = onSpecChanged
             )
         }
     }

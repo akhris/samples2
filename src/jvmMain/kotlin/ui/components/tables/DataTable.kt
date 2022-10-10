@@ -276,7 +276,6 @@ fun <T> DataTable(
                                             //secondary title
                                             if (column.secondaryText.isNotEmpty()) {
                                                 Text(
-                                                    modifier = Modifier.border(width = 1.dp, color = Color.DarkGray),
                                                     text = column.secondaryText,
                                                     style = MaterialTheme.typography.caption.copy(
                                                         color = MaterialTheme.colors.primaryVariant

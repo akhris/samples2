@@ -1,6 +1,7 @@
 package persistence.repositories
 
 import domain.*
+import domain.valueobjects.SliceResult
 import kotlinx.coroutines.flow.SharedFlow
 
 class BaseRepository<ENTITY : IEntity>(private val baseDao: IBaseDao<ENTITY>) : IRepository<ENTITY>,
@@ -51,7 +52,7 @@ class BaseRepository<ENTITY : IEntity>(private val baseDao: IBaseDao<ENTITY>) : 
         repoCallbacks.onItemUpdated(t)
     }
 
-    override suspend fun getSlice(columnName: String): List<Any> {
+    override suspend fun getSlice(columnName: String): List<SliceResult> {
         return baseDao.slice(columnName)
     }
 
