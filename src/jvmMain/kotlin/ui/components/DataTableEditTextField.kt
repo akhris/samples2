@@ -16,6 +16,7 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.TextStyle
+import utils.conditional
 import java.awt.Cursor
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -23,7 +24,7 @@ import java.awt.Cursor
 fun DataTableEditTextField(
     modifier: Modifier = Modifier,
     value: String,
-    onValueChange: (String) -> Unit,
+    onValueChange: ((String) -> Unit)? = null,
     placeholderText: String? = null,
     singleLine: Boolean = true,
     textStyle: TextStyle = LocalTextStyle.current.copy(
@@ -44,8 +45,9 @@ fun DataTableEditTextField(
         .onPointerEvent(PointerEventType.Enter) { isHover = true }
         .onPointerEvent(PointerEventType.Exit) { isHover = false }
         .fillMaxWidth(),
+        enabled = onValueChange != null,
         value = value,
-        onValueChange = onValueChange,
+        onValueChange = { onValueChange?.invoke(it) },
         singleLine = singleLine,
 //        cursorBrush = SolidColor(MaterialTheme.colors.primary),
         textStyle = textStyle,

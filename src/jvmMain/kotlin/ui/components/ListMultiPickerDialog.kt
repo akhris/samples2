@@ -2,6 +2,7 @@ package ui.components
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -15,10 +16,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.rememberDialogState
+import ui.UiSettings
 import ui.theme.DialogSettings
 import utils.log
 
@@ -99,7 +102,6 @@ private fun <T> ItemsPickerDialogContent(
     val headerElevation by animateDpAsState(if (state.firstVisibleItemIndex == 0 && state.firstVisibleItemScrollOffset == 0) 0.dp else 4.dp)
 
     val selectedCount = remember(selectedItems.toList(), items, isInverted) {
-        log("calculating selectedCount=${items.size}-${selectedItems.size}")
         when (isInverted) {
             false -> selectedItems.size
             true -> items.size - selectedItems.size
@@ -113,45 +115,56 @@ private fun <T> ItemsPickerDialogContent(
         if (items.size > 1) {
             stickyHeader {
                 Surface(elevation = headerElevation) {
-                    ListItem(
-                        modifier = Modifier.fillMaxWidth(),
-                        text = {
+                    Box {
+                        ListItem(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = {
+                                Text(
+                                    "Выбрано: $selectedCount",
+                                    style = LocalTextStyle.current.copy(fontWeight = FontWeight.Bold)
+                                )
+                            }, icon = {
+                                TriStateCheckbox(
+                                    state = when (isInverted) {
+                                        true -> when (selectedItems.size) {
+                                            items.size -> ToggleableState.Off
+                                            0 -> ToggleableState.On
+                                            else -> ToggleableState.Indeterminate
+                                        }
 
-                            Text("Выбрано: $selectedCount")
-                        }, icon = {
-                            TriStateCheckbox(
-                                state = when (isInverted) {
-                                    true -> when (selectedItems.size) {
-                                        items.size -> ToggleableState.Off
-                                        0 -> ToggleableState.On
-                                        else -> ToggleableState.Indeterminate
-                                    }
+                                        false -> when (selectedItems.size) {
+                                            items.size -> ToggleableState.On
+                                            0 -> ToggleableState.Off
+                                            else -> ToggleableState.Indeterminate
+                                        }
+                                    },
+                                    onClick = {
+                                        when (isInverted) {
+                                            true -> onSelectionChanged(
+                                                when (selectedItems.size) {
+                                                    0 -> items
+                                                    else -> listOf()
+                                                }
+                                            )
 
-                                    false -> when (selectedItems.size) {
-                                        items.size -> ToggleableState.On
-                                        0 -> ToggleableState.Off
-                                        else -> ToggleableState.Indeterminate
+                                            false -> onSelectionChanged(
+                                                when (selectedItems.size) {
+                                                    0 -> listOf()
+                                                    else -> items
+                                                }
+                                            )
+                                        }
                                     }
-                                },
-                                onClick = {
-                                    when (isInverted) {
-                                        true -> onSelectionChanged(
-                                            when (selectedItems.size) {
-                                                0 -> items
-                                                else -> listOf()
-                                            }
-                                        )
-
-                                        false -> onSelectionChanged(
-                                            when (selectedItems.size) {
-                                                0 -> listOf()
-                                                else -> items
-                                            }
-                                        )
-                                    }
-                                }
-                            )
-                        })
+                                )
+                            })
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomStart)
+                                .height(1.dp)
+                                .fillParentMaxWidth()
+                                .background(color = UiSettings.DataTable.dividerColor())
+                        )
+                    }
                 }
             }
         }
@@ -183,7 +196,6 @@ private fun <T> SelectableItem(
     mapper: ((T) -> String)? = null,
     onSelectionChanged: (isSelected: Boolean) -> Unit
 ) {
-
     ListItem(
         modifier = Modifier.fillMaxWidth(),
         text = {

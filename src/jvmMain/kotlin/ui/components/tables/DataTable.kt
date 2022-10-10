@@ -798,11 +798,29 @@ private fun BoxScope.RenderEntityCell(
         }
 
         else -> {
-            Text(
+            DataTableEditTextField(
                 modifier = modifier,
-                text = cell.entity?.toString() ?: "",
-                style = getCellTextStyle()
+                value = cell.entity?.toString() ?: "",
+                trailingIcon = if (cell.entity != null) {
+                    {
+                        Icon(
+                            Icons.Rounded.Clear,
+                            contentDescription = "clear entity",
+                            modifier = Modifier
+                                .size(18.dp)
+                                .clickable {
+                                    onCellChanged(cell.copy(entity = null))
+                                }
+                        )
+                    }
+                } else null,
+                textStyle = getCellTextStyle()
             )
+//            Text(
+//                modifier = modifier,
+//                text = cell.entity?.toString() ?: "",
+//                style = getCellTextStyle()
+//            )
         }
     }
 
