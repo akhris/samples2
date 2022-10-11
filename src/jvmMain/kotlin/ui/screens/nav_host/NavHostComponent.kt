@@ -1,109 +1,208 @@
 package ui.screens.nav_host
 
 import com.arkivanov.decompose.ComponentContext
-import com.arkivanov.decompose.router.RouterState
-import com.arkivanov.decompose.router.replaceCurrent
-import com.arkivanov.decompose.router.router
+import com.arkivanov.decompose.router.stack.ChildStack
+import com.arkivanov.decompose.router.stack.StackNavigation
+import com.arkivanov.decompose.router.stack.childStack
+import com.arkivanov.decompose.router.stack.replaceCurrent
+import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
+import com.arkivanov.decompose.value.reduce
+import com.arkivanov.essenty.lifecycle.subscribe
 import com.arkivanov.essenty.parcelable.Parcelable
 import com.arkivanov.essenty.parcelable.Parcelize
-import domain.entities.*
-import domain.entities.fieldsmappers.FieldsMapperFactory
-import domain.entities.usecase_factories.*
+import domain.*
+import domain.application.Result
+import domain.application.baseUseCases.GetEntities
+import domain.application.baseUseCases.InsertEntity
+import domain.application.baseUseCases.RemoveEntity
+import kotlinx.coroutines.*
 import navigation.NavItem
-import navigation.Screen
-import persistence.columnMappers.ColumnMappersFactory
-import settings.AppSettingsRepository
-import ui.screens.entities_screen.EntitiesScreenComponent
-import ui.screens.settings.SettingsComponent
+import org.kodein.di.DI
+import org.kodein.di.instance
+import ui.screens.base_entity_screen.EntityComponent
+import ui.screens.base_entity_screen.entityComponents.MeasurementsEntityComponent
+import ui.screens.base_entity_screen.entityComponents.OperationsComponent
+import ui.screens.base_entity_screen.entityComponents.ParametersComponent
+import ui.screens.base_entity_screen.entityComponents.SamplesComponent
+import ui.screens.sample_details_screen.SampleDetailsComponent
 
 /**
  * Main navigation component that holds all destinations
  */
 class NavHostComponent constructor(
-    componentContext: ComponentContext,
-    private val fieldsMapperFactory: FieldsMapperFactory,
-    private val columnMappersFactory: ColumnMappersFactory,
-    private val appSettingsRepository: AppSettingsRepository,
-    private val getUseCaseFactory: IGetUseCaseFactory,
-    private val updateUseCaseFactory: IUpdateUseCaseFactory,
-    private val getListUseCaseFactory: IGetListUseCaseFactory,
-    private val insertUseCaseFactory: IInsertUseCaseFactory,
-    private val removeUseCaseFactory: IRemoveUseCaseFactory
+    private val di: DI,
+    componentContext: ComponentContext
 ) :
     INavHost, ComponentContext by componentContext {
 
-    /**
-     * Router instance
-     */
-    private val router =
-        router(
-            initialConfiguration = Config(NavItem.getDefaultHome().route),
-            handleBackButton = true, // Pop the back stack on back button press
+//    private val backCallback = BackCall { /* Handle the back button */ }
+
+    private val scope =
+        CoroutineScope(Dispatchers.Default + SupervisorJob())
+
+    private val _state = MutableValue(INavHost.State())
+    private val _sampleTypesState = MutableValue(listOf<SampleType>())
+
+    private val getSampleTypes: GetEntities<SampleType> by di.instance()
+    private val insertSampleType: InsertEntity<SampleType> by di.instance()
+    private val removeSampleType: RemoveEntity<SampleType> by di.instance()
+
+    private val samplesCallback: IRepositoryCallback<SampleType> by di.instance()
+    private val navigation = StackNavigation<Config>()
+
+    private val stack =
+        childStack(
+            source = navigation,
+            initialConfiguration = Config.Samples,
             childFactory = ::createChild,
-            key = "nav_host_router"
+            key = "nav host stack"
         )
 
-    /**
-     * Exposes Router State
-     */
-    override val routerState: Value<RouterState<Config, INavHost.Child>> = router.state
 
-    /**
-     * Navigate to destination by route.
-     */
-    override fun setDestination(route: String) {
-        router.replaceCurrent(Config(route))
-    }
+    override val state: Value<INavHost.State> = _state
 
-    /**
-     * Child components factory.
-     * Creates
-     */
+    override val sampleTypes: Value<List<SampleType>> = _sampleTypesState
+
+    override val childStack: Value<ChildStack<*, INavHost.Child>>
+        get() = stack
+
     private fun createChild(config: Config, componentContext: ComponentContext): INavHost.Child {
-        return when (config.route) {
-            Screen.Settings.route -> INavHost.Child.Settings(
-                SettingsComponent(
-                    componentContext = componentContext,
-                    appSettingsRepository = appSettingsRepository
+        return when (config) {
+            Config.Places -> INavHost.Child.Places(EntityComponent(di = di, componentContext))
+            Config.Workers -> INavHost.Child.Workers(EntityComponent(di = di, componentContext))
+            Config.Norms -> INavHost.Child.Norms(EntityComponent(di = di, componentContext))
+            Config.Parameters -> INavHost.Child.Parameters(ParametersComponent(di = di, componentContext))
+            Config.Operations -> INavHost.Child.Operations(OperationsComponent(di = di, componentContext))
+            Config.Samples -> INavHost.Child.Samples(SamplesComponent(di = di, componentContext, onSampleSelected = {
+                //navigate to sample details here
+                setDestination(NavItem.SampleDetails(it))
+            }))
+
+            Config.OperationTypes -> INavHost.Child.OperationTypes(EntityComponent(di = di, componentContext))
+            Config.Measurements -> INavHost.Child.Measurements(
+                MeasurementsEntityComponent(
+                    di = di,
+                    componentContext = componentContext
                 )
             )
-            else -> {
-                val entities = when (config.route) {
-                    Screen.Warehouse.route -> listOf(WarehouseItem::class)
-                    Screen.Income.route -> listOf(ItemIncome::class)
-                    Screen.Outcome.route -> listOf(ItemOutcome::class)
-                    Screen.Types.route -> listOf(
-                        Item::class,
-                        ObjectType::class,
-                        domain.entities.Unit::class,
-                        Parameter::class,
-                        Container::class,
-                        Supplier::class,
-                        Invoice::class,
-                        Project::class
-                    )
-                    else -> throw UnsupportedOperationException("unknown root: ${config.route}")
+
+            is Config.SampleDetails -> INavHost.Child.SampleDetails(
+                SampleDetailsComponent(di = di, componentContext = componentContext, sample = config.sample)
+            )
+        }
+    }
+
+
+    override fun setDestination(navItem: NavItem) {
+
+        val newConf = when (navItem) {
+            NavItem.Conditions -> null
+            NavItem.Measurements -> Config.Measurements
+            NavItem.Norms -> Config.Norms
+            NavItem.Operations -> Config.Operations
+            NavItem.Parameters -> Config.Parameters
+            NavItem.Places -> Config.Places
+            NavItem.SampleTypes -> null
+            NavItem.Samples -> Config.Samples
+            NavItem.Workers -> Config.Workers
+            NavItem.OperationTypes -> Config.OperationTypes
+            NavItem.AppSettings -> null
+            is NavItem.SampleDetails -> Config.SampleDetails(navItem.sample)
+        }
+        if (newConf != null && navItem != _state.value.currentDestination) {
+            navigation.replaceCurrent(newConf)
+        }
+
+        _state.reduce {
+            it.copy(currentDestination = navItem)
+        }
+    }
+
+    @Parcelize
+    private sealed class Config : Parcelable {
+        @Parcelize
+        object Places : Config()
+
+        @Parcelize
+        object Workers : Config()
+
+        @Parcelize
+        object Norms : Config()
+
+        @Parcelize
+        object Parameters : Config()
+
+        @Parcelize
+        object Operations : Config()
+
+        @Parcelize
+        object OperationTypes : Config()
+
+        @Parcelize
+        data class SampleDetails(val sample: Sample) : Config()
+
+        @Parcelize
+        object Samples : Config()
+
+        @Parcelize
+        object Measurements : Config()
+
+    }
+
+
+    override fun addSampleType(type: SampleType) {
+        scope.launch {
+            insertSampleType(InsertEntity.Insert(type))
+        }
+    }
+
+    override fun removeSampleType(type: SampleType) {
+        scope.launch {
+            removeSampleType(RemoveEntity.Remove(type))
+        }
+    }
+
+    private suspend fun invalidateSampleTypes() {
+        val types = getSampleTypes(GetEntities.Params.GetWithSpecification(Specification.QueryAll))
+        when (types) {
+            is Result.Failure -> {}
+            is Result.Success -> {
+                when (types.value) {
+                    is EntitiesList.Grouped -> {}
+                    is EntitiesList.NotGrouped -> {
+                        _sampleTypesState.reduce { types.value.items }
+                    }
                 }
 
-                INavHost.Child.EntitiesListWithSidePanel(
-                    EntitiesScreenComponent(
-                        componentContext = componentContext,
-                        entityClasses = entities,
-                        fieldsMapperFactory = fieldsMapperFactory,
-                        columnMappersFactory = columnMappersFactory,
-                        getListUseCaseFactory = getListUseCaseFactory,
-                        updateUseCaseFactory = updateUseCaseFactory,
-                        removeUseCaseFactory = removeUseCaseFactory,
-                        insertUseCaseFactory = insertUseCaseFactory
-                    )
-                )
             }
         }
     }
 
 
-    @Parcelize
-    data class Config(val route: String) : Parcelable
+    init {
+
+        lifecycle.subscribe(onDestroy = {
+            scope.coroutineContext.cancelChildren()
+        })
+
+        scope.launch {
+            invalidateSampleTypes()
+        }
+
+        scope.launch {
+            samplesCallback
+                .updates
+                .collect {
+                    when (it) {
+                        is RepoResult.ItemInserted,
+                        is RepoResult.ItemRemoved,
+                        is RepoResult.ItemUpdated -> {
+                            invalidateSampleTypes()
+                        }
+                    }
+                }
+        }
+    }
 
 }
