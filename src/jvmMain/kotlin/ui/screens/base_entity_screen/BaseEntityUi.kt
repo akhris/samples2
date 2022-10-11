@@ -2,6 +2,7 @@ package ui.screens.base_entity_screen
 
 import LocalSamplesType
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -16,6 +17,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.layout.onSizeChanged
@@ -37,6 +39,8 @@ import ui.components.tables.*
 import ui.dialogs.DatePickerDialog
 import ui.dialogs.TimePickerDialog
 import ui.screens.base_entity_screen.filter_dialog.FilterEntityFieldUi
+import ui.screens.error_dialog.ErrorDialogUi
+import utils.log
 import java.time.LocalDateTime
 import java.time.temporal.TemporalAdjusters
 
@@ -56,6 +60,14 @@ fun <T : IEntity> BaseEntityUi(
     val state by remember(component) { component.state }.subscribeAsState()
     //render samples list:
 //    val entities = remember(state) { state.entities }
+
+    val sampleType = LocalSamplesType.current
+
+    LaunchedEffect(sampleType) {
+        sampleType?.let {
+            component.setSampleType(it)
+        }
+    }
 
     when (val entities = state.entities) {
         is EntitiesList.Grouped -> {
@@ -83,15 +95,13 @@ fun <T : IEntity> BaseEntityUi(
 
                 var selection by remember { mutableStateOf<IEntity?>(null) }
 
-                val sampleType = LocalSamplesType.current
-
                 Dialog(
                     state = dialogState,
                     title = "Выбрать: ${child.columnName.lowercase()}",
                     onCloseRequest = {
                         component.dismissDialog()
                     }) {
-                    Column(modifier = Modifier.fillMaxSize()) {
+                    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
                         Box(modifier = Modifier.weight(1f)) {
                             BaseEntityUi(
                                 component = child.component,
@@ -133,6 +143,12 @@ fun <T : IEntity> BaseEntityUi(
             is IEntityComponent.Dialog.FieldFilter<*> -> {
                 //show filtering dialog ui here:
                 FilterEntityFieldUi(component = child.component, onDismissDialog = {
+                    component.dismissDialog()
+                })
+            }
+
+            is IEntityComponent.Dialog.ErrorDialog -> {
+                ErrorDialogUi(component = child.component, onDismissDialog = {
                     component.dismissDialog()
                 })
             }
@@ -250,8 +266,9 @@ private fun <T : IEntity> ShowDataTableForGroup(
                 component.onEntitySelected(it)
             },
             utilitiesPanel = null,
-            footer = {
-                Spacer(modifier = Modifier.height(bottomPanelHeight))
+            footer =
+            {
+                Box(modifier = Modifier.height(bottomPanelHeight).width(20.dp).background(color = Color.Yellow))
             },
             headerMenu = { column ->
 
@@ -331,65 +348,73 @@ private fun <T : IEntity> ShowDataTableForGroup(
             firstItemIndex = remember(pagingSpec) { ((pagingSpec.pageNumber - 1) * pagingSpec.itemsPerPage + 1).toInt() },
             isReorderable = remember(component) { component.isReorderable }
         )
+        Surface(
+            modifier = Modifier.align(Alignment.BottomCenter).onSizeChanged { bottomPanelHeight = it.height.dp },
+            shape = MaterialTheme.shapes.medium,
+            elevation = 16.dp
+        ) {
+            if (selectionMode is SelectionMode.Multiple<T> && selectedEntities.isNotEmpty()) {
 
-        if (selectionMode is SelectionMode.Multiple<T> && selectedEntities.isNotEmpty()) {
-            //show control buttons:
-            Surface(
-                modifier = Modifier.align(Alignment.BottomCenter).onSizeChanged { bottomPanelHeight = it.height.dp },
-                shape = MaterialTheme.shapes.medium,
-                elevation = 16.dp
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+                //show control buttons:
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Button(onClick = {
-                        component.duplicateEntities(selectedEntities)
-                    }) {
-                        Text(text = "Дублировать")
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                    ) {
+                        Button(onClick = {
+                            component.duplicateEntities(selectedEntities)
+                        }) {
+                            Text(text = "Дублировать")
+                        }
+
+
+                        Button(onClick = {
+                            component.saveRowsToExcel(selectedEntities)
+                        }) {
+                            Text(text = "Отправить")
+                        }
+                        TextButton(onClick = {
+
+                        }) {
+                            Text(text = "Удалить", color = MaterialTheme.colors.error)
+                            Icon(
+                                Icons.Rounded.Delete,
+                                contentDescription = "Удалить записи",
+                                tint = MaterialTheme.colors.error
+                            )
+                        }
                     }
+                    Text(
+                        text = "(${selectedEntities.size} элемент${
+                            when (selectedEntities.size % 10) {
+                                1 -> ""
+                                2, 3, 4 -> "a"
+                                else -> "ов"
+                            }
+                        })", style = MaterialTheme.typography.caption
+                    )
+                }
 
-
-                    Button(onClick = {
-                        component.saveRowsToExcel(selectedEntities)
-                    }) {
-                        Text(text = "Отправить")
-                    }
-                    TextButton(onClick = {
-
-                    }) {
-                        Text(text = "Удалить", color = MaterialTheme.colors.error)
-                        Icon(
-                            Icons.Rounded.Delete,
-                            contentDescription = "Удалить записи",
-                            tint = MaterialTheme.colors.error
+            } else {
+                //show pagination control:
+                pagingSpec.totalItems?.let { ti ->
+                    if (ti > pagingSpec.itemsPerPage) {
+                        var isHovered by remember { mutableStateOf(false) }
+                        val alpha by animateFloatAsState(if (isHovered) 1f else 0.1f)
+                        Pagination(
+                            modifier = modifier.onPointerEvent(PointerEventType.Enter) { isHovered = true }
+                                .onPointerEvent(PointerEventType.Exit) { isHovered = false }.alpha(alpha),
+                            currentPage = pagingSpec.pageNumber.toInt(),
+                            onPageChanged = { component.setPagingSpec(pagingSpec.copy(pageNumber = it.toLong())) },
+                            rowsPerPage = pagingSpec.itemsPerPage.toInt(),
+                            onRowsPerPageChanged = { component.setPagingSpec(pagingSpec.copy(itemsPerPage = it.toLong())) },
+                            maxItemsCount = ti
                         )
                     }
-                }
-            }
-        } else {
-            //show pagination control:
-            pagingSpec.totalItems?.let { ti ->
-
-                var isHovered by remember { mutableStateOf(false) }
-
-                val alpha by animateFloatAsState(if (isHovered) 1f else 0.1f)
-
-                Surface(modifier = Modifier.align(Alignment.BottomCenter).onSizeChanged {
-                    bottomPanelHeight = it.height.dp
-                }.onPointerEvent(PointerEventType.Enter) { isHovered = true }
-                    .onPointerEvent(PointerEventType.Exit) { isHovered = false }.alpha(alpha),
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    Pagination(
-                        modifier = modifier,
-                        currentPage = pagingSpec.pageNumber.toInt(),
-                        onPageChanged = { component.setPagingSpec(pagingSpec.copy(pageNumber = it.toLong())) },
-                        rowsPerPage = pagingSpec.itemsPerPage.toInt(),
-                        onRowsPerPageChanged = { component.setPagingSpec(pagingSpec.copy(itemsPerPage = it.toLong())) },
-                        maxItemsCount = ti
-                    )
                 }
             }
         }

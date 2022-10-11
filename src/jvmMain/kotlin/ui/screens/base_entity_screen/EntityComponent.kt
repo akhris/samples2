@@ -19,10 +19,11 @@ import kotlinx.coroutines.*
 import org.kodein.di.DI
 import org.kodein.di.LazyDelegate
 import org.kodein.di.instance
-import ui.OperationState
+import persistence.Column
 import ui.components.tables.Cell
 import ui.components.tables.IDataTableMapper
 import ui.screens.base_entity_screen.filter_dialog.FilterEntityFieldComponent
+import ui.screens.error_dialog.ErrorDialogComponent
 import utils.DateTimeConverter
 import utils.log
 import utils.replaceOrAdd
@@ -44,7 +45,16 @@ open class EntityComponent<T : IEntity>(
     private val _spec = MutableValue<Specification>(Specification.QueryAll)
     private val _pagingSpec = MutableValue<Specification.Paginated>(Specification.Paginated(1L, 25L, null))
     private val _filterSpec = MutableValue<Specification.Filtered>(initialFilterSpec)
-
+    private val _sampleTypeFilterSpec = MutableValue(
+        Specification.Filtered(
+            listOf(
+                FilterSpec.Values(
+                    listOf(),
+                    columnName = Column.SampleType.columnName
+                )
+            )
+        )
+    )
 
     override val pagingSpec: Value<Specification.Paginated> = _pagingSpec
 
@@ -63,12 +73,6 @@ open class EntityComponent<T : IEntity>(
         )
 
     override val dialogStack: Value<ChildStack<*, IEntityComponent.Dialog>> = _dialogStack
-
-
-    private val _operationState =
-        MutableValue<OperationState<T>>(OperationState.Empty())
-
-    override val operationState: Value<OperationState<T>> = _operationState
 
     override val isReorderable: Boolean = when (type) {
         Parameter::class -> true
@@ -183,6 +187,22 @@ open class EntityComponent<T : IEntity>(
         //do nothing
     }
 
+    override fun setSampleType(sampleType: SampleType) {
+        _sampleTypeFilterSpec.reduce {
+            it.copy(
+                filters = listOf(
+                    FilterSpec.Values(
+                        filteredValues = listOf(sampleType.id),
+                        columnName = Column.SampleType.columnName
+                    )
+                )
+            )
+        }
+        scope.launch {
+            invalidateItemsCount()
+            invalidateEntities()
+        }
+    }
 
     override fun insertNewEntity(sampleType: SampleType) {
 
@@ -190,7 +210,7 @@ open class EntityComponent<T : IEntity>(
             Sample::class -> Sample(type = sampleType)
             SampleType::class -> SampleType()
             Parameter::class -> Parameter(sampleType = sampleType)
-            Operation::class -> Operation()
+            Operation::class -> Operation(sampleType = sampleType)
             OperationType::class -> OperationType()
             Worker::class -> Worker()
             Place::class -> Place()
@@ -213,18 +233,19 @@ open class EntityComponent<T : IEntity>(
 
     override fun updateEntity(entity: T) {
         scope.launch {
-            val result = updateEntity(UpdateEntity.Update(entity))
-            when (result) {
+            when (val result = updateEntity(UpdateEntity.Update(entity))) {
                 is Result.Failure -> {
-                    _operationState.reduce {
-                        OperationState.UpdateFailure(entity, result.throwable)
-                    }
+                    dialogNav.replaceCurrent(
+                        Config.RepoErrorDialog(
+                            title = "Ошибка при обновлении объекта: $entity",
+                            caption = "тип данных: ${type.simpleName}",
+                            error = result.throwable
+                        )
+                    )
                 }
 
                 is Result.Success -> {
-                    _operationState.reduce {
-                        OperationState.UpdatedSuccessfully(result.value)
-                    }
+
                 }
             }
         }
@@ -289,6 +310,7 @@ open class EntityComponent<T : IEntity>(
             })
         }
         scope.launch {
+            invalidateItemsCount()
             invalidateEntities()
         }
     }
@@ -298,6 +320,7 @@ open class EntityComponent<T : IEntity>(
             spec.copy(filters = spec.filters.filter { it.columnName != filterSpec.columnName })
         }
         scope.launch {
+            invalidateItemsCount()
             invalidateEntities()
         }
     }
@@ -341,7 +364,14 @@ open class EntityComponent<T : IEntity>(
     private suspend fun invalidateEntities() {
         //get all samples
         val entities =
-            getEntities(GetEntities.Params.GetWithSpecification(_spec.value, _pagingSpec.value, _filterSpec.value))
+            getEntities(
+                GetEntities.Params.GetWithSpecification(
+                    _spec.value,
+                    _pagingSpec.value,
+                    _filterSpec.value,
+                    _sampleTypeFilterSpec.value
+                )
+            )
 
         when (entities) {
             is Result.Success -> {
@@ -353,8 +383,13 @@ open class EntityComponent<T : IEntity>(
             }
 
             is Result.Failure -> {
-                log(entities.throwable)
-                log(entities.throwable.stackTraceToString())
+                dialogNav.replaceCurrent(
+                    Config.RepoErrorDialog(
+                        title = "Ошибка при обновлении записей",
+                        caption = "тип данных: ${type.simpleName}",
+                        error = entities.throwable
+                    )
+                )
             }
         }
     }
@@ -384,6 +419,16 @@ open class EntityComponent<T : IEntity>(
                 )
             )
 
+            is Config.RepoErrorDialog -> IEntityComponent.Dialog.ErrorDialog(
+                component = ErrorDialogComponent(
+                    title = config.title,
+                    caption = config.caption,
+                    error = config.error,
+                    di = di,
+                    componentContext = componentContext
+                )
+            )
+
             Config.None -> IEntityComponent.Dialog.None
         }
     }
@@ -406,10 +451,22 @@ open class EntityComponent<T : IEntity>(
     }
 
     private suspend fun invalidateItemsCount() {
-        val itemsCount = getItemsCount(GetItemsCount.Params.GetBySpecifications(_spec.value))
+        val itemsCount = getItemsCount(
+            GetItemsCount.Params.GetBySpecifications(
+                _spec.value,
+                _filterSpec.value,
+                _sampleTypeFilterSpec.value
+            )
+        )
         when (itemsCount) {
             is Result.Failure -> {
-                log("could not get items count: ${itemsCount.throwable.localizedMessage}")
+                dialogNav.replaceCurrent(
+                    Config.RepoErrorDialog(
+                        title = "Ошибка при обновлении количества записей",
+                        caption = "тип данных: ${type.simpleName}",
+                        error = itemsCount.throwable
+                    )
+                )
             }
 
             is Result.Success -> {
@@ -464,6 +521,8 @@ open class EntityComponent<T : IEntity>(
         ) : Config()
 
         class FieldFilterDialog(val initialSpec: FilterSpec) : Config()
+
+        class RepoErrorDialog(val title: String = "", val caption: String = "", val error: Throwable? = null) : Config()
     }
 
 

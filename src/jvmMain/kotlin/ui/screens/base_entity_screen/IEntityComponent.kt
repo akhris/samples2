@@ -3,15 +3,13 @@ package ui.screens.base_entity_screen
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
 import domain.*
-import ui.OperationState
 import ui.components.tables.IDataTableMapper
 import ui.screens.base_entity_screen.filter_dialog.IFilterEntityFieldComponent
+import ui.screens.error_dialog.IErrorDialogComponent
 import kotlin.reflect.KClass
 
 interface IEntityComponent<T : IEntity> {
     val state: Value<State<T>>
-
-    val operationState: Value<OperationState<T>>
 
     val pagingSpec: Value<Specification.Paginated>
 
@@ -20,6 +18,8 @@ interface IEntityComponent<T : IEntity> {
     fun insertNewEntity(entity: T)
     fun insertNewEntity(sampleType: SampleType)
     fun updateEntity(entity: T)
+
+    fun setSampleType(sampleType: SampleType)
 
     fun duplicateEntities(entities: List<T>)
 
@@ -35,6 +35,7 @@ interface IEntityComponent<T : IEntity> {
     fun setPagingSpec(spec: Specification.Paginated)
 
     fun saveRowsToExcel(entities: List<T>)
+
 
     data class State<E : IEntity>(
         val entities: EntitiesList<E> = EntitiesList.empty()
@@ -70,6 +71,8 @@ interface IEntityComponent<T : IEntity> {
         ) : Dialog()
 
         class FieldFilter<T : IEntity>(val component: IFilterEntityFieldComponent<T>) : Dialog()
+
+        class ErrorDialog(val component: IErrorDialogComponent) : Dialog()
     }
 
 }

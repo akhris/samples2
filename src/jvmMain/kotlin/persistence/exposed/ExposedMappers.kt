@@ -59,6 +59,7 @@ fun EntityWorker.toWorker(): Worker {
 fun EntityOperation.toOperation(): Operation {
     return Operation(
         id = this.id.value.toString(),
+        sampleType = this.sampleType.toSampleType(),
         sample = this.sample?.toSample(),
         operationType = this.operationType?.toOperationType(),
         dateTime = this.dateTime,

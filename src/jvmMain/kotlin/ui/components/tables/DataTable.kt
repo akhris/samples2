@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.onKeyEvent
@@ -74,6 +75,7 @@ fun <T> DataTable(
         mutableStateMapOf<String, OperationIndicator>()
     }
 
+
     LaunchedEffect(selectionMode) {
         val initialSelection: Map<String, Boolean> = when (selectionMode) {
             is SelectionMode.Multiple<T> -> mapOf()
@@ -115,7 +117,7 @@ fun <T> DataTable(
 
     val headerElevation by animateDpAsState(if (listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0) 0.dp else 4.dp)
 
-    val selectItem = remember {
+    val selectItem = remember(selectionMode) {
         { item: T ->
             when (selectionMode) {
                 is SelectionMode.Multiple -> {
@@ -123,16 +125,11 @@ fun <T> DataTable(
                         !(selectionMap[mapper.getId(item)] ?: false)
                     selectionMode.onItemsSelected?.invoke(
                         selectionMap.filterValues { it }.keys.mapNotNull { key ->
-                            items.find {
-                                mapper.getId(
-                                    it
-                                ) == key
-                            }
+                            items.find { mapper.getId(it) == key }
                         }
                     )
                 }
 
-                is SelectionMode.None -> {}
                 is SelectionMode.Single -> {
                     val prevValue = selectionMap[mapper.getId(item)] ?: false
                     selectionMap.clear()
@@ -141,6 +138,8 @@ fun <T> DataTable(
                         if (prevValue) null else item
                     )
                 }
+
+                is SelectionMode.None -> {}
             }
         }
     }
@@ -264,25 +263,28 @@ fun <T> DataTable(
                                             if (LocalLayoutDirection.current == LayoutDirection.Rtl)
                                                 Spacer(modifier = Modifier.width(UiSettings.DataTable.draggableAreaWidth))
                                             //primary title
-                                            Text(
+                                            Row(
                                                 modifier = Modifier.weight(1f),
-                                                text = column.title,
-                                                style = MaterialTheme.typography.subtitle2,
-                                                fontWeight = FontWeight.Bold,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-
-                                            //secondary title
-                                            if (column.secondaryText.isNotEmpty()) {
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
                                                 Text(
-                                                    text = column.secondaryText,
-                                                    style = MaterialTheme.typography.caption.copy(
-                                                        color = MaterialTheme.colors.primaryVariant
-                                                    ),
+                                                    text = column.title,
+                                                    style = MaterialTheme.typography.subtitle2,
+                                                    fontWeight = FontWeight.Bold,
                                                     maxLines = 1,
                                                     overflow = TextOverflow.Ellipsis
                                                 )
+                                                //secondary title
+                                                if (column.secondaryText.isNotEmpty()) {
+                                                    Text(
+                                                        text = column.secondaryText,
+                                                        style = MaterialTheme.typography.caption.copy(
+                                                            color = MaterialTheme.colors.primarySurface
+                                                        ),
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                }
                                             }
 
                                             headerStateIcons?.let { hsi ->
@@ -388,8 +390,11 @@ fun <T> DataTable(
                                     }
                                 )
                                 .padding(horizontal = UiSettings.DataTable.columnPadding)
-                                .clickable {
+                                .clickable(enabled = onCellClicked != null) {
                                     onCellClicked?.invoke(item, cell, column)
+                                }
+                                .onFocusChanged {
+                                    if (selectionMode is SelectionMode.Single) selectItem(item)
                                 },
                             contentAlignment = when (column.alignment) {
                                 ColumnAlignment.Center -> Alignment.Center
@@ -407,8 +412,7 @@ fun <T> DataTable(
                             ) {
                                 RenderCell(
                                     modifier =
-                                    Modifier
-                                        .padding(all = UiSettings.DataTable.cellPadding),
+                                    Modifier.padding(all = UiSettings.DataTable.cellPadding),
                                     cell = cell,
                                     columnId = column,
                                     onCellChanged = { changedCell ->
@@ -513,7 +517,7 @@ fun <T> DataTable(
     }
 
 
-    // debounce on reordering:
+    // debounce on items changing:
     LaunchedEffect(_items.toList(), items) {
         if (_items.toList() == items) {
             // if lists are equal - do not write changes to db
@@ -791,10 +795,9 @@ private fun BoxScope.RenderEntityCell(
                 modifier = modifier,
                 cell = cell,
                 unit = cell.entity as? domain.Unit,
-                factor = cell.tag as? Factor
-            ) {
-                onCellChanged(cell.copy(tag = it))
-            }
+                factor = cell.tag as? Factor,
+                onCellChanged = onCellChanged
+            )
         }
 
         else -> {
@@ -816,11 +819,6 @@ private fun BoxScope.RenderEntityCell(
                 } else null,
                 textStyle = getCellTextStyle()
             )
-//            Text(
-//                modifier = modifier,
-//                text = cell.entity?.toString() ?: "",
-//                style = getCellTextStyle()
-//            )
         }
     }
 
@@ -832,7 +830,7 @@ private fun BoxScope.RenderUnitCell(
     cell: Cell.EntityCell,
     unit: domain.Unit?,
     factor: Factor?,
-    onFactorChanged: (Factor) -> Unit
+    onCellChanged: (Cell) -> Unit
 ) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         if (unit?.isMultipliable == true) {
@@ -860,25 +858,43 @@ private fun BoxScope.RenderUnitCell(
                     .forEach { f ->
                         DropdownMenuItem(
                             modifier = Modifier.background(
-                                if (f == factor) MaterialTheme.colors.secondary.copy(alpha = 0.5f) else MaterialTheme.colors.surface
+                                if (f == factor) MaterialTheme
+                                    .colors
+                                    .secondary
+                                    .copy(alpha = 0.5f) else MaterialTheme.colors.surface
                             ),
                             onClick = {
-                                onFactorChanged(f)
+                                onCellChanged(cell.copy(tag = f))
                                 showFactorsList = false
                             }) {
                             Text(
                                 text = "${f.prefix}: ${f.name}"
-
                             )
                         }
                     }
             }
 
         }
-        Text(
-            modifier = modifier, text = cell.entity?.toString() ?: "",
-            style = getCellTextStyle()
+        DataTableEditTextField(
+            modifier = modifier,
+            value = cell.entity?.toString() ?: "",
+            textStyle = getCellTextStyle(),
+            trailingIcon = {
+                Icon(
+                    Icons.Rounded.Clear,
+                    contentDescription = "clear unit",
+                    modifier = Modifier
+                        .size(18.dp)
+                        .clickable {
+                            onCellChanged(cell.copy(entity = null, tag = null))
+                        }
+                )
+            }
         )
+//        Text(
+//            modifier = modifier, text = cell.entity?.toString() ?: "",
+//            style = getCellTextStyle()
+//        )
     }
 }
 

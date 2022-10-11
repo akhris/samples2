@@ -3,9 +3,8 @@ package persistence.exposed.dto
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.ReferenceOption
-import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.datetime
-import persistence.exposed.dto.Tables.MeasurementResults.nullable
+import persistence.Column
 
 object Tables {
 
@@ -22,7 +21,8 @@ object Tables {
      */
     object Samples : UUIDTable() {
         val sampleID = text(name = "sampleID").nullable()
-        val type = reference(name = "type", foreign = SampleTypes, onDelete = ReferenceOption.CASCADE)
+        val sampleType =
+            reference(name = Column.SampleType.columnName, foreign = SampleTypes, onDelete = ReferenceOption.CASCADE)
         val description = text(name = "description").nullable()
         val comment = text(name = "comment").nullable()
         val orderID = text(name = "orderID").nullable()
@@ -34,7 +34,8 @@ object Tables {
      */
     object Parameters : UUIDTable() {
         val name = text(name = "name")
-        val sampleType = reference(name = "sample_type", foreign = SampleTypes, onDelete = ReferenceOption.CASCADE)
+        val sampleType =
+            reference(name = Column.SampleType.columnName, foreign = SampleTypes, onDelete = ReferenceOption.CASCADE)
         val description = text(name = "description").nullable()
         val position = integer(name = "position").nullable()
         val unit = reference(name = "unit", foreign = Units).nullable()
@@ -70,6 +71,8 @@ object Tables {
      */
     object Operations : UUIDTable() {
         val sample = reference(name = "sample", foreign = Samples, onDelete = ReferenceOption.CASCADE).nullable()
+        val sampleType =
+            reference(name = Column.SampleType.columnName, foreign = SampleTypes, onDelete = ReferenceOption.CASCADE)
         val operationType =
             reference(name = "operationType", foreign = OperationTypes, onDelete = ReferenceOption.CASCADE).nullable()
         val dateTime = datetime(name = "dateTime").nullable()

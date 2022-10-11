@@ -49,7 +49,6 @@ fun DataTableEditTextField(
         value = value,
         onValueChange = { onValueChange?.invoke(it) },
         singleLine = singleLine,
-//        cursorBrush = SolidColor(MaterialTheme.colors.primary),
         textStyle = textStyle,
         decorationBox = { innerTextField ->
             Row(

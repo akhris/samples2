@@ -14,6 +14,7 @@ class OperationsDao : BaseExposedDao<Operation, EntityOperation, Tables.Operatio
 ) {
 
     override fun insertStatement(entity: Operation): Tables.Operations.(InsertStatement<Number>) -> Unit = {
+        it[table.sampleType] = entity.sampleType.id.toUUID()
         it[table.operationType] = entity.operationType?.id?.toUUID()
         it[table.sample] = entity.sample?.id?.toUUID()
         it[table.place] = entity.place?.id?.toUUID()
@@ -22,6 +23,7 @@ class OperationsDao : BaseExposedDao<Operation, EntityOperation, Tables.Operatio
     }
 
     override fun updateStatement(entity: Operation): Tables.Operations.(UpdateStatement) -> Unit = {
+        it[table.sampleType] = entity.sampleType.id.toUUID()
         it[table.operationType] = entity.operationType?.id?.toUUID()
         it[table.sample] = entity.sample?.id?.toUUID()
         it[table.place] = entity.place?.id?.toUUID()

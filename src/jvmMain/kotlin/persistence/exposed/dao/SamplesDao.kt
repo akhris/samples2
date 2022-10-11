@@ -20,7 +20,7 @@ class SamplesDao : BaseExposedDao<Sample, EntitySample, Tables.Samples>(
         it[comment] = entity.comment
         it[orderID] = entity.orderID
         it[description] = entity.description
-        it[type] = entity.type.id.toUUID()
+        it[sampleType] = entity.type.id.toUUID()
     }
 
     override fun insertStatement(entity: Sample): Tables.Samples.(InsertStatement<Number>) -> Unit = {
@@ -28,7 +28,7 @@ class SamplesDao : BaseExposedDao<Sample, EntitySample, Tables.Samples>(
         it[comment] = entity.comment
         it[orderID] = entity.orderID
         it[description] = entity.description
-        it[type] = entity.type.id.toUUID()
+        it[sampleType] = entity.type.id.toUUID()
     }
 
 }

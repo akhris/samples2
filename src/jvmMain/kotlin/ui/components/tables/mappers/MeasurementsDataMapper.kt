@@ -26,9 +26,7 @@ data class MeasurementsDataMapper(val parameters: List<Parameter> = listOf()) : 
         return when (val col = requireColumn(columnId)) {
             Column.Sample -> {
                 (cell as? Cell.EntityCell)?.let {
-                    (it.entity as? Sample)?.let { e ->
-                        item.copy(sample = e)
-                    }
+                        item.copy(sample = it.entity as? Sample)
                 }
             }
 
@@ -51,16 +49,12 @@ data class MeasurementsDataMapper(val parameters: List<Parameter> = listOf()) : 
             }
 
             Column.Operator -> (cell as? Cell.EntityCell)?.let {
-                (it.entity as? Worker)?.let { e ->
-                    item.copy(operator = e)
-                }
+                item.copy(operator = it.entity as? Worker)
             }
 
             Column.Place -> {
                 (cell as? Cell.EntityCell)?.let {
-                    (it.entity as? Place)?.let { e ->
-                        item.copy(place = e)
-                    }
+                    item.copy(place = it.entity as? Place)
                 }
             }
 

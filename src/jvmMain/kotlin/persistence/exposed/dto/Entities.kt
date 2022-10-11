@@ -15,7 +15,7 @@ class EntitySample(id: EntityID<UUID>) : UUIDEntity(id) {
     companion object : UUIDEntityClass<EntitySample>(Tables.Samples)
 
     val sampleID by Tables.Samples.sampleID
-    var type by EntitySampleType referencedOn Tables.Samples.type
+    var type by EntitySampleType referencedOn Tables.Samples.sampleType
     var description by Tables.Samples.description
     var comment by Tables.Samples.comment
     var orderID by Tables.Samples.orderID
@@ -62,6 +62,7 @@ class EntityOperation(id: EntityID<UUID>) : UUIDEntity(id) {
 
     companion object : UUIDEntityClass<EntityOperation>(Tables.Operations)
 
+    val sampleType by EntitySampleType referencedOn Tables.Operations.sampleType
     val sample by EntitySample optionalReferencedOn Tables.Operations.sample
     val operationType by EntityOperationType optionalReferencedOn Tables.Operations.operationType
     val dateTime by Tables.Operations.dateTime

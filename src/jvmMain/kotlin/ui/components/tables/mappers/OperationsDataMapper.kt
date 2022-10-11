@@ -19,27 +19,19 @@ class OperationsDataMapper : IDataTableMapper<Operation> {
         return when (Column.requireColumn(columnId)) {
             Column.DateTime -> (cell as? Cell.DateTimeCell)?.let { item.copy(dateTime = it.value) }
             Column.OperationType -> (cell as? Cell.EntityCell)?.let {
-                (it.entity as? OperationType)?.let { e ->
-                    item.copy(operationType = e)
-                }
+                item.copy(operationType = it.entity as? OperationType)
             }
 
             Column.Place -> (cell as? Cell.EntityCell)?.let {
-                (it.entity as? Place)?.let { e ->
-                    item.copy(place = e)
-                }
+                item.copy(place = it.entity as? Place)
             }
 
             Column.Sample -> (cell as? Cell.EntityCell)?.let {
-                (it.entity as? Sample)?.let { e ->
-                    item.copy(sample = e)
-                }
+                item.copy(sample = it.entity as? Sample)
             }
 
             Column.Worker -> (cell as? Cell.EntityCell)?.let {
-                (it.entity as? Worker)?.let { e ->
-                    item.copy(worker = e)
-                }
+                item.copy(worker = it.entity as? Worker)
             }
         } ?: item
     }

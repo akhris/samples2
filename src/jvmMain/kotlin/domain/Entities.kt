@@ -53,6 +53,7 @@ data class OperationType(
  */
 data class Operation(
     override val id: String = UUID.randomUUID().toString(),
+    val sampleType: SampleType,
     val sample: Sample? = null,
     val operationType: OperationType? = null,
     val dateTime: LocalDateTime? = null,

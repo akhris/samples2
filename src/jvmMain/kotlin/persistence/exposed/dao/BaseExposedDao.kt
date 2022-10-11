@@ -138,7 +138,7 @@ abstract class BaseExposedDao<ENTITY : IEntity, EXP_ENTITY : UUIDEntity, TABLE :
         (specs.filterIsInstance<Specification.Search>().firstOrNull())?.let {
             query.addSearching(it)
         }
-        (specs.filterIsInstance<Specification.Filtered>().firstOrNull())?.let {
+        (specs.filterIsInstance<Specification.Filtered>()).forEach {
             //add filtering
             query.addFiltering(it)
         }
