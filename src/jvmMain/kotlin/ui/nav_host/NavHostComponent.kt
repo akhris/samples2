@@ -1,4 +1,4 @@
-package ui.screens.nav_host
+package ui.nav_host
 
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.ChildStack
@@ -20,7 +20,9 @@ import kotlinx.coroutines.*
 import navigation.NavItem
 import org.kodein.di.DI
 import org.kodein.di.instance
+import ui.dialogs.add_sample_type_dialog.AddSampleTypeDialogComponent
 import ui.screens.base_entity_screen.EntityComponent
+import ui.screens.base_entity_screen.IEntityComponent
 import ui.screens.base_entity_screen.entityComponents.MeasurementsEntityComponent
 import ui.screens.base_entity_screen.entityComponents.OperationsComponent
 import ui.screens.base_entity_screen.entityComponents.ParametersComponent
@@ -51,6 +53,7 @@ class NavHostComponent constructor(
     private val samplesCallback: IRepositoryCallback<SampleType> by di.instance()
     private val navigation = StackNavigation<Config>()
 
+
     private val stack =
         childStack(
             source = navigation,
@@ -66,6 +69,7 @@ class NavHostComponent constructor(
 
     override val childStack: Value<ChildStack<*, INavHost.Child>>
         get() = stack
+
 
     private fun createChild(config: Config, componentContext: ComponentContext): INavHost.Child {
         return when (config) {

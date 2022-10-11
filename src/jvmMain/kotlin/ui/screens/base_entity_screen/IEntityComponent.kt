@@ -5,7 +5,7 @@ import com.arkivanov.decompose.value.Value
 import domain.*
 import ui.components.tables.IDataTableMapper
 import ui.screens.base_entity_screen.filter_dialog.IFilterEntityFieldComponent
-import ui.screens.error_dialog.IErrorDialogComponent
+import ui.dialogs.error_dialog.IErrorDialogComponent
 import kotlin.reflect.KClass
 
 interface IEntityComponent<T : IEntity> {

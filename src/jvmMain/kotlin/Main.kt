@@ -19,11 +19,10 @@ import kotlinx.coroutines.launch
 import org.kodein.di.instance
 import persistence.exposed.DbSettings
 import test.SampleTypes
-import ui.RootUi
+import ui.root_ui.RootUi
 import ui.UiSettings
-import ui.components.VerticalReorderList
-import ui.screens.nav_host.INavHost
-import ui.screens.nav_host.NavHostComponent
+import ui.nav_host.INavHost
+import ui.nav_host.NavHostComponent
 import ui.theme.AppTheme
 
 

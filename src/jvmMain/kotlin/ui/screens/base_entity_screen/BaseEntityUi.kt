@@ -39,7 +39,7 @@ import ui.components.tables.*
 import ui.dialogs.DatePickerDialog
 import ui.dialogs.TimePickerDialog
 import ui.screens.base_entity_screen.filter_dialog.FilterEntityFieldUi
-import ui.screens.error_dialog.ErrorDialogUi
+import ui.dialogs.error_dialog.ErrorDialogUi
 import utils.log
 import java.time.LocalDateTime
 import java.time.temporal.TemporalAdjusters

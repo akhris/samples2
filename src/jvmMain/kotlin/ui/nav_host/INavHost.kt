@@ -1,9 +1,10 @@
-package ui.screens.nav_host
+package ui.nav_host
 
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
 import domain.*
 import navigation.NavItem
+import ui.dialogs.add_sample_type_dialog.IAddSampleTypeDialogComponent
 import ui.screens.base_entity_screen.EntityComponentWithFab
 import ui.screens.base_entity_screen.IEntityComponent
 import ui.screens.sample_details_screen.ISampleDetailsComponent
@@ -31,7 +32,6 @@ interface INavHost {
      */
     val childStack: Value<ChildStack<*, Child>>
 
-
     /**
      * Child classes containing child components.
      */
@@ -49,5 +49,6 @@ interface INavHost {
         class SampleDetails(val component: ISampleDetailsComponent) : Child()
 
     }
+
 
 }

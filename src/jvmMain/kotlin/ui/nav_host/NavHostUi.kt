@@ -1,10 +1,11 @@
-package ui.screens.nav_host
+package ui.nav_host
 
 import androidx.compose.runtime.Composable
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.jetbrains.stack.Children
 import com.arkivanov.decompose.extensions.compose.jetbrains.stack.animation.fade
 import com.arkivanov.decompose.extensions.compose.jetbrains.stack.animation.stackAnimation
+import ui.dialogs.add_sample_type_dialog.AddSampleTypeDialogUi
 import ui.screens.base_entity_screen.BaseEntityUi
 import ui.screens.base_entity_screen.EntityUiwithFab
 import ui.screens.sample_details_screen.SampleDetailsUi

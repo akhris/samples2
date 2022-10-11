@@ -1,25 +1,30 @@
-package ui
+package ui.root_ui
 
 import LocalSamplesType
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.rememberDialogState
+import com.arkivanov.decompose.ExperimentalDecomposeApi
+import com.arkivanov.decompose.extensions.compose.jetbrains.stack.Children
+import com.arkivanov.decompose.extensions.compose.jetbrains.stack.animation.fade
+import com.arkivanov.decompose.extensions.compose.jetbrains.stack.animation.stackAnimation
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import domain.SampleType
+import ui.SideNavigationPanel
 import ui.components.ListSelector
-import ui.components.VerticalReorderList
-import ui.screens.nav_host.INavHost
-import ui.screens.nav_host.NavHostUi
+import ui.dialogs.add_sample_type_dialog.AddSampleTypeDialogUi
+import ui.nav_host.INavHost
+import ui.nav_host.NavHostUi
 
+@OptIn(ExperimentalDecomposeApi::class)
 @Composable
-fun RootUi(component: INavHost, isDarkTheme: Boolean, onThemeChanged: (isDark: Boolean) -> Unit) {
+fun RootUi(component: IRootComponent, isDarkTheme: Boolean, onThemeChanged: (isDark: Boolean) -> Unit) {
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed, confirmStateChange = { false })
     val scaffoldState = rememberScaffoldState(drawerState = drawerState)
@@ -71,7 +76,15 @@ fun RootUi(component: INavHost, isDarkTheme: Boolean, onThemeChanged: (isDark: B
 
                     Box(
                         modifier = Modifier.weight(1f)
-                    ) { NavHostUi(component = component) }
+                    ) {
+                        Children(stack = component.navHostStack, animation = stackAnimation(fade())) {
+                            when (val config = it.instance) {
+                                is IRootComponent.NavHost.MainNavHost -> {
+                                    NavHostUi(component = config.component)
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -104,16 +117,12 @@ fun RootUi(component: INavHost, isDarkTheme: Boolean, onThemeChanged: (isDark: B
             })
     }
 
-//    Row(modifier = Modifier.background(MaterialTheme.colors.background)) {
-//
-////        NavigationRailUi(NavigationRailComponent(onNavigateTo = {
-////            component.setDestination(it.route)
-////        }, onAddButtonClicked = {
-////            addClickedNavItem = it
-////        }), localizedStrings = localizedStrings)
-//
-//        Box(modifier = Modifier.fillMaxHeight().weight(1f)) {
-//
-//        }
-//    }
+    Children(stack = component.dialogStack, animation = stackAnimation(fade())) {
+        when (val child = it.instance) {
+            IRootComponent.Dialog.None -> {}
+            is IRootComponent.Dialog.AddSampleTypeDialog -> AddSampleTypeDialogUi(child.component)
+        }
+    }
+
+
 }

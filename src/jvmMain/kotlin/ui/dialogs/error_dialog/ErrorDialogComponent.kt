@@ -1,4 +1,4 @@
-package ui.screens.error_dialog
+package ui.dialogs.error_dialog
 
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.value.MutableValue
