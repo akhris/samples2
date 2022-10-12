@@ -32,9 +32,7 @@ import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.*
 import androidx.compose.ui.zIndex
 import domain.IEntity
 import domain.valueobjects.Factor
@@ -691,17 +689,11 @@ private fun BoxScope.RenderCell(
         })
 }
 
+@OptIn(ExperimentalUnitApi::class)
 @Composable
-private fun getCellTextStyle() = MaterialTheme
-    .typography
-    .caption
-//    .copy(
-//        textAlign = when (columnAlignment) {
-//            ColumnAlignment.Center -> TextAlign.Center
-//            ColumnAlignment.End -> TextAlign.End
-//            ColumnAlignment.Start -> TextAlign.Start
-//        }
-//    )
+private fun getCellTextStyle() =
+    LocalTextStyle.current.copy(fontSize = TextUnit(UiSettings.DataTable.cellTextSize, TextUnitType.Sp))
+
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
