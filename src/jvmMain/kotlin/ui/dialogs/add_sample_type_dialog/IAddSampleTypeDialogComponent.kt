@@ -1,3 +1,7 @@
 package ui.dialogs.add_sample_type_dialog
 
-interface IAddSampleTypeDialogComponent
+import domain.SampleType
+
+interface IAddSampleTypeDialogComponent {
+    fun addSampleType(type: SampleType)
+}

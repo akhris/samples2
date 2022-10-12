@@ -47,6 +47,9 @@ kotlin {
                 //sqlite driver:
                 implementation("org.xerial:sqlite-jdbc:3.39.2.0")
 
+                //logger:
+                implementation("org.slf4j:slf4j-simple:1.7.36")
+
                 //swaydb (for properties):
                 implementation("io.swaydb:swaydb_2.13:0.16.2")
 

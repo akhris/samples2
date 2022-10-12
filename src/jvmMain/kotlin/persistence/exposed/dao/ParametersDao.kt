@@ -11,6 +11,7 @@ import persistence.exposed.dto.EntityParameter
 import persistence.exposed.dto.Tables
 import persistence.exposed.toParameter
 import ui.components.tables.ColumnId
+import utils.replaceOrAdd
 import utils.toUUID
 
 class ParametersDao : BaseExposedDao<Parameter, EntityParameter, Tables.Parameters>(
@@ -19,7 +20,6 @@ class ParametersDao : BaseExposedDao<Parameter, EntityParameter, Tables.Paramete
 ) {
 
     override fun insertStatement(entity: Parameter): Tables.Parameters.(InsertStatement<Number>) -> Unit = {
-
         it[name] = entity.name
         it[description] = entity.description
         it[position] = entity.position
@@ -41,7 +41,15 @@ class ParametersDao : BaseExposedDao<Parameter, EntityParameter, Tables.Paramete
     override fun mapToEntity(expEntity: EntityParameter): Parameter = expEntity.toParameter()
 
     override suspend fun query(specs: List<ISpecification>): EntitiesList<Parameter> {
-        return super.query(listOf(Specification.Sorted(ColumnId(Tables.Parameters.position.name, "Позиция"))))
+        return super.query(
+            specs.replaceOrAdd(
+                Specification.Sorted(
+                    ColumnId(
+                        Tables.Parameters.position.name,
+                        "Позиция"
+                    )
+                )
+            ) { oldSpec -> oldSpec is Specification.Sorted })
     }
 
 }
