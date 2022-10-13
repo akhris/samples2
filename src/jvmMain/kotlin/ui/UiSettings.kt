@@ -34,6 +34,7 @@ object UiSettings {
     }
 
     object DataTable {
+        const val cellTextSize: Float = 10f
         val headerStateIconsSize: Dp = 18.dp
         val draggableAreaWidth: Dp = 10.dp
         val cellPadding: Dp = 4.dp

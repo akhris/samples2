@@ -23,11 +23,14 @@ import persistence.Column
 import ui.components.tables.Cell
 import ui.components.tables.IDataTableMapper
 import ui.screens.base_entity_screen.filter_dialog.FilterEntityFieldComponent
-import ui.screens.error_dialog.ErrorDialogComponent
+import ui.dialogs.error_dialog.ErrorDialogComponent
+import ui.dialogs.file_picker_dialog.FilePickerComponent
+import ui.dialogs.prompt_dialog.PromptDialogComponent
 import utils.DateTimeConverter
 import utils.log
 import utils.replaceOrAdd
 import java.util.*
+import javax.swing.filechooser.FileNameExtensionFilter
 import kotlin.Unit
 import kotlin.reflect.KClass
 
@@ -45,28 +48,20 @@ open class EntityComponent<T : IEntity>(
     private val _spec = MutableValue<Specification>(Specification.QueryAll)
     private val _pagingSpec = MutableValue<Specification.Paginated>(Specification.Paginated(1L, 25L, null))
     private val _filterSpec = MutableValue<Specification.Filtered>(initialFilterSpec)
-    private val _sampleTypeFilterSpec = MutableValue(
-        Specification.Filtered(
-            listOf(
-                FilterSpec.Values(
-                    listOf(),
-                    columnName = Column.SampleType.columnName
-                )
-            )
-        )
-    )
+
+    private val _sampleTypeFilterSpec = MutableValue(Specification.Filtered())
 
     override val pagingSpec: Value<Specification.Paginated> = _pagingSpec
 
     override val filterSpec: Value<Specification.Filtered> = _filterSpec
 
-    private val dialogNav = StackNavigation<Config>()
+    private val dialogNav = StackNavigation<DialogConfig>()
 
 
     private val _dialogStack =
         childStack(
             source = dialogNav,
-            initialConfiguration = Config.None,
+            initialConfiguration = DialogConfig.None,
 //            handleBackButton = true,
             childFactory = ::createChild,
             key = "entity picker dialog stack"
@@ -91,7 +86,6 @@ open class EntityComponent<T : IEntity>(
         Measurement::class -> di.instance<GetEntities<Measurement>>()
         else -> throw IllegalArgumentException("unsupported type: $type")
     } as LazyDelegate<GetEntities<T>>
-
 
     private val insertEntity: InsertEntity<T> by when (type) {
         Sample::class -> di.instance<InsertEntity<Sample>>()
@@ -118,6 +112,19 @@ open class EntityComponent<T : IEntity>(
         Measurement::class -> di.instance<UpdateEntity<Measurement>>()
         else -> throw IllegalArgumentException("unsupported type: $type")
     } as LazyDelegate<UpdateEntity<T>>
+
+    private val removeEntity: RemoveEntity<T> by when (type) {
+        Sample::class -> di.instance<RemoveEntity<Sample>>()
+        SampleType::class -> di.instance<RemoveEntity<SampleType>>()
+        Parameter::class -> di.instance<RemoveEntity<Parameter>>()
+        Operation::class -> di.instance<RemoveEntity<Operation>>()
+        OperationType::class -> di.instance<RemoveEntity<OperationType>>()
+        Worker::class -> di.instance<RemoveEntity<Worker>>()
+        Place::class -> di.instance<RemoveEntity<Place>>()
+        domain.Unit::class -> di.instance<RemoveEntity<domain.Unit>>()
+        Measurement::class -> di.instance<RemoveEntity<Measurement>>()
+        else -> throw IllegalArgumentException("unsupported type: $type")
+    } as LazyDelegate<RemoveEntity<T>>
 
     private val updateEntities: UpdateEntities<T> by when (type) {
         Sample::class -> di.instance<UpdateEntities<Sample>>()
@@ -235,17 +242,34 @@ open class EntityComponent<T : IEntity>(
         scope.launch {
             when (val result = updateEntity(UpdateEntity.Update(entity))) {
                 is Result.Failure -> {
-                    dialogNav.replaceCurrent(
-                        Config.RepoErrorDialog(
-                            title = "Ошибка при обновлении объекта: $entity",
-                            caption = "тип данных: ${type.simpleName}",
-                            error = result.throwable
-                        )
+                    showErrorDialog(
+                        title = "Ошибка при обновлении объекта: $entity",
+                        caption = "тип данных: ${type.simpleName}",
+                        error = result.throwable
                     )
+
                 }
 
                 is Result.Success -> {
 
+                }
+            }
+        }
+    }
+
+    override fun removeEntity(entity: Any) {
+        scope.launch {
+            when (val result = removeEntity.invoke(RemoveEntity.Remove(entity))) {
+                is Result.Failure -> {
+                    showErrorDialog(
+                        title = "Ошибка при удалении объекта: $entity",
+                        caption = "тип данных: ${type.simpleName}",
+                        error = result.throwable
+                    )
+                }
+
+                is Result.Success -> {
+                    //removed successfully
                 }
             }
         }
@@ -362,6 +386,7 @@ open class EntityComponent<T : IEntity>(
 
 
     private suspend fun invalidateEntities() {
+
         //get all samples
         val entities =
             getEntities(
@@ -383,58 +408,77 @@ open class EntityComponent<T : IEntity>(
             }
 
             is Result.Failure -> {
-                dialogNav.replaceCurrent(
-                    Config.RepoErrorDialog(
-                        title = "Ошибка при обновлении записей",
-                        caption = "тип данных: ${type.simpleName}",
-                        error = entities.throwable
-                    )
+                showErrorDialog(
+                    title = "Ошибка при обновлении записей",
+                    caption = "тип данных: ${type.simpleName}",
+                    error = entities.throwable
                 )
             }
         }
     }
 
-    private fun createChild(config: Config, componentContext: ComponentContext): IEntityComponent.Dialog {
-        return when (config) {
-            is Config.EntityPickerDialog -> IEntityComponent.Dialog.EntityPicker(
+    private fun createChild(dialogConfig: DialogConfig, componentContext: ComponentContext): IEntityComponent.Dialog {
+        return when (dialogConfig) {
+            is DialogConfig.EntityPickerDialog -> IEntityComponent.Dialog.EntityPicker(
                 EntityComponent(
-                    type = config.entityClass,
+                    type = dialogConfig.entityClass,
                     di = di,
                     componentContext = componentContext
                 ),
-                initialSelection = config.entity?.id,
-                onSelectionChanged = config.onSelectionChanged,
-                columnName = config.columnName
+                initialSelection = dialogConfig.entity,
+                onSelectionChanged = dialogConfig.onSelectionChanged,
+                columnName = dialogConfig.columnName
             )
 
-            is Config.FieldFilterDialog -> IEntityComponent.Dialog.FieldFilter(
+            is DialogConfig.FieldFilterDialog -> IEntityComponent.Dialog.FieldFilter(
                 component = FilterEntityFieldComponent(
                     type = type,
                     di = di,
                     componentContext = componentContext,
-                    initialSpec = config.initialSpec,
+                    initialSpec = dialogConfig.initialSpec,
                     onSpecChanged = {
                         addFilter(it)
                     }
                 )
             )
 
-            is Config.RepoErrorDialog -> IEntityComponent.Dialog.ErrorDialog(
+            is DialogConfig.RepoErrorDialog -> IEntityComponent.Dialog.ErrorDialog(
                 component = ErrorDialogComponent(
-                    title = config.title,
-                    caption = config.caption,
-                    error = config.error,
+                    title = dialogConfig.title,
+                    caption = dialogConfig.caption,
+                    error = dialogConfig.error,
                     di = di,
                     componentContext = componentContext
                 )
             )
 
-            Config.None -> IEntityComponent.Dialog.None
+            is DialogConfig.PromptDialog -> IEntityComponent.Dialog.PromptDialog(
+                component = PromptDialogComponent(
+                    di = di,
+                    componentContext = componentContext,
+                    title = dialogConfig.title,
+                    message = dialogConfig.message
+                ),
+                onYes = dialogConfig.onYes,
+                onCancel = dialogConfig.onCancel
+            )
+
+            is DialogConfig.FilePickerDialog -> IEntityComponent.Dialog.FilePickerDialog(
+                component = FilePickerComponent(
+                    di = di,
+                    componentContext = componentContext,
+                    title = dialogConfig.title,
+                    fileFilters = dialogConfig.fileFilters,
+                    onFileSelectedCallback = dialogConfig.onFileSelectedCallback
+                )
+            )
+
+            DialogConfig.None -> IEntityComponent.Dialog.None
         }
     }
 
     override fun dismissDialog() {
-        dialogNav.replaceCurrent(Config.None)
+        dialogNav.replaceCurrent(DialogConfig.None)
     }
 
     override fun showEntityPickerDialog(
@@ -443,11 +487,30 @@ open class EntityComponent<T : IEntity>(
         onSelectionChanged: (IEntity?) -> Unit,
         columnName: String
     ) {
-        dialogNav.replaceCurrent(Config.EntityPickerDialog(entity, entityClass, onSelectionChanged, columnName))
+        dialogNav.replaceCurrent(DialogConfig.EntityPickerDialog(entity, entityClass, onSelectionChanged, columnName))
+    }
+
+    override fun showFilePickerDialog(
+        title: String,
+        fileFilters: List<FileNameExtensionFilter>,
+        onFileSelectedCallback: (filePath: String) -> Unit
+    ) {
+        dialogNav.replaceCurrent(DialogConfig.FilePickerDialog(title, fileFilters, onFileSelectedCallback))
     }
 
     override fun showFilterDialog(columnFilters: FilterSpec) {
-        dialogNav.replaceCurrent(Config.FieldFilterDialog(columnFilters))
+        dialogNav.replaceCurrent(DialogConfig.FieldFilterDialog(columnFilters))
+    }
+
+    override fun showPrompt(title: String, message: String, onYes: () -> Unit, onCancel: (() -> Unit)?) {
+        dialogNav.replaceCurrent(
+            DialogConfig.PromptDialog(
+                title = title,
+                message = message,
+                onYes = onYes,
+                onCancel = onCancel
+            )
+        )
     }
 
     private suspend fun invalidateItemsCount() {
@@ -460,12 +523,10 @@ open class EntityComponent<T : IEntity>(
         )
         when (itemsCount) {
             is Result.Failure -> {
-                dialogNav.replaceCurrent(
-                    Config.RepoErrorDialog(
-                        title = "Ошибка при обновлении количества записей",
-                        caption = "тип данных: ${type.simpleName}",
-                        error = itemsCount.throwable
-                    )
+                showErrorDialog(
+                    title = "Ошибка при обновлении количества записей",
+                    caption = "тип данных: ${type.simpleName}",
+                    error = itemsCount.throwable
                 )
             }
 
@@ -476,6 +537,16 @@ open class EntityComponent<T : IEntity>(
             }
         }
 
+    }
+
+    protected fun showErrorDialog(title: String = "", caption: String = "", error: Throwable? = null) {
+        dialogNav.replaceCurrent(
+            DialogConfig.RepoErrorDialog(
+                title = title,
+                caption = caption,
+                error = error
+            )
+        )
     }
 
     init {
@@ -508,9 +579,9 @@ open class EntityComponent<T : IEntity>(
     }
 
     @Parcelize
-    private sealed class Config : Parcelable {
+    private sealed class DialogConfig : Parcelable {
         @Parcelize
-        object None : Config()
+        object None : DialogConfig()
 
         @Parcelize
         class EntityPickerDialog(
@@ -518,11 +589,26 @@ open class EntityComponent<T : IEntity>(
             val entityClass: KClass<out IEntity>,
             val onSelectionChanged: (IEntity?) -> Unit,
             val columnName: String
-        ) : Config()
+        ) : DialogConfig()
 
-        class FieldFilterDialog(val initialSpec: FilterSpec) : Config()
+        @Parcelize
+        class FieldFilterDialog(val initialSpec: FilterSpec) : DialogConfig()
 
-        class RepoErrorDialog(val title: String = "", val caption: String = "", val error: Throwable? = null) : Config()
+        @Parcelize
+        class RepoErrorDialog(val title: String = "", val caption: String = "", val error: Throwable? = null) :
+            DialogConfig()
+
+        @Parcelize
+        class PromptDialog(
+            val title: String, val message: String, val onYes: () -> Unit, val onCancel: (() -> Unit)? = null
+        ) : DialogConfig()
+
+        @Parcelize
+        class FilePickerDialog(
+            val title: String,
+            val fileFilters: List<FileNameExtensionFilter> = listOf(),
+            val onFileSelectedCallback: (filePath: String) -> Unit
+        ) : DialogConfig()
     }
 
 

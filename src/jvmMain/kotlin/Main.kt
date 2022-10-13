@@ -19,17 +19,16 @@ import kotlinx.coroutines.launch
 import org.kodein.di.instance
 import persistence.exposed.DbSettings
 import test.SampleTypes
-import ui.RootUi
+import ui.root_ui.RootUi
 import ui.UiSettings
-import ui.components.VerticalReorderList
-import ui.screens.nav_host.INavHost
-import ui.screens.nav_host.NavHostComponent
+import ui.root_ui.IRootComponent
+import ui.root_ui.RootComponent
 import ui.theme.AppTheme
 
 
 @Composable
 @Preview
-fun App(rootComponent: INavHost) {
+fun App(rootComponent: IRootComponent) {
 
     var isDark by remember { mutableStateOf(false) }
     AppTheme(darkTheme = isDark) {
@@ -44,7 +43,7 @@ fun main() {
     //    prepopulateDB()
     // Create the root component before starting Compose
     val lifecycle = LifecycleRegistry()
-    val root = NavHostComponent(componentContext = DefaultComponentContext(lifecycle), di = di)
+    val root = RootComponent(componentContext = DefaultComponentContext(lifecycle), di = di)
     // Start Compose
     application {
         val windowState = rememberWindowState(

@@ -48,6 +48,7 @@ fun <T : IEntity> EntityUiwithFab(
             stateChanged = { toState = it },
             onFabItemClicked = {
                 component.invokeFABAction(it.identifier, sampleType)
+                toState = MultiFabState.COLLAPSED
             }
         )
 //

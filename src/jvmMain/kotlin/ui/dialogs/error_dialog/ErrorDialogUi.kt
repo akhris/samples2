@@ -1,4 +1,4 @@
-package ui.screens.error_dialog
+package ui.dialogs.error_dialog
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
