@@ -12,6 +12,8 @@ import ui.components.tables.mappers.MeasurementsDataMapper
 import ui.screens.base_entity_screen.EntityComponentWithFab
 import ui.screens.base_entity_screen.FABParams
 import utils.log
+import java.io.File
+import javax.swing.filechooser.FileNameExtensionFilter
 
 class MeasurementsEntityComponent(
     di: DI,
@@ -39,6 +41,14 @@ class MeasurementsEntityComponent(
         )
     )
 
+    private sealed class FileExtensions(val descr: String, vararg val extensions: String) {
+        object JSON : FileExtensions(descr = "JSON текстовые документы", "txt", "json")
+        object EXCEL : FileExtensions(descr = "Протоколы измерений в формате EXCEL", "xls", "xlsx")
+    }
+
+    private fun FileExtensions.toFileNameExtensionsFilter(): FileNameExtensionFilter =
+        FileNameExtensionFilter(descr, *extensions)
+
     override fun invokeFABAction(id: String, tag: Any?) {
         when (id) {
             ACTION_ADD_SINGLE -> {
@@ -52,9 +62,50 @@ class MeasurementsEntityComponent(
             }
 
             ACTION_IMPORT_FROM_FILE -> {
-
+                showFilePickerDialog(
+                    title = "Выберите файл с результатами измерений",
+                    fileFilters =
+                    listOf(FileExtensions.JSON, FileExtensions.EXCEL)
+                        .map { it.toFileNameExtensionsFilter() },
+                    onFileSelectedCallback = {
+                        //make actual import of measurements here:
+                        scope.launch {
+                            importFromFile(it)
+                        }
+                    }
+                )
             }
         }
+    }
+
+
+    private suspend fun importFromFile(filePath: String) {
+        val file = File(filePath)
+        if (!file.exists()) {
+            showErrorDialog(title = "Файл не существует", error = NoSuchFileException(file))
+            return
+        }
+        if (file.isDirectory) {
+            showErrorDialog(
+                title = "Выбранный путь является директорией",
+                error = NoSuchFileException(file, reason = "Необходимо выбрать файл")
+            )
+            return
+        }
+
+        when (file.extension) {
+            in FileExtensions.JSON.extensions -> importFromJSONFile(file)
+            in FileExtensions.EXCEL.extensions -> importFromEXCELFile(file)
+            else -> showErrorDialog(title = "Неподдерживаемый формат файла", error = FileSystemException(file))
+        }
+    }
+
+    private suspend fun importFromJSONFile(file: File) {
+        //make actual read from JSON file
+    }
+
+    private suspend fun importFromEXCELFile(file: File) {
+        //make actual read from EXCEL file
     }
 
     private suspend fun invalidateDataMapper() {

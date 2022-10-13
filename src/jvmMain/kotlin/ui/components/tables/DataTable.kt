@@ -131,13 +131,13 @@ fun <T> DataTable(
                 is SelectionMode.Single -> {
                     val prevValue = selectionMap[mapper.getId(item)] ?: false
                     selectionMap.clear()
-                    selectionMap[mapper.getId(item)] = !prevValue
-                    selectionMode.onItemSelected?.invoke(
-                        if (prevValue) null else item
-                    )
+                    selectionMap[mapper.getId(item)] = true
+                    if (!prevValue)
+                        selectionMode.onItemSelected?.invoke(item)
+                    Unit
                 }
 
-                is SelectionMode.None -> {}
+                is SelectionMode.None -> null
             }
         }
     }
@@ -276,9 +276,7 @@ fun <T> DataTable(
                                                 if (column.secondaryText.isNotEmpty()) {
                                                     Text(
                                                         text = column.secondaryText,
-                                                        style = MaterialTheme.typography.caption.copy(
-                                                            color = MaterialTheme.colors.primarySurface
-                                                        ),
+                                                        style = MaterialTheme.typography.caption,
                                                         maxLines = 1,
                                                         overflow = TextOverflow.Ellipsis
                                                     )

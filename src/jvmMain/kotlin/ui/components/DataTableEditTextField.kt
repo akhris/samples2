@@ -57,7 +57,9 @@ fun DataTableEditTextField(
         },
         colors = TextFieldDefaults.outlinedTextFieldColors(
             focusedBorderColor = Color.Unspecified,
-            unfocusedBorderColor = Color.Unspecified
+            unfocusedBorderColor = Color.Unspecified,
+            disabledBorderColor = Color.Unspecified,
+            disabledTextColor = TextFieldDefaults.outlinedTextFieldColors().textColor(true).value
         ),
         shape = MaterialTheme.shapes.small
     )

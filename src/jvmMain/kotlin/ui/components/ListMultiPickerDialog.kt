@@ -50,36 +50,37 @@ fun <T> ListMultiPickerDialog(
         title = title,
         onCloseRequest = onDismiss,
         content = {
+            Surface {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    var buttonsHeight by remember { mutableStateOf(0.dp) }
 
-            Box(modifier = Modifier.fillMaxSize()) {
-                var buttonsHeight by remember { mutableStateOf(0.dp) }
+                    ItemsPickerDialogContent(
+                        modifier = Modifier.padding(bottom = buttonsHeight),
+                        items = items,
+                        selectedItems = selectedItems,
+                        onSelectionChanged = {
+                            selectedItems.clear()
+                            selectedItems.addAll(it)
+                        },
+                        mapper = mapper,
+                        isInverted = isInverted
+                    )
 
-                ItemsPickerDialogContent(
-                    modifier = Modifier.padding(bottom = buttonsHeight),
-                    items = items,
-                    selectedItems = selectedItems,
-                    onSelectionChanged = {
-                        selectedItems.clear()
-                        selectedItems.addAll(it)
-                    },
-                    mapper = mapper,
-                    isInverted = isInverted
-                )
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .onSizeChanged { buttonsHeight = it.height.dp }
-                        .align(Alignment.BottomCenter)
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(space = 8.dp, alignment = Alignment.End)
-                ) {
-                    TextButton(onClick = { onDismiss() }) {
-                        Text("Отмена")
-                    }
-                    Button(onClick = { onItemsPicked(selectedItems) }) {
-                        Text("Выбрать")
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .onSizeChanged { buttonsHeight = it.height.dp }
+                            .align(Alignment.BottomCenter)
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(space = 8.dp, alignment = Alignment.End)
+                    ) {
+                        TextButton(onClick = { onDismiss() }) {
+                            Text("Отмена")
+                        }
+                        Button(onClick = { onItemsPicked(selectedItems) }) {
+                            Text("Выбрать")
+                        }
                     }
                 }
             }

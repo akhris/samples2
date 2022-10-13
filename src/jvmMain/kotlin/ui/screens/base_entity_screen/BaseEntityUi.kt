@@ -2,7 +2,6 @@ package ui.screens.base_entity_screen
 
 import LocalSamplesType
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -17,7 +16,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.layout.onSizeChanged
@@ -40,7 +38,8 @@ import ui.dialogs.DatePickerDialog
 import ui.dialogs.TimePickerDialog
 import ui.screens.base_entity_screen.filter_dialog.FilterEntityFieldUi
 import ui.dialogs.error_dialog.ErrorDialogUi
-import utils.log
+import ui.dialogs.file_picker_dialog.FilePickerUi
+import ui.dialogs.prompt_dialog.PromptDialogUi
 import java.time.LocalDateTime
 import java.time.temporal.TemporalAdjusters
 
@@ -58,8 +57,6 @@ fun <T : IEntity> BaseEntityUi(
     selectionMode: SelectionMode<T> = SelectionMode.Multiple()
 ) {
     val state by remember(component) { component.state }.subscribeAsState()
-    //render samples list:
-//    val entities = remember(state) { state.entities }
 
     val sampleType = LocalSamplesType.current
 
@@ -85,51 +82,80 @@ fun <T : IEntity> BaseEntityUi(
     }
 
     Children(stack = component.dialogStack) {
-        when (val child = it.instance) {
+        when (val dialog = it.instance) {
             is IEntityComponent.Dialog.EntityPicker<*> -> {
-                val childTableWidth = remember { child.component.dataMapper.value.getTableWidth() + 128.dp }
+                val childTableWidth = remember { dialog.component.dataMapper.value.getTableWidth() + 128.dp }
                 val dialogState = rememberDialogState(
                     width = childTableWidth,
                     height = UiSettings.Dialogs.defaultWideDialogHeight
                 )
 
-                var selection by remember { mutableStateOf<IEntity?>(null) }
+                var selection by remember { mutableStateOf(dialog.initialSelection) }
 
                 Dialog(
                     state = dialogState,
-                    title = "Выбрать: ${child.columnName.lowercase()}",
+                    title = "Выбрать: ${dialog.columnName.lowercase()}",
                     onCloseRequest = {
                         component.dismissDialog()
                     }) {
-                    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(modifier = Modifier.weight(1f)) {
-                            BaseEntityUi(
-                                component = child.component,
-                                selectionMode = SelectionMode.Single(child.initialSelection, onItemSelected = {
-                                    selection = it
-                                })
-                            )
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
-                        ) {
-                            TextButton(onClick = { component.dismissDialog() }) {
-                                Text("Отмена")
+                    Surface {
+                        Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Box(modifier = Modifier.weight(1f)) {
+                                BaseEntityUi(
+                                    component = dialog.component,
+                                    selectionMode = SelectionMode.Single(dialog.initialSelection?.id, onItemSelected = {
+                                        selection = it
+                                    })
+                                )
                             }
-                            TextButton(onClick = {
-                                sampleType?.let {
-                                    child.component.insertNewEntity(it)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
+                            ) {
+                                TextButton(onClick = { component.dismissDialog() }) {
+                                    Text("Отмена")
                                 }
-                            }) {
-                                Text("Добавить")
-                            }
-                            Button(onClick = {
+                                TextButton(onClick = {
+                                    sampleType?.let {
+                                        dialog.component.insertNewEntity(it)
+                                    }
+                                }) {
+                                    Text("Добавить")
+                                }
+
+                                TextButton(
+                                    enabled = selection != null,
+                                    onClick = {
+                                        dialog.component.showPrompt(
+                                            title = "Удалить объект?",
+                                            message = "$selection",
+                                            onYes = {
+                                                //do actual delete
+                                                selection?.let {
+                                                    dialog.component.removeEntity(it)
+                                                    selection = null
+                                                }
+
+                                            }
+                                        )
+                                    },
+                                    colors = ButtonDefaults.textButtonColors(
+                                        contentColor = MaterialTheme.colors.error,
+                                        disabledContentColor = MaterialTheme.colors.error.copy(alpha = 0.25f)
+                                    )
+                                ) {
+                                    Text("Удалить")
+                                }
+
+                                Button(
+                                    enabled = selection != null,
+                                    onClick = {
 //                                component.updateEntity()
-                                child.onSelectionChanged(selection)
-                                component.dismissDialog()
-                            }) {
-                                Text("Выбрать")
+                                        dialog.onSelectionChanged(selection)
+                                        component.dismissDialog()
+                                    }) {
+                                    Text("Выбрать")
+                                }
                             }
                         }
                     }
@@ -142,15 +168,28 @@ fun <T : IEntity> BaseEntityUi(
 
             is IEntityComponent.Dialog.FieldFilter<*> -> {
                 //show filtering dialog ui here:
-                FilterEntityFieldUi(component = child.component, onDismissDialog = {
+                FilterEntityFieldUi(component = dialog.component, onDismissDialog = {
                     component.dismissDialog()
                 })
             }
 
             is IEntityComponent.Dialog.ErrorDialog -> {
-                ErrorDialogUi(component = child.component, onDismissDialog = {
+                ErrorDialogUi(component = dialog.component, onDismissDialog = {
                     component.dismissDialog()
                 })
+            }
+
+            is IEntityComponent.Dialog.PromptDialog -> {
+                PromptDialogUi(
+                    component = dialog.component,
+                    onDismiss = { component.dismissDialog() },
+                    onYes = dialog.onYes,
+                    onCancel = dialog.onCancel
+                )
+            }
+
+            is IEntityComponent.Dialog.FilePickerDialog -> {
+                FilePickerUi(component = dialog.component) { component.dismissDialog() }
             }
         }
     }
@@ -266,10 +305,7 @@ private fun <T : IEntity> ShowDataTableForGroup(
                 component.onEntitySelected(it)
             },
             utilitiesPanel = null,
-            footer =
-            {
-                Box(modifier = Modifier.height(bottomPanelHeight).width(20.dp).background(color = Color.Yellow))
-            },
+            footer = null,
             headerMenu = { column ->
 
                 val sortingAsc = remember(sorting, column) {
@@ -377,14 +413,30 @@ private fun <T : IEntity> ShowDataTableForGroup(
                         }) {
                             Text(text = "Отправить")
                         }
-                        TextButton(onClick = {
 
-                        }) {
+                        TextButton(
+                            onClick = {
+                                component.showPrompt(
+                                    title = "Удалить объекты?",
+                                    message = "${selectedEntities.toList()}?",
+                                    onYes = {
+                                        //do actual delete
+                                        selectedEntities.toList().forEach {
+                                            component.removeEntity(it)
+                                            selectedEntities.remove(it)
+                                        }
+                                    }
+                                )
+                            },
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colors.error,
+                                disabledContentColor = MaterialTheme.colors.error.copy(alpha = 0.25f)
+                            )
+                        ) {
                             Text(text = "Удалить", color = MaterialTheme.colors.error)
                             Icon(
                                 Icons.Rounded.Delete,
-                                contentDescription = "Удалить записи",
-                                tint = MaterialTheme.colors.error
+                                contentDescription = "Удалить записи"
                             )
                         }
                     }
