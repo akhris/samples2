@@ -33,7 +33,7 @@ fun AddSampleTypeDialogUi(component: IAddSampleTypeDialogComponent, onDismiss: (
         }, content = { Text("Добавить") })
     }, title = {
         Text("Новый тип образцов")
-    })
+    }, shape = MaterialTheme.shapes.medium)
 
 
 }
