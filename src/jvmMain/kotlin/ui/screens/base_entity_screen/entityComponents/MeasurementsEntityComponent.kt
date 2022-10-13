@@ -102,6 +102,7 @@ class MeasurementsEntityComponent(
 
     private suspend fun importFromJSONFile(file: File) {
         //make actual read from JSON file
+        
     }
 
     private suspend fun importFromEXCELFile(file: File) {
