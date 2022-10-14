@@ -7,7 +7,11 @@ import ui.components.tables.IDataTableMapper
 import ui.screens.base_entity_screen.filter_dialog.IFilterEntityFieldComponent
 import ui.dialogs.error_dialog.IErrorDialogComponent
 import ui.dialogs.file_picker_dialog.IFilePicker
+import ui.dialogs.list_picker_dialog.IListPickerDialogComponent
+import ui.dialogs.list_picker_dialog.ListPickerItem
+import ui.dialogs.list_picker_dialog.ListPickerMode
 import ui.dialogs.prompt_dialog.IPromptDialog
+import java.io.File
 import javax.swing.filechooser.FileNameExtensionFilter
 import kotlin.reflect.KClass
 
@@ -37,7 +41,7 @@ interface IEntityComponent<T : IEntity> {
 
     fun setPagingSpec(spec: Specification.Paginated)
 
-    fun saveRowsToExcel(entities: List<T>)
+    fun shareEntities(entities: List<T>)
 
 
     data class State<E : IEntity>(
@@ -65,7 +69,14 @@ interface IEntityComponent<T : IEntity> {
     fun showFilePickerDialog(
         title: String = "",
         fileFilters: List<FileNameExtensionFilter> = listOf(),
-        onFileSelectedCallback: (filePath: String) -> Unit
+        onFileSelectedCallback: (file: File) -> Unit,
+        pickerType: IFilePicker.PickerType
+    )
+
+    fun showItemsPickerDialog(
+        title: String = "",
+        items: List<ListPickerItem> = listOf(),
+        mode: ListPickerMode = ListPickerMode.SingleSelect()
     )
 
     fun showFilterDialog(columnFilters: FilterSpec)
@@ -83,10 +94,14 @@ interface IEntityComponent<T : IEntity> {
 
         class FieldFilter<T : IEntity>(val component: IFilterEntityFieldComponent<T>) : Dialog()
         class ErrorDialog(val component: IErrorDialogComponent) : Dialog()
-        class PromptDialog(val component: IPromptDialog, val onYes: () -> Unit, val onCancel: (() -> Unit)? = null) :
-            Dialog()
+        class PromptDialog(
+            val component: IPromptDialog,
+            val onYes: () -> Unit,
+            val onCancel: (() -> Unit)? = null
+        ) : Dialog()
 
         class FilePickerDialog(val component: IFilePicker) : Dialog()
+        class ListPickerDialog(val component: IListPickerDialogComponent) : Dialog()
     }
 
 }

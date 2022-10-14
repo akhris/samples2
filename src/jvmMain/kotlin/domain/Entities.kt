@@ -2,6 +2,7 @@ package domain
 
 import domain.valueobjects.Factor
 import kotlinx.serialization.Serializable
+import persistence.json.serializers.LocalDateTimeSerializer
 import java.time.LocalDateTime
 import java.util.*
 
@@ -12,6 +13,7 @@ interface IEntity {
 /**
  * Entity representing room (a place)
  */
+@Serializable
 data class Place(
     override val id: String = UUID.randomUUID().toString(),
     val name: String = "",
@@ -24,6 +26,7 @@ data class Place(
 /**
  * Entity representing a person
  */
+@Serializable
 data class Worker(
     override val id: String = UUID.randomUUID().toString(),
     val name: String = "",
@@ -64,6 +67,7 @@ data class Operation(
 /**
  * Entity representing sample type
  */
+@Serializable
 data class SampleType(
     override val id: String = UUID.randomUUID().toString(),
     val name: String = "",
@@ -72,6 +76,7 @@ data class SampleType(
     override fun toString() = name
 }
 
+@Serializable
 data class Sample(
     override val id: String = UUID.randomUUID().toString(), //id for database
     val identifier: String? = null, //id written on the sample
@@ -86,6 +91,7 @@ data class Sample(
 /**
  * Entity representing sample parameter
  */
+@Serializable
 data class Parameter(
     override val id: String = UUID.randomUUID().toString(),
     val name: String = "",
@@ -120,6 +126,7 @@ data class Norm(
     // TODO: add values range for norm (min, max, avg)
 ) : IEntity
 
+@Serializable
 data class Unit(
     override val id: String = UUID.randomUUID().toString(),
     val unit: String = "",  //A, V, Ohm
@@ -128,6 +135,7 @@ data class Unit(
     override fun toString(): String = unit
 }
 
+@Serializable
 data class MeasurementResult(
     val parameter: Parameter,
     val value: String
@@ -137,9 +145,11 @@ data class MeasurementResult(
  * Entity representing single measurement of the [sample].
  * [results] is a JSON serialized string like array of { parameterID: value}
  */
+@Serializable
 data class Measurement(
     override val id: String = UUID.randomUUID().toString(),
     val sample: Sample? = null,
+    @Serializable(with = LocalDateTimeSerializer::class)
     val dateTime: LocalDateTime? = null,
     val operator: Worker? = null,
     val place: Place? = null,

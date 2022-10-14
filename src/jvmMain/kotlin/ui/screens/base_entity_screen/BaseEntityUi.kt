@@ -39,6 +39,7 @@ import ui.dialogs.TimePickerDialog
 import ui.screens.base_entity_screen.filter_dialog.FilterEntityFieldUi
 import ui.dialogs.error_dialog.ErrorDialogUi
 import ui.dialogs.file_picker_dialog.FilePickerUi
+import ui.dialogs.list_picker_dialog.ListPickerDialogUi
 import ui.dialogs.prompt_dialog.PromptDialogUi
 import java.time.LocalDateTime
 import java.time.temporal.TemporalAdjusters
@@ -190,6 +191,10 @@ fun <T : IEntity> BaseEntityUi(
 
             is IEntityComponent.Dialog.FilePickerDialog -> {
                 FilePickerUi(component = dialog.component) { component.dismissDialog() }
+            }
+
+            is IEntityComponent.Dialog.ListPickerDialog -> {
+                ListPickerDialogUi(component = dialog.component) { component.dismissDialog() }
             }
         }
     }
@@ -409,7 +414,8 @@ private fun <T : IEntity> ShowDataTableForGroup(
 
 
                         Button(onClick = {
-                            component.saveRowsToExcel(selectedEntities)
+                            component.shareEntities(selectedEntities)
+
                         }) {
                             Text(text = "Отправить")
                         }

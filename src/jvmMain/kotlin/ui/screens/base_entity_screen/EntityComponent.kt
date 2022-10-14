@@ -25,10 +25,15 @@ import ui.components.tables.IDataTableMapper
 import ui.screens.base_entity_screen.filter_dialog.FilterEntityFieldComponent
 import ui.dialogs.error_dialog.ErrorDialogComponent
 import ui.dialogs.file_picker_dialog.FilePickerComponent
+import ui.dialogs.file_picker_dialog.IFilePicker
+import ui.dialogs.list_picker_dialog.ListPickerDialogComponent
+import ui.dialogs.list_picker_dialog.ListPickerItem
+import ui.dialogs.list_picker_dialog.ListPickerMode
 import ui.dialogs.prompt_dialog.PromptDialogComponent
 import utils.DateTimeConverter
 import utils.log
 import utils.replaceOrAdd
+import java.io.File
 import java.util.*
 import javax.swing.filechooser.FileNameExtensionFilter
 import kotlin.Unit
@@ -349,7 +354,7 @@ open class EntityComponent<T : IEntity>(
         }
     }
 
-    override fun saveRowsToExcel(entities: List<T>) {
+    override fun shareEntities(entities: List<T>) {
         scope.launch {
             workbook {
                 sheet {
@@ -417,17 +422,17 @@ open class EntityComponent<T : IEntity>(
         }
     }
 
-    private fun createChild(dialogConfig: DialogConfig, componentContext: ComponentContext): IEntityComponent.Dialog {
-        return when (dialogConfig) {
+    private fun createChild(config: DialogConfig, componentContext: ComponentContext): IEntityComponent.Dialog {
+        return when (config) {
             is DialogConfig.EntityPickerDialog -> IEntityComponent.Dialog.EntityPicker(
                 EntityComponent(
-                    type = dialogConfig.entityClass,
+                    type = config.entityClass,
                     di = di,
                     componentContext = componentContext
                 ),
-                initialSelection = dialogConfig.entity,
-                onSelectionChanged = dialogConfig.onSelectionChanged,
-                columnName = dialogConfig.columnName
+                initialSelection = config.entity,
+                onSelectionChanged = config.onSelectionChanged,
+                columnName = config.columnName
             )
 
             is DialogConfig.FieldFilterDialog -> IEntityComponent.Dialog.FieldFilter(
@@ -435,7 +440,7 @@ open class EntityComponent<T : IEntity>(
                     type = type,
                     di = di,
                     componentContext = componentContext,
-                    initialSpec = dialogConfig.initialSpec,
+                    initialSpec = config.initialSpec,
                     onSpecChanged = {
                         addFilter(it)
                     }
@@ -444,9 +449,9 @@ open class EntityComponent<T : IEntity>(
 
             is DialogConfig.RepoErrorDialog -> IEntityComponent.Dialog.ErrorDialog(
                 component = ErrorDialogComponent(
-                    title = dialogConfig.title,
-                    caption = dialogConfig.caption,
-                    error = dialogConfig.error,
+                    title = config.title,
+                    caption = config.caption,
+                    error = config.error,
                     di = di,
                     componentContext = componentContext
                 )
@@ -456,20 +461,30 @@ open class EntityComponent<T : IEntity>(
                 component = PromptDialogComponent(
                     di = di,
                     componentContext = componentContext,
-                    title = dialogConfig.title,
-                    message = dialogConfig.message
+                    title = config.title,
+                    message = config.message
                 ),
-                onYes = dialogConfig.onYes,
-                onCancel = dialogConfig.onCancel
+                onYes = config.onYes,
+                onCancel = config.onCancel
             )
 
             is DialogConfig.FilePickerDialog -> IEntityComponent.Dialog.FilePickerDialog(
                 component = FilePickerComponent(
                     di = di,
                     componentContext = componentContext,
-                    title = dialogConfig.title,
-                    fileFilters = dialogConfig.fileFilters,
-                    onFileSelectedCallback = dialogConfig.onFileSelectedCallback
+                    title = config.title,
+                    fileFilters = config.fileFilters,
+                    onFileSelectedCallback = config.onFileSelectedCallback
+                )
+            )
+
+            is DialogConfig.ListPickerDialog -> IEntityComponent.Dialog.ListPickerDialog(
+                component = ListPickerDialogComponent(
+                    di = di,
+                    componentContext = componentContext,
+                    dialogTitle = config.title,
+                    selectMode = config.selectionMode,
+                    items = config.items
                 )
             )
 
@@ -493,13 +508,22 @@ open class EntityComponent<T : IEntity>(
     override fun showFilePickerDialog(
         title: String,
         fileFilters: List<FileNameExtensionFilter>,
-        onFileSelectedCallback: (filePath: String) -> Unit
+        onFileSelectedCallback: (file: File) -> Unit,
+        pickerType: IFilePicker.PickerType
     ) {
-        dialogNav.replaceCurrent(DialogConfig.FilePickerDialog(title, fileFilters, onFileSelectedCallback))
+        dialogNav.replaceCurrent(DialogConfig.FilePickerDialog(title, fileFilters, onFileSelectedCallback, pickerType))
     }
 
     override fun showFilterDialog(columnFilters: FilterSpec) {
         dialogNav.replaceCurrent(DialogConfig.FieldFilterDialog(columnFilters))
+    }
+
+    override fun showItemsPickerDialog(title: String, items: List<ListPickerItem>, mode: ListPickerMode) {
+        dialogNav.replaceCurrent(
+            DialogConfig.ListPickerDialog(
+                title = title, items = items, selectionMode = mode
+            )
+        )
     }
 
     override fun showPrompt(title: String, message: String, onYes: () -> Unit, onCancel: (() -> Unit)?) {
@@ -607,7 +631,15 @@ open class EntityComponent<T : IEntity>(
         class FilePickerDialog(
             val title: String,
             val fileFilters: List<FileNameExtensionFilter> = listOf(),
-            val onFileSelectedCallback: (filePath: String) -> Unit
+            val onFileSelectedCallback: (file: File) -> Unit,
+            val pickerType: IFilePicker.PickerType
+        ) : DialogConfig()
+
+        @Parcelize
+        class ListPickerDialog(
+            val title: String,
+            val items: List<ListPickerItem> = listOf(),
+            val selectionMode: ListPickerMode
         ) : DialogConfig()
     }
 

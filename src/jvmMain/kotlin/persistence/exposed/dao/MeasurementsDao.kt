@@ -2,6 +2,7 @@ package persistence.exposed.dao
 
 import domain.Measurement
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.statements.InsertStatement
 import org.jetbrains.exposed.sql.statements.UpdateStatement
 import persistence.exposed.dto.EntityMeasurement
@@ -36,19 +37,47 @@ class MeasurementsDao : BaseExposedDao<Measurement, EntityMeasurement, Tables.Me
 
     override fun Transaction.doAfterUpdate(entity: Measurement) {
         log("updating measurement: $entity")
+
+        //get all parametersID - resultID map for current measurement
+        val parametersResultsID =
+            Tables.MeasurementResults.slice(Tables.MeasurementResults.id, Tables.MeasurementResults.parameter)
+                .select { Tables.MeasurementResults.measurement eq entity.id.toUUID() }
+                .associate { it[Tables.MeasurementResults.parameter].value.toString() to it[Tables.MeasurementResults.id].value }
+
+
         entity
             .results
             .forEach { mr ->
-                log("inserting $mr")
-                Tables
-                    .MeasurementResults
-                    .insert {
-                        it[value] = mr.value
-                        it[measurement] = entity.id.toUUID()
-                        it[parameter] = mr.parameter.id.toUUID()
-                    }
+                val resultID = parametersResultsID[mr.parameter.id]
+                log("resultID: $resultID for parameter:${mr.parameter.name}")
+
+                if (resultID != null) {
+                    //result exists - update it:
+                    log("updating result with id: $resultID")
+                    Tables
+                        .MeasurementResults
+                        .update(where = { Tables.MeasurementResults.id eq resultID }) {
+                            it[value] = mr.value
+                            it[measurement] = entity.id.toUUID()
+                            it[parameter] = mr.parameter.id.toUUID()
+                        }
+                } else {
+                    //result does not exist - insert it:
+                    log("inserting new result for parameter: ${mr.parameter.name}")
+                    Tables
+                        .MeasurementResults
+                        .insert {
+                            it[value] = mr.value
+                            it[measurement] = entity.id.toUUID()
+                            it[parameter] = mr.parameter.id.toUUID()
+                        }
+                }
+
+
 //                    .update(where = { Tables.MeasurementResults.measurement eq entity.id.toUUID() and (Tables.MeasurementResults.parameter eq mr.parameter.id.toUUID()) }) {
-//
+//                        it[value] = mr.value
+//                        it[measurement] = entity.id.toUUID()
+//                        it[parameter] = mr.parameter.id.toUUID()
 //                    }
             }
 

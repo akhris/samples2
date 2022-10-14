@@ -1,17 +1,14 @@
 package ui.dialogs.file_picker_dialog
 
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.graphics.toArgb
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import utils.log
-import java.awt.Color
 import java.io.File
 import javax.swing.JFileChooser
+import javax.swing.JOptionPane
 import javax.swing.filechooser.FileNameExtensionFilter
 import javax.swing.filechooser.FileSystemView
 
@@ -19,10 +16,10 @@ import javax.swing.filechooser.FileSystemView
 @Composable
 fun FilePickerUi(component: IFilePicker, onDismiss: () -> Unit) {
     val state by remember(component) { component.state }.subscribeAsState()
-    val file = remember(state.title, state.fileFilters) { fileChooserDialog(state.title, state.fileFilters) }
+    val file =
+        remember(state.title, state.fileFilters) { fileChooserDialog(state.title, state.fileFilters, state.pickerType) }
     LaunchedEffect(file) {
-        if (file.isNotEmpty())
-            component.onFileSelected(file)
+        file?.let { component.onFileSelected(it) }
         onDismiss()
     }
 }
@@ -62,22 +59,44 @@ fun FilePickerUi(component: IFilePicker, onDismiss: () -> Unit) {
 
 fun fileChooserDialog(
     title: String?,
-    filters: List<FileNameExtensionFilter> = listOf()
-): String {
+    filters: List<FileNameExtensionFilter> = listOf(),
+    pickerType: IFilePicker.PickerType
+): File? {
     val fileChooser = JFileChooser(FileSystemView.getFileSystemView())
     fileChooser.currentDirectory = File(System.getProperty("user.dir"))
     fileChooser.dialogTitle = title
-    fileChooser.fileSelectionMode = JFileChooser.FILES_AND_DIRECTORIES
+    fileChooser.fileSelectionMode = JFileChooser.FILES_ONLY
     filters.forEach { fileChooser.addChoosableFileFilter(it) }
     fileChooser.isAcceptAllFileFilterUsed = false
     fileChooser.selectedFile = null
     fileChooser.currentDirectory = null
 
-    val file = if (fileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
-        fileChooser.selectedFile.toString()
-    } else {
-        ""
+    val returnValue = when (pickerType) {
+        IFilePicker.PickerType.OpenFile -> fileChooser.showOpenDialog(null)
+        IFilePicker.PickerType.SaveFile -> fileChooser.showSaveDialog(null)
     }
+
+    val file = if (returnValue == JFileChooser.APPROVE_OPTION) {
+        fileChooser.selectedFile?.let {
+            //check extension:
+            //if empty - try to add extension from selected extension filter
+            val nameFilter = (fileChooser.fileFilter as? FileNameExtensionFilter) ?: return it
+            val extension = it.extension
+            if (extension !in nameFilter.extensions) {
+                File(it.toString() + (nameFilter.extensions.firstOrNull()?.let { ext -> ".$ext" } ?: ""))
+            } else {
+                it
+            }
+        }
+    } else {
+        null
+    }
+
+
+
+    log("got file: $file with fileFilter: ${fileChooser.fileFilter.description}")
+
+
     return file
 
 }
