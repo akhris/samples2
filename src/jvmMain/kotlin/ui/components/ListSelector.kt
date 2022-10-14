@@ -53,8 +53,8 @@ fun <T> ListSelector(
                         imageVector = Icons.Rounded.ArrowDropDown,
                         modifier = Modifier.size(UiSettings.SampleTypesSelector.dropDownIconSize)
                             .rotate(rotation),
-                        contentDescription = "open drop-down",
-                        tint = MaterialTheme.colors.onPrimary.copy(alpha = 0.75f)
+                        contentDescription = "open drop-down"
+//                        tint = MaterialTheme.colors.onPrimary.copy(alpha = 0.75f)
                     )
                 }
             } else {

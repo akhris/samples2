@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.isShiftPressed
@@ -535,7 +536,7 @@ fun <T> DataTable(
             indicators[mapper.getId(it)] = OperationIndicator.ChangedItem
         }
 
-        delay(UiSettings.Debounce.debounceTime)
+//        delay(UiSettings.Debounce.debounceTime)
 
 
         if (changedItems.isNotEmpty() && onItemChanged != null) {
@@ -703,9 +704,12 @@ private fun BoxScope.RenderEditTextCell(
 ) {
 
     var value by remember(cell) { mutableStateOf(cell.value) }
+    var focusState by remember { mutableStateOf<FocusState?>(null) }
 
     DataTableEditTextField(
-        modifier = modifier,
+        modifier = modifier.onFocusChanged {
+            focusState = it
+        },
         value = value,
         singleLine = false,
         onValueChange = { value = it },
@@ -725,6 +729,18 @@ private fun BoxScope.RenderEditTextCell(
         } else null
     )
 
+    //save on focus state change:
+
+//    LaunchedEffect(focusState) {
+//        log("focus state changed: $focusState")
+//        if (value == cell.value || focusState == null) {
+//            return@LaunchedEffect
+//        }
+//        if (focusState?.isFocused == false) {
+//            log("focusstate is not focused -> save cell")
+//            onCellChanged(cell.copy(value = value))
+//        }
+//    }
 
     //debounce:
     LaunchedEffect(value) {

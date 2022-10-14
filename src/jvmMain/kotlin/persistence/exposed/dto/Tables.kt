@@ -96,7 +96,7 @@ object Tables {
 
     object MeasurementResults : IntIdTable() {
         val measurement = reference(name = "measurement", foreign = Measurements, onDelete = ReferenceOption.CASCADE)
-        val parameter = reference(name = "parameters", foreign = Parameters, onDelete = ReferenceOption.CASCADE)
+        val parameter = reference(name = "parameter", foreign = Parameters, onDelete = ReferenceOption.CASCADE)
         val value = text(name = "value").nullable()
     }
 }

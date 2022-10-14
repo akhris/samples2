@@ -13,7 +13,7 @@ object UiSettings {
     }
 
     object Debounce {
-        const val debounceTime: Long = 500L
+        const val debounceTime: Long = 400L
     }
 
     object AppBar {
