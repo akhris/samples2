@@ -10,11 +10,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import utils.conditional
@@ -29,34 +34,54 @@ fun DataTableEditTextField(
     placeholderText: String? = null,
     singleLine: Boolean = true,
     textStyle: TextStyle = LocalTextStyle.current,
-    leadingIcon: @Composable (RowScope.() -> Unit)? = null,
+    leadingIcon: @Composable (BoxScope.() -> Unit)? = null,
     trailingIcon: @Composable (BoxScope.() -> Unit)? = null
 ) {
+    val focusManager = LocalFocusManager.current
 
     var isHover by remember { mutableStateOf(false) }
-
+    val readOnly = remember(onValueChange) { onValueChange == null }
 //    Surface(shape = MaterialTheme.shapes.small) {
     OutlinedTextField(modifier = modifier
+
+        .onPreviewKeyEvent { ke ->
+            if (ke.key == Key.Tab && ke.type == KeyEventType.KeyDown) {
+                focusManager.moveFocus(FocusDirection.Right)
+                true
+            } else {
+                false
+            }
+        }
         .onPointerEvent(PointerEventType.Enter) { isHover = true }
         .onPointerEvent(PointerEventType.Exit) { isHover = false }
+        .pointerHoverIcon(PointerIcon(Cursor(if (readOnly) Cursor.DEFAULT_CURSOR else Cursor.TEXT_CURSOR)))
         .fillMaxWidth(),
-        enabled = onValueChange != null,
+        enabled = !readOnly,
         value = value,
         onValueChange = { onValueChange?.invoke(it) },
         textStyle = textStyle,
         singleLine = singleLine,
-        trailingIcon = trailingIcon?.let { ti ->
+        leadingIcon = leadingIcon?.let { li ->
             {
                 Box(
-                    Modifier
-                        .alpha(if (isHover) 1f else 0.1f)
-                        .pointerHoverIcon(PointerIcon(Cursor(Cursor.DEFAULT_CURSOR))),
+                    Modifier.pointerHoverIcon(PointerIcon(Cursor(Cursor.DEFAULT_CURSOR))),
                     contentAlignment = Alignment.Center
                 ) {
-                    ti()
+                    li()
                 }
             }
         },
+        trailingIcon = if (isHover)
+            trailingIcon?.let { ti ->
+                {
+                    Box(
+                        Modifier.pointerHoverIcon(PointerIcon(Cursor(Cursor.DEFAULT_CURSOR))),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        ti()
+                    }
+                }
+            } else null,
         colors = TextFieldDefaults.outlinedTextFieldColors(
             focusedBorderColor = Color.Unspecified,
             unfocusedBorderColor = Color.Unspecified,
@@ -65,6 +90,8 @@ fun DataTableEditTextField(
         ),
         shape = MaterialTheme.shapes.small
     )
+
+
 //    }
 
     /*

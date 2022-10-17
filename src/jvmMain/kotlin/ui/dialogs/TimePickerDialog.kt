@@ -171,7 +171,7 @@ private fun TimePickerTextField(
             onValueChange = {
                 currentValue = (it.toIntOrNull() ?: 0).coerceIn(valueRange)
             },
-            textStyle = MaterialTheme.typography.h4
+            textStyle = MaterialTheme.typography.h4.copy(textAlign = TextAlign.Center)
         )
     }
 

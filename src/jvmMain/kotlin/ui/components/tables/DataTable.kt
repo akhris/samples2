@@ -5,16 +5,21 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.runtime.*
+import androidx.compose.runtime.internal.composableLambda
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -51,6 +56,8 @@ import kotlin.reflect.KClass
 fun <T> DataTable(
     modifier: Modifier = Modifier,
     items: List<T>,
+    selection: List<T>,
+    onSelectionChanged: (item: T, isChanged: Boolean) -> Unit,
     mapper: IDataTableMapper<T>,
     onItemChanged: ((T) -> Unit)? = null,
     selectionMode: SelectionMode<T> = SelectionMode.Multiple(),
@@ -76,6 +83,7 @@ fun <T> DataTable(
 
 
     LaunchedEffect(selectionMode) {
+        selectionMap.clear()
         val initialSelection: Map<String, Boolean> = when (selectionMode) {
             is SelectionMode.Multiple<T> -> mapOf()
             is SelectionMode.None -> mapOf()
@@ -130,11 +138,10 @@ fun <T> DataTable(
                 }
 
                 is SelectionMode.Single -> {
-                    val prevValue = selectionMap[mapper.getId(item)] ?: false
+//                    val prevValue = selectionMap[mapper.getId(item)] ?: false
                     selectionMap.clear()
                     selectionMap[mapper.getId(item)] = true
-                    if (!prevValue)
-                        selectionMode.onItemSelected?.invoke(item)
+                    selectionMode.onItemSelected?.invoke(item)
                     Unit
                 }
 
@@ -158,11 +165,9 @@ fun <T> DataTable(
     ) {
         stickyHeader {
             Row(
-//                modifier = Modifier.height(UiSettings.DataTable.headerRowHeight),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 //render header:
-
                 //space for first item index if used:
                 firstItemIndex?.let {
                     Spacer(modifier = Modifier.width(UiSettings.DataTable.additionalRowWidth))
@@ -346,10 +351,8 @@ fun <T> DataTable(
                         Text(
                             modifier = Modifier.width(UiSettings.DataTable.additionalRowWidth),
                             text = (fii + index).toString(),
-                            style = MaterialTheme.typography.caption.copy(
-                                color = MaterialTheme.colors.onBackground,
-                                textAlign = TextAlign.Center
-                            )
+                            style = MaterialTheme.typography.caption,
+                            textAlign = TextAlign.Center
                         )
                     }
                 },
@@ -676,7 +679,12 @@ private fun BoxScope.RenderCell(
                     onCellChanged = onCellChanged
                 )
 
-                is Cell.DateTimeCell -> RenderDateTimeCell(modifier, cell)
+                is Cell.DateTimeCell -> RenderDateTimeCell(
+                    modifier = modifier,
+                    cell = cell,
+                    onCellChanged = onCellChanged
+                )
+
                 is Cell.BooleanCell -> RenderBooleanCell(
                     modifier = modifier,
                     cell = cell,
@@ -729,19 +737,6 @@ private fun BoxScope.RenderEditTextCell(
         } else null
     )
 
-    //save on focus state change:
-
-//    LaunchedEffect(focusState) {
-//        log("focus state changed: $focusState")
-//        if (value == cell.value || focusState == null) {
-//            return@LaunchedEffect
-//        }
-//        if (focusState?.isFocused == false) {
-//            log("focusstate is not focused -> save cell")
-//            onCellChanged(cell.copy(value = value))
-//        }
-//    }
-
     //debounce:
     LaunchedEffect(value) {
         if (value == cell.value) {
@@ -776,13 +771,27 @@ private fun BoxScope.RenderBooleanCell(
 @Composable
 private fun BoxScope.RenderDateTimeCell(
     modifier: Modifier = Modifier,
-    cell: Cell.DateTimeCell
+    cell: Cell.DateTimeCell,
+    onCellChanged: (Cell) -> Unit
 ) {
 
-    Text(
+    DataTableEditTextField(
         modifier = modifier,
-        text = cell.value?.let { DateTimeConverter.dateTimeToString(it) } ?: "",
-        style = getCellTextStyle()
+        value = cell.value?.let { DateTimeConverter.dateTimeToString(it) } ?: "",
+        textStyle = getCellTextStyle(),
+        trailingIcon = if (cell.value != null) {
+            {
+                Icon(
+                    Icons.Rounded.Clear,
+                    contentDescription = "clear datetime",
+                    modifier = Modifier
+                        .size(18.dp)
+                        .clickable {
+                            onCellChanged(cell.copy(value = null))
+                        }
+                )
+            }
+        } else null
     )
 
 }
@@ -795,113 +804,86 @@ private fun BoxScope.RenderEntityCell(
     onCellChanged: (Cell) -> Unit
 ) {
 
-    when (cell.entityClass) {
-        domain.Unit::class -> {
-            RenderUnitCell(
-                modifier = modifier,
-                cell = cell,
-                unit = cell.entity as? domain.Unit,
-                factor = cell.tag as? Factor,
-                onCellChanged = onCellChanged
-            )
+    val leadingIcon: (@Composable BoxScope.() -> Unit)? = when (cell.entityClass) {
+        domain.Unit::class -> (cell.entity as? domain.Unit)?.let { unit ->
+            {
+                var showFactorsList by remember { mutableStateOf(false) }
+                Box {
+                    Text(
+                        text = ((cell.tag as? Factor) ?: Factor.NoFactor).prefix,
+                        modifier = Modifier.clickable {
+                            //show factors list to choose from:
+                            showFactorsList = true
+                        }.padding(horizontal = 2.dp),
+                        style = getCellTextStyle()
+                    )
+
+                    DropdownMenu(
+                        expanded = showFactorsList,
+                        onDismissRequest = { showFactorsList = false }
+                    ) {
+                        factors
+                            .forEach { f ->
+                                DropdownMenuItem(
+                                    modifier = Modifier
+                                        .background(
+                                            if (f == cell.tag as? Factor) MaterialTheme
+                                                .colors
+                                                .secondary
+                                                .copy(alpha = 0.5f) else MaterialTheme.colors.surface
+                                        ),
+                                    onClick = {
+                                        onCellChanged(cell.copy(tag = f))
+                                        showFactorsList = false
+                                    }) {
+                                    Text(
+                                        text = "${f.prefix}: ${f.name}"
+                                    )
+                                }
+                            }
+                    }
+                }
+            }
         }
 
-        else -> {
-            DataTableEditTextField(
-                modifier = modifier,
-                value = cell.entity?.toString() ?: "",
-                trailingIcon = if (cell.entity != null) {
-                    {
-                        Icon(
-                            Icons.Rounded.Clear,
-                            contentDescription = "clear entity",
-                            modifier = Modifier
-                                .size(18.dp)
-                                .clickable {
-                                    onCellChanged(cell.copy(entity = null))
-                                }
-                        )
-                    }
-                } else null,
-                textStyle = getCellTextStyle()
-            )
-        }
+        else -> null
     }
 
-}
-
-@Composable
-private fun BoxScope.RenderUnitCell(
-    modifier: Modifier = Modifier,
-    cell: Cell.EntityCell,
-    unit: domain.Unit?,
-    factor: Factor?,
-    onCellChanged: (Cell) -> Unit
-) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        if (unit?.isMultipliable == true) {
-            var showFactorsList by remember { mutableStateOf(false) }
-
-            Text(
-                text = (factor ?: Factor.NoFactor)
-                    .prefix,
-                modifier =
-                Modifier
-
-                    .clickable {
-                        //show factors list to choose from:
-                        showFactorsList = true
-                    }.padding(horizontal = 2.dp),
-                color = MaterialTheme.colors.secondary,
-                style = getCellTextStyle()
-            )
-
-            DropdownMenu(
-                expanded = showFactorsList,
-                onDismissRequest = { showFactorsList = false }
-            ) {
-                factors
-                    .forEach { f ->
-                        DropdownMenuItem(
-                            modifier = Modifier.background(
-                                if (f == factor) MaterialTheme
-                                    .colors
-                                    .secondary
-                                    .copy(alpha = 0.5f) else MaterialTheme.colors.surface
-                            ),
-                            onClick = {
-                                onCellChanged(cell.copy(tag = f))
-                                showFactorsList = false
-                            }) {
-                            Text(
-                                text = "${f.prefix}: ${f.name}"
-                            )
-                        }
-                    }
-            }
-
-        }
-        DataTableEditTextField(
-            modifier = modifier,
-            value = cell.entity?.toString() ?: "",
-            textStyle = getCellTextStyle(),
-            trailingIcon = {
+//
+//    when (cell.entityClass) {
+//        domain.Unit::class -> {
+//            RenderUnitCell(
+//                modifier = modifier,
+//                cell = cell,
+//                unit = cell.entity as? domain.Unit,
+//                factor = cell.tag as? Factor,
+//                onCellChanged = onCellChanged
+//            )
+//        }
+//
+//        else -> {
+    DataTableEditTextField(
+        modifier = modifier,
+        value = cell.entity?.toString() ?: "",
+        leadingIcon = leadingIcon,
+        trailingIcon = if (cell.entity != null) {
+            {
                 Icon(
                     Icons.Rounded.Clear,
-                    contentDescription = "clear unit",
+                    contentDescription = "clear entity",
                     modifier = Modifier
                         .size(18.dp)
                         .clickable {
-                            onCellChanged(cell.copy(entity = null, tag = null))
+                            onCellChanged(cell.copy(entity = null))
                         }
                 )
             }
-        )
-//        Text(
-//            modifier = modifier, text = cell.entity?.toString() ?: "",
-//            style = getCellTextStyle()
-//        )
-    }
+        } else null,
+        textStyle = getCellTextStyle()
+    )
+//        }
+//    }
+
 }
 
 

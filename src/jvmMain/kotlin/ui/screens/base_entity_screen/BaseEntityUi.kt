@@ -212,7 +212,13 @@ private fun <T : IEntity> ShowDataTableForGroup(
 ) {
     var dateTimePickerParams by remember { mutableStateOf<DateTimePickerDialogParams?>(null) }
 
-    val selectedEntities = remember { mutableStateListOf<T>() }
+    val selectedEntities = remember(selectionMode) {
+        when (selectionMode) {
+            is SelectionMode.Multiple -> entities.filter { it.id in selectionMode.initialSelection }
+            is SelectionMode.None -> listOf()
+            is SelectionMode.Single -> listOfNotNull(entities.find { it.id == selectionMode.initialSelection })
+        }.toMutableStateList()
+    }
 
     var bottomPanelHeight by remember { mutableStateOf(0.dp) }
 
