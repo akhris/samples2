@@ -5,21 +5,16 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.runtime.*
-import androidx.compose.runtime.internal.composableLambda
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -56,11 +51,11 @@ import kotlin.reflect.KClass
 fun <T> DataTable(
     modifier: Modifier = Modifier,
     items: List<T>,
-    selection: List<T>,
-    onSelectionChanged: (item: T, isChanged: Boolean) -> Unit,
+    selection: List<String> = listOf(),
+    onSelectionChanged: (items: List<T>, areSelected: Boolean) -> Unit = { _, _ -> },
+    selectionMode: SelectionMode? = null,
     mapper: IDataTableMapper<T>,
     onItemChanged: ((T) -> Unit)? = null,
-    selectionMode: SelectionMode<T> = SelectionMode.Multiple(),
     onCellClicked: ((T, Cell, ColumnId) -> Unit)? = null,
     onItemRowClicked: ((T) -> Unit)? = null,
     utilitiesPanel: @Composable() (BoxScope.() -> Unit)? = null,
@@ -73,41 +68,12 @@ fun <T> DataTable(
 
     val _items = remember(items) { items.toMutableStateList() }
 
-    val selectionMap = remember {
-        mutableStateMapOf<String, Boolean>()
-    }
-
     val indicators = remember {
         mutableStateMapOf<String, OperationIndicator>()
     }
 
-
-    LaunchedEffect(selectionMode) {
-        selectionMap.clear()
-        val initialSelection: Map<String, Boolean> = when (selectionMode) {
-            is SelectionMode.Multiple<T> -> mapOf()
-            is SelectionMode.None -> mapOf()
-            is SelectionMode.Single -> listOfNotNull(selectionMode.initialSelection?.let { it to true }).toMap()
-        }
-        selectionMap.putAll(initialSelection)
-    }
-
-
     val columnWidths = remember { mutableStateMapOf<ColumnId, Dp>() }
 
-    //all items are selected:
-    val checks = items
-        .map { item -> selectionMap[mapper.getId(item)] ?: false }
-
-    val checkState = remember(checks) {
-        if (checks.all { it } && checks.isNotEmpty()) {
-            ToggleableState.On
-        } else if (checks.all { !it } || checks.isEmpty()) {
-            ToggleableState.Off
-        } else {
-            ToggleableState.Indeterminate
-        }
-    }
 
     val listState = rememberLazyListState()
 
@@ -123,33 +89,6 @@ fun <T> DataTable(
     }
 
     val headerElevation by animateDpAsState(if (listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0) 0.dp else 4.dp)
-
-    val selectItem = remember(selectionMode) {
-        { item: T ->
-            when (selectionMode) {
-                is SelectionMode.Multiple -> {
-                    selectionMap[mapper.getId(item)] =
-                        !(selectionMap[mapper.getId(item)] ?: false)
-                    selectionMode.onItemsSelected?.invoke(
-                        selectionMap.filterValues { it }.keys.mapNotNull { key ->
-                            items.find { mapper.getId(it) == key }
-                        }
-                    )
-                }
-
-                is SelectionMode.Single -> {
-//                    val prevValue = selectionMap[mapper.getId(item)] ?: false
-                    selectionMap.clear()
-                    selectionMap[mapper.getId(item)] = true
-                    selectionMode.onItemSelected?.invoke(item)
-                    Unit
-                }
-
-                is SelectionMode.None -> null
-            }
-        }
-    }
-
 
     var isShiftPressed by remember { mutableStateOf(false) }
     var lastClickedIndex by remember(items) { mutableStateOf(-1) }
@@ -202,28 +141,32 @@ fun <T> DataTable(
                         ) {
                             //selection box:
                             Box(modifier = Modifier.width(UiSettings.DataTable.additionalRowWidth)) {
-                                if (selectionMode is SelectionMode.Multiple && items.size > 1) {
+                                if (selectionMode == SelectionMode.Multiple && items.size > 1) {
+
+                                    //all items are selected:
+                                    val checks = items
+                                        .map { item -> mapper.getId(item) in selection }
+
+                                    val checkState = remember(checks) {
+                                        if (checks.all { it } && checks.isNotEmpty()) {
+                                            ToggleableState.On
+                                        } else if (checks.all { !it } || checks.isEmpty()) {
+                                            ToggleableState.Off
+                                        } else {
+                                            ToggleableState.Indeterminate
+                                        }
+                                    }
+
+
                                     TriStateCheckbox(state = checkState, onClick = {
                                         when (checkState) {
                                             ToggleableState.On -> {
-                                                selectionMap.clear()
-                                                selectionMode.onItemsSelected?.invoke(listOf())
+                                                onSelectionChanged(items, false)
                                             }
 
                                             ToggleableState.Off,
                                             ToggleableState.Indeterminate -> {
-                                                items.forEach {
-                                                    selectionMap[mapper.getId(it)] = true
-                                                }
-                                                selectionMode.onItemsSelected?.invoke(
-                                                    selectionMap.filterValues { it }.keys.mapNotNull { key ->
-                                                        items.find {
-                                                            mapper.getId(
-                                                                it
-                                                            ) == key
-                                                        }
-                                                    }
-                                                )
+                                                onSelectionChanged(items, true)
                                             }
                                         }
                                     }, modifier = Modifier.align(Alignment.Center))
@@ -345,7 +288,14 @@ fun <T> DataTable(
         }
         itemsIndexed(_items, key = { index, item -> mapper.getId(item) }) { index, item ->
             RenderRow(
-                modifier = Modifier.animateItemPlacement(),
+                modifier = Modifier
+                    .onFocusChanged {
+                        if (it.hasFocus && selectionMode == SelectionMode.Single && (mapper.getId(item) !in selection)) {
+                            onSelectionChanged(items, false)
+                            onSelectionChanged(listOf(item), true)
+                        }
+                    }
+                    .animateItemPlacement(),
                 renderIndex = {
                     firstItemIndex?.let { fii ->
                         Text(
@@ -392,9 +342,6 @@ fun <T> DataTable(
                                 .padding(horizontal = UiSettings.DataTable.columnPadding)
                                 .clickable(enabled = onCellClicked != null) {
                                     onCellClicked?.invoke(item, cell, column)
-                                }
-                                .onFocusChanged {
-                                    if (selectionMode is SelectionMode.Single) selectItem(item)
                                 },
                             contentAlignment = when (column.alignment) {
                                 ColumnAlignment.Center -> Alignment.Center
@@ -433,38 +380,38 @@ fun <T> DataTable(
                         }
                     }
                 },
-                renderSelectionControl = {
-                    when (selectionMode) {
-                        is SelectionMode.Multiple -> {
+                renderSelectionControl =
+                when (selectionMode) {
+                    SelectionMode.Multiple -> {
+                        {
                             Checkbox(
-                                checked = selectionMap[mapper.getId(item)] == true,
+                                checked = mapper.getId(item) in selection,
                                 onCheckedChange = {
-                                    selectItem(item)
                                     if (lastClickedIndex != -1 && isShiftPressed) {
-                                        for (i in lastClickedIndex + 1 until index) {
-                                            items.getOrNull(i)?.let {
-                                                selectItem(it)
-                                            }
-                                        }
+                                        onSelectionChanged(items.subList(lastClickedIndex, index - 1), it)
+                                    } else {
+                                        onSelectionChanged(listOf(item), it)
                                     }
                                     lastClickedIndex = index
                                 }
                             )
                         }
+                    }
 
-                        is SelectionMode.Single -> {
+                    SelectionMode.Single -> {
+                        {
                             RadioButton(
-                                selected = selectionMap[mapper.getId(item)] == true,
+                                selected = mapper.getId(item) in selection,
                                 onClick = {
-                                    selectItem(item)
+                                    val wasSelected = mapper.getId(item) in selection
+                                    onSelectionChanged(items, false)
+                                    onSelectionChanged(listOf(item), !wasSelected)
                                 }
                             )
                         }
-
-                        is SelectionMode.None -> {
-
-                        }
                     }
+
+                    else -> null
                 },
                 renderDragHandle = if (isReorderable) {
                     {
@@ -502,8 +449,10 @@ fun <T> DataTable(
                     }
                 } else null,
                 onRowClicked = {
-                    if (selectionMode is SelectionMode.Single) {
-                        selectItem(item)
+                    if (selectionMode == SelectionMode.Single) {
+                        val wasSelected = mapper.getId(item) in selection
+                        onSelectionChanged(items, false)
+                        onSelectionChanged(listOf(item), !wasSelected)
                     } else {
                         onItemRowClicked?.invoke(item)
                     }
@@ -967,23 +916,11 @@ sealed class Cell {
 
 }
 
-sealed class SelectionMode<T> {
-    data class Single<T>(
-        val initialSelection: String? = null,
-        val onItemSelected: ((T?) -> Unit)? = null
-    ) :
-        SelectionMode<T>()
-
-    class Multiple<T>(
-        val initialSelection: List<String> = listOf(),
-        val onItemsSelected: ((List<T>) -> Unit)? = null
-    ) :
-        SelectionMode<T>()
-
-    class None<T> : SelectionMode<T>()
+sealed class SelectionMode {
+    object Single : SelectionMode()
+    object Multiple : SelectionMode()
 }
 
-class OrderableItem<T>(val item: T, val pos: Int)
 
 sealed class OperationIndicator {
     object UpdatedSuccessfully : OperationIndicator()

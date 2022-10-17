@@ -41,6 +41,7 @@ import ui.dialogs.error_dialog.ErrorDialogUi
 import ui.dialogs.file_picker_dialog.FilePickerUi
 import ui.dialogs.list_picker_dialog.ListPickerDialogUi
 import ui.dialogs.prompt_dialog.PromptDialogUi
+import utils.log
 import java.time.LocalDateTime
 import java.time.temporal.TemporalAdjusters
 
@@ -55,7 +56,8 @@ import java.time.temporal.TemporalAdjusters
 fun <T : IEntity> BaseEntityUi(
     modifier: Modifier = Modifier,
     component: IEntityComponent<T>,
-    selectionMode: SelectionMode<T> = SelectionMode.Multiple()
+    selectionMode: SelectionMode? = SelectionMode.Multiple,
+    initialSelection: List<String> = listOf()
 ) {
     val state by remember(component) { component.state }.subscribeAsState()
 
@@ -77,7 +79,8 @@ fun <T : IEntity> BaseEntityUi(
                 modifier = modifier,
                 entities = entities.items,
                 component = component,
-                selectionMode = selectionMode
+                selectionMode = selectionMode,
+                initialSelection = initialSelection
             )
         }
     }
@@ -104,9 +107,8 @@ fun <T : IEntity> BaseEntityUi(
                             Box(modifier = Modifier.weight(1f)) {
                                 BaseEntityUi(
                                     component = dialog.component,
-                                    selectionMode = SelectionMode.Single(dialog.initialSelection?.id, onItemSelected = {
-                                        selection = it
-                                    })
+                                    selectionMode = SelectionMode.Single,
+                                    initialSelection = listOfNotNull(dialog.initialSelection?.id)
                                 )
                             }
                             Row(
@@ -208,17 +210,12 @@ private fun <T : IEntity> ShowDataTableForGroup(
     modifier: Modifier = Modifier,
     entities: List<T>,
     component: IEntityComponent<T>,
-    selectionMode: SelectionMode<T>
+    selectionMode: SelectionMode?,
+    initialSelection: List<String> = listOf()
 ) {
     var dateTimePickerParams by remember { mutableStateOf<DateTimePickerDialogParams?>(null) }
 
-    val selectedEntities = remember(selectionMode) {
-        when (selectionMode) {
-            is SelectionMode.Multiple -> entities.filter { it.id in selectionMode.initialSelection }
-            is SelectionMode.None -> listOf()
-            is SelectionMode.Single -> listOfNotNull(entities.find { it.id == selectionMode.initialSelection })
-        }.toMutableStateList()
-    }
+    val selectedEntities = remember(initialSelection) { initialSelection.toSet().toMutableStateList() }
 
     var bottomPanelHeight by remember { mutableStateOf(0.dp) }
 
@@ -246,32 +243,21 @@ private fun <T : IEntity> ShowDataTableForGroup(
         DataTable(
             modifier = modifier.horizontalScroll(state = rememberScrollState()),
             items = entities,
-            mapper = mapper,
-            onItemChanged = { component.updateEntity(it) },
-            selectionMode = remember(selectionMode) {
-                when (selectionMode) {
-                    is SelectionMode.Multiple -> SelectionMode.Multiple(
-                        initialSelection = selectionMode.initialSelection,
-                        onItemsSelected = {
-                            selectionMode.onItemsSelected?.invoke(it)
-                            selectedEntities.clear()
-                            selectedEntities.addAll(it)
-                        }
-                    )
-
-                    is SelectionMode.None -> SelectionMode.None()
-                    is SelectionMode.Single -> SelectionMode.Single(
-                        initialSelection = selectionMode.initialSelection,
-                        onItemSelected = {
-                            selectionMode.onItemSelected?.invoke(it)
-                            selectedEntities.clear()
-                            it?.let {
-                                selectedEntities.add(it)
-                            }
-                        }
-                    )
+            selection = selectedEntities,
+            onSelectionChanged = remember {
+                { items, areSelected ->
+                    log("onSelectionChanged: $items areSelected: $areSelected")
+                    val ids = items.map { it.id }
+                    if (areSelected) {
+                        selectedEntities.addAll(ids)
+                    } else {
+                        selectedEntities.removeIf { it in ids }
+                    }
                 }
             },
+            selectionMode = selectionMode,
+            mapper = mapper,
+            onItemChanged = { component.updateEntity(it) },
             //wrapping selection mode to make additional actions available (duplicating/deleting)
             onCellClicked = { item, cell, column ->
                 when (cell) {
@@ -400,7 +386,7 @@ private fun <T : IEntity> ShowDataTableForGroup(
             shape = MaterialTheme.shapes.medium,
             elevation = 16.dp
         ) {
-            if (selectionMode is SelectionMode.Multiple<T> && selectedEntities.isNotEmpty()) {
+            if (selectionMode == SelectionMode.Multiple && selectedEntities.isNotEmpty()) {
 
                 //show control buttons:
                 Column(
@@ -413,14 +399,14 @@ private fun <T : IEntity> ShowDataTableForGroup(
                         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                     ) {
                         Button(onClick = {
-                            component.duplicateEntities(selectedEntities)
+                            component.duplicateEntities(entities.filter { it.id in selectedEntities })
                         }) {
                             Text(text = "Дублировать")
                         }
 
 
                         Button(onClick = {
-                            component.shareEntities(selectedEntities)
+                            component.shareEntities(entities.filter { it.id in selectedEntities })
 
                         }) {
                             Text(text = "Отправить")
