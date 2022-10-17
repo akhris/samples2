@@ -1,6 +1,8 @@
 package ui.root_ui
 
 import LocalSamplesType
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.window.WindowDraggableArea
@@ -9,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowScope
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.jetbrains.stack.Children
@@ -17,17 +20,23 @@ import com.arkivanov.decompose.extensions.compose.jetbrains.stack.animation.slid
 import com.arkivanov.decompose.extensions.compose.jetbrains.stack.animation.stackAnimation
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import domain.SampleType
-import navigation.NavItem
 import ui.SideNavigationPanel
+import ui.components.Tooltip
 import ui.dialogs.add_sample_type_dialog.AddSampleTypeDialogUi
 import ui.screens.base_entity_screen.BaseEntityUi
 import ui.screens.base_entity_screen.EntityUiwithFab
 import ui.screens.sample_details_screen.SampleDetailsUi
 import ui.toolbar_utils.sampletypes_selector.SampleTypesSelectorUi
 
-@OptIn(ExperimentalDecomposeApi::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalDecomposeApi::class, ExperimentalMaterialApi::class, ExperimentalFoundationApi::class)
 @Composable
-fun WindowScope.RootUi(component: IRootComponent, isDarkTheme: Boolean, onThemeChanged: (isDark: Boolean) -> Unit) {
+fun WindowScope.RootUi(
+    component: IRootComponent,
+    isDarkTheme: Boolean,
+    onThemeChanged: (isDark: Boolean) -> Unit,
+    windowPlacement: WindowPlacement,
+    onWindowPlacementChange: (WindowPlacement) -> Unit
+) {
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed, confirmStateChange = { false })
     val scaffoldState = rememberScaffoldState(drawerState = drawerState)
@@ -36,7 +45,6 @@ fun WindowScope.RootUi(component: IRootComponent, isDarkTheme: Boolean, onThemeC
     val navigationItem by remember(component) { component.currentDestination }.subscribeAsState()
 //    val sampleTypes by remember(component) { component.sampleTypes }.subscribeAsState()
     var selectedSampleType by remember { mutableStateOf<SampleType?>(null) }
-
 
 
     Scaffold(
@@ -57,16 +65,52 @@ fun WindowScope.RootUi(component: IRootComponent, isDarkTheme: Boolean, onThemeC
                         }
                     }
                     Spacer(modifier = Modifier.weight(1f))
-                    Icon(
-                        modifier = Modifier
-                            .padding(horizontal = 8.dp).clickable {
-                                onThemeChanged(!isDarkTheme)
-                            },
-                        painter = when (isDarkTheme) {
-                            true -> painterResource("vector/light_mode_black_24dp.svg")
-                            false -> painterResource("vector/dark_mode_black_24dp.svg")
-                        }, contentDescription = "light/dark theme switcher"
+                    Tooltip(
+                        tip = when (isDarkTheme) {
+                            true -> "Включить светлую тему"
+                            false -> "Включить тёмную тему"
+                        }
+                    ) {
+                        Icon(
+                            modifier = Modifier
+                                .padding(horizontal = 8.dp).clickable {
+                                    onThemeChanged(!isDarkTheme)
+                                },
+                            painter = when (isDarkTheme) {
+                                true -> painterResource("vector/light_mode_black_24dp.svg")
+                                false -> painterResource("vector/dark_mode_black_24dp.svg")
+                            }, contentDescription = "light/dark theme switcher"
+                        )
+                    }
+                    Tooltip(
+                        tip = when (windowPlacement) {
+                            WindowPlacement.Floating,
+                            WindowPlacement.Maximized -> "Развернуть на весь экран"
+
+                            WindowPlacement.Fullscreen -> "Выйти из полноэкранного режима"
+                        }
                     )
+                    {
+                        Icon(
+                            modifier = Modifier
+                                .padding(horizontal = 8.dp).clickable {
+                                    onWindowPlacementChange(
+                                        when (windowPlacement) {
+                                            WindowPlacement.Floating,
+                                            WindowPlacement.Maximized -> WindowPlacement.Fullscreen
+
+                                            WindowPlacement.Fullscreen -> WindowPlacement.Floating
+                                        }
+                                    )
+                                },
+                            painter = when (windowPlacement) {
+                                WindowPlacement.Floating,
+                                WindowPlacement.Maximized -> painterResource("vector/fullscreen_black_24dp.svg")
+
+                                WindowPlacement.Fullscreen -> painterResource("vector/fullscreen_exit_black_24dp.svg")
+                            }, contentDescription = "fullscreen switcher"
+                        )
+                    }
                 }
             }
         },

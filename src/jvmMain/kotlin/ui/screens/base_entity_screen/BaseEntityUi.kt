@@ -22,6 +22,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.WindowScope
 import androidx.compose.ui.window.rememberDialogState
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.jetbrains.stack.Children
@@ -97,6 +98,7 @@ fun <T : IEntity> BaseEntityUi(
                 var selection by remember { mutableStateOf(dialog.initialSelection) }
 
                 Dialog(
+                    undecorated = true,
                     state = dialogState,
                     title = "Выбрать: ${dialog.columnName.lowercase()}",
                     onCloseRequest = {

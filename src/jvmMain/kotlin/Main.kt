@@ -27,12 +27,21 @@ import ui.theme.AppTheme
 
 @Composable
 @Preview
-fun WindowScope.App(rootComponent: IRootComponent) {
+fun WindowScope.App(
+    rootComponent: IRootComponent,
+    windowPlacement: WindowPlacement,
+    onWindowPlacementChange: (WindowPlacement) -> Unit
+) {
 
     var isDark by remember { mutableStateOf(false) }
     AppTheme(darkTheme = isDark) {
-//        VerticalReorderList()
-        RootUi(component = rootComponent, isDarkTheme = isDark, onThemeChanged = { isDark = it })
+        RootUi(
+            component = rootComponent,
+            isDarkTheme = isDark,
+            onThemeChanged = { isDark = it },
+            windowPlacement = windowPlacement,
+            onWindowPlacementChange = onWindowPlacementChange
+        )
     }
 }
 
@@ -45,13 +54,22 @@ fun main() {
     val root = RootComponent(componentContext = DefaultComponentContext(lifecycle), di = di)
     // Start Compose
     application {
+
+        var windowPlacement by remember { mutableStateOf(WindowPlacement.Floating) }
+
         val windowState = rememberWindowState(
             width = UiSettings.Window.initialWidth,
             height = UiSettings.Window.initialHeight,
             position = WindowPosition(
                 Alignment.Center
-            )
+            ),
+            placement = windowPlacement
         )
+
+        LaunchedEffect(windowPlacement) {
+            if (windowPlacement != windowState.placement)
+                windowState.placement = windowPlacement
+        }
 
         Window(
             state = windowState,
@@ -61,7 +79,11 @@ fun main() {
             undecorated = true
         ) {
 
-            App(root)
+            App(
+                rootComponent = root,
+                windowPlacement = windowPlacement,
+                onWindowPlacementChange = { windowPlacement = it }
+            )
 
         }
     }
