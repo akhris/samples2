@@ -44,10 +44,7 @@ class SampleDetailsComponent(
             is Result.Failure -> {}
             is Result.Success -> {
                 _stateOperations.reduce {
-                    when (val ops = operations.value) {
-                        is EntitiesList.Grouped -> listOf()
-                        is EntitiesList.NotGrouped -> ops.items
-                    }
+                    operations.value.flatten()
                 }
             }
         }

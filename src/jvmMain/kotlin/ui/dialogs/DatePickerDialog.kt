@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.window.WindowDraggableArea
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowDropDown
@@ -24,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogWindowScope
 import androidx.compose.ui.window.rememberDialogState
 import ui.theme.AppTheme
 import ui.theme.DialogSettings
@@ -51,7 +53,6 @@ import java.util.*
  * Material date picker dialog as described here:
  * https://material.io/components/date-pickers#specs
  */
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun DatePickerDialog(
     initialSelection: LocalDate? = null,
@@ -65,29 +66,75 @@ fun DatePickerDialog(
             height = DialogSettings.DatePickerSettings.defaultPickerHeight
         )
     )
-    Dialog(
-        state = dialogState,
-        onCloseRequest = onDismiss,
-        undecorated = true,
-        resizable = false,
-        transparent = true,
+
+    var yearMonth by remember(initialSelection) { mutableStateOf(initialSelection?.yearMonth ?: YearMonth.now()) }
+    var selectedDate by remember(initialSelection) { mutableStateOf<LocalDate?>(initialSelection) }
+
+
+    BaseDialog(
+        dialogState,
+        onDismiss = onDismiss,
+        title = {
+            TitleContent(selectedDate)
+        },
         content = {
-            DatePickerDialogContent(
-                initialSelection = initialSelection,
-                onCancelClick = onDismiss,
-                onOkClick = {
+
+            MainContent(
+                modifier = Modifier.fillMaxWidth()
+                    .padding(horizontal = DialogSettings.DatePickerSettings.defaultHorizontalPadding),
+                yearMonth = yearMonth,
+                onYearMonthChange = {
+                    yearMonth = it
+                },
+                selectedDate = selectedDate,
+                onDayClick = {
+                    selectedDate = it
+                }
+            )
+
+        },
+        buttons = {
+
+            TextButton(onClick = onDismiss, content = {
+                Text(text = "отмена".uppercase())
+            })
+
+            TextButton(onClick = {
+                selectedDate?.let {
                     onDateSelected(it)
                     onDismiss()
                 }
-            )
+            }, content = {
+                Text(text = "ок".uppercase())
+            })
+
         }
     )
+
+//    Dialog(
+//        state = dialogState,
+//        onCloseRequest = onDismiss,
+//        undecorated = true,
+//        resizable = false,
+//        transparent = true,
+//        focusable = false,
+//        content = {
+//            DatePickerDialogContent(
+//                initialSelection = initialSelection,
+//                onCancelClick = onDismiss,
+//                onOkClick = {
+//                    onDateSelected(it)
+//                    onDismiss()
+//                }
+//            )
+//        }
+//    )
 
 }
 
 
 @Composable
-private fun DatePickerDialogContent(
+private fun DialogWindowScope.DatePickerDialogContent(
     initialSelection: LocalDate? = null,
     onCancelClick: (() -> Unit)? = null,
     onOkClick: ((LocalDate) -> Unit)? = null
@@ -102,16 +149,19 @@ private fun DatePickerDialogContent(
             modifier = Modifier.fillMaxSize()
         ) {
             //title
-            Box(
-                modifier = Modifier.height(defaultPickerTitleHeight)
-                    .width(defaultPickerWidth)
-                    .background(color = MaterialTheme.colors.primarySurface)
-            ) {
-                TitleContent(selectedDate)
+            WindowDraggableArea {
+                Box(
+                    modifier = Modifier
+                        .height(defaultPickerTitleHeight)
+                        .fillMaxWidth()
+                        .background(color = MaterialTheme.colors.primarySurface)
+                ) {
+                    TitleContent(selectedDate)
+                }
             }
 
             //main content
-            Box(modifier = Modifier.weight(1f).width(defaultPickerWidth)) {
+            Box(modifier = Modifier.weight(1f)) {
 
                 MainContent(
                     modifier = Modifier.fillMaxWidth()
@@ -156,13 +206,13 @@ private fun DatePickerDialogContent(
 @Composable
 private fun TitleContent(selectedDate: LocalDate? = null, withMobileInputPicker: Boolean = false) {
 
-    Column(modifier = Modifier.padding(horizontal = 24.dp).fillMaxWidth()) {
+    Column(modifier = Modifier.padding(horizontal = 24.dp).fillMaxWidth().height(defaultPickerTitleHeight)) {
 
         Box(modifier = Modifier.height(32.dp)) {
             Text(
                 modifier = Modifier.align(Alignment.BottomStart),
                 text = "выберите дату",
-                style = MaterialTheme.typography.overline,
+//                style = MaterialTheme.typography.overline,
                 color = MaterialTheme.colors.contentColorFor(MaterialTheme.colors.primarySurface)
             )
         }
@@ -210,19 +260,7 @@ private fun MainContent(
             modifier = Modifier.padding(vertical = 16.dp).height(24.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            BasicTextField(
-                value = DateTimeConverter.MMMMyyyy.format(yearMonth),
-                onValueChange = {
-                    try {
-                        YearMonth.parse(it, DateTimeConverter.MMMMyyyy)
-                    } catch (e: Exception) {
-                        log(e.localizedMessage)
-                        null
-                    }?.let { ym ->
-                        onYearMonthChange(ym)
-                    }
-                }
-            )
+            Text(text = DateTimeConverter.MMMMyyyy.format(yearMonth))
             IconButton(onClick = {
                 pickerState = when (pickerState) {
                     DatePickerState.DateSelectorState -> DatePickerState.YearSelectorState
@@ -427,18 +465,3 @@ private sealed class DatePickerState {
     object YearSelectorState : DatePickerState()
 }
 
-@Preview
-@Composable
-fun DatePickerTest_light() {
-    AppTheme(darkTheme = false) {
-        DatePickerDialogContent()
-    }
-}
-
-@Preview
-@Composable
-fun DatePickerTest_dark() {
-    AppTheme(darkTheme = true) {
-        DatePickerDialogContent()
-    }
-}

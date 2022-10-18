@@ -49,7 +49,7 @@ object UiSettings {
         val columnDefaultWidthWide: Dp = 240.dp
         val columnDefaultWidthSmall: Dp = 100.dp
 
-        private val dividerAlpha = 0.12f
+        val dividerHeight: Dp = 2.dp
 
         val toolTipWidth = 360.dp
         val toolTipHeight = 240.dp

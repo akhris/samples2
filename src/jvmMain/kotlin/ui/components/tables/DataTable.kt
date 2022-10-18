@@ -93,378 +93,390 @@ fun <T> DataTable(
     var isShiftPressed by remember { mutableStateOf(false) }
     var lastClickedIndex by remember(items) { mutableStateOf(-1) }
 
-    LazyColumn(
-        modifier = modifier
-            .onKeyEvent {
-                isShiftPressed = it.isShiftPressed
-                true
-            }
-            .border(width = 1.dp, color = UiSettings.DataTable.dividerColor()),
-        state = listState
-    ) {
-        stickyHeader {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                //render header:
-                //space for first item index if used:
-                firstItemIndex?.let {
-                    Spacer(modifier = Modifier.width(UiSettings.DataTable.additionalRowWidth))
-                }
-                Surface(
-                    elevation = headerElevation,
-                    shape = RoundedCornerShape(
-                        topStart = UiSettings.DataTable.cornerRadius,
-                        topEnd = UiSettings.DataTable.cornerRadius
-                    )
+    Box {
+        LazyColumn(
+            modifier = modifier
+                .onKeyEvent {
+                    isShiftPressed = it.isShiftPressed
+                    true
+                },
+            state = listState
+        ) {
+            stickyHeader {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
-                        //additional panel (for filtering and other utilities)
+                    //render header:
+                    //space for first item index if used:
+                    firstItemIndex?.let {
+                        Spacer(modifier = Modifier.width(UiSettings.DataTable.additionalRowWidth))
+                    }
+                    Surface(
+                        elevation = headerElevation,
+                        shape = RoundedCornerShape(
+                            topStart = UiSettings.DataTable.cornerRadius,
+                            topEnd = UiSettings.DataTable.cornerRadius
+                        )
+                    ) {
+                        Column {
+                            //additional panel (for filtering and other utilities)
 
-                        utilitiesPanel?.let { up ->
-                            Box(modifier = Modifier.fillMaxWidth().height(UiSettings.DataTable.headerRowHeight)) {
-                                up()
-                                Box(
-                                    modifier = Modifier
-                                        .align(Alignment.BottomStart)
-                                        .height(1.dp)
-                                        .width(tableWidth + UiSettings.DataTable.additionalRowWidth)
-                                        .background(color = UiSettings.DataTable.dividerColor())
-                                )
-                            }
-                        }
-
-                        //table header:
-                        Row(
-                            modifier = Modifier.height(UiSettings.DataTable.headerRowHeight),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            //selection box:
-                            Box(modifier = Modifier.width(UiSettings.DataTable.additionalRowWidth)) {
-                                if (selectionMode == SelectionMode.Multiple && items.size > 1) {
-
-                                    //all items are selected:
-                                    val checks = items
-                                        .map { item -> mapper.getId(item) in selection }
-
-                                    val checkState = remember(checks) {
-                                        if (checks.all { it } && checks.isNotEmpty()) {
-                                            ToggleableState.On
-                                        } else if (checks.all { !it } || checks.isEmpty()) {
-                                            ToggleableState.Off
-                                        } else {
-                                            ToggleableState.Indeterminate
-                                        }
-                                    }
-
-
-                                    TriStateCheckbox(state = checkState, onClick = {
-                                        when (checkState) {
-                                            ToggleableState.On -> {
-                                                onSelectionChanged(items, false)
-                                            }
-
-                                            ToggleableState.Off,
-                                            ToggleableState.Indeterminate -> {
-                                                onSelectionChanged(items, true)
-                                            }
-                                        }
-                                    }, modifier = Modifier.align(Alignment.Center))
+                            utilitiesPanel?.let { up ->
+                                Box(modifier = Modifier.fillMaxWidth().height(UiSettings.DataTable.headerRowHeight)) {
+                                    up()
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.BottomStart)
+                                            .height(UiSettings.DataTable.dividerHeight)
+                                            .width(tableWidth + UiSettings.DataTable.additionalRowWidth)
+                                            .background(color = UiSettings.DataTable.dividerColor())
+                                    )
                                 }
                             }
 
-                            for (column in mapper.columns) {
-                                Box(
-                                    modifier = Modifier
-                                        .width(
-                                            columnWidths[column] ?: when (column.width) {
-                                                is ColumnWidth.Custom -> column.width.width
-                                                ColumnWidth.Normal -> UiSettings.DataTable.columnDefaultWidthNormal
-                                                ColumnWidth.Small -> UiSettings.DataTable.columnDefaultWidthSmall
-                                                ColumnWidth.Wide -> UiSettings.DataTable.columnDefaultWidthWide
+                            //table header:
+                            Row(
+                                modifier = Modifier.height(UiSettings.DataTable.headerRowHeight),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                //selection box:
+                                Box(modifier = Modifier.width(UiSettings.DataTable.additionalRowWidth)) {
+                                    if (selectionMode == SelectionMode.Multiple && items.size > 1) {
+
+                                        //all items are selected:
+                                        val checks = items
+                                            .map { item -> mapper.getId(item) in selection }
+
+                                        val checkState = remember(checks) {
+                                            if (checks.all { it } && checks.isNotEmpty()) {
+                                                ToggleableState.On
+                                            } else if (checks.all { !it } || checks.isEmpty()) {
+                                                ToggleableState.Off
+                                            } else {
+                                                ToggleableState.Indeterminate
                                             }
-                                        )
-                                        .fillMaxHeight()
-                                        .padding(horizontal = UiSettings.DataTable.columnPadding)
-                                ) {
-                                    var showMenu by remember(column) { mutableStateOf(false) }
-
-                                    CompositionLocalProvider(
-                                        LocalLayoutDirection provides when (column.alignment) {
-                                            ColumnAlignment.Start,
-                                            ColumnAlignment.Center -> LayoutDirection.Ltr
-
-                                            ColumnAlignment.End -> LayoutDirection.Rtl
                                         }
+
+
+                                        TriStateCheckbox(state = checkState, onClick = {
+                                            when (checkState) {
+                                                ToggleableState.On -> {
+                                                    onSelectionChanged(items, false)
+                                                }
+
+                                                ToggleableState.Off,
+                                                ToggleableState.Indeterminate -> {
+                                                    onSelectionChanged(items, true)
+                                                }
+                                            }
+                                        }, modifier = Modifier.align(Alignment.Center))
+                                    }
+                                }
+
+                                for (column in mapper.columns) {
+                                    Box(
+                                        modifier = Modifier
+                                            .width(
+                                                columnWidths[column] ?: when (column.width) {
+                                                    is ColumnWidth.Custom -> column.width.width
+                                                    ColumnWidth.Normal -> UiSettings.DataTable.columnDefaultWidthNormal
+                                                    ColumnWidth.Small -> UiSettings.DataTable.columnDefaultWidthSmall
+                                                    ColumnWidth.Wide -> UiSettings.DataTable.columnDefaultWidthWide
+                                                }
+                                            )
+                                            .fillMaxHeight()
+                                            .padding(horizontal = UiSettings.DataTable.columnPadding)
                                     ) {
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .clickable {
-                                                    if (headerMenu != null) {
-                                                        showMenu = true
-                                                    }
-                                                },
-                                            verticalAlignment = Alignment.CenterVertically
+                                        var showMenu by remember(column) { mutableStateOf(false) }
+
+                                        CompositionLocalProvider(
+                                            LocalLayoutDirection provides when (column.alignment) {
+                                                ColumnAlignment.Start,
+                                                ColumnAlignment.Center -> LayoutDirection.Ltr
+
+                                                ColumnAlignment.End -> LayoutDirection.Rtl
+                                            }
                                         ) {
-                                            if (LocalLayoutDirection.current == LayoutDirection.Rtl)
-                                                Spacer(modifier = Modifier.width(UiSettings.DataTable.draggableAreaWidth))
-                                            //primary title
                                             Row(
-                                                modifier = Modifier.weight(1f),
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .clickable {
+                                                        if (headerMenu != null) {
+                                                            showMenu = true
+                                                        }
+                                                    },
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                Text(
-                                                    text = column.title,
-                                                    style = MaterialTheme.typography.subtitle2,
-                                                    fontWeight = FontWeight.Bold,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                                //secondary title
-                                                if (column.secondaryText.isNotEmpty()) {
+                                                if (LocalLayoutDirection.current == LayoutDirection.Rtl)
+                                                    Spacer(modifier = Modifier.width(UiSettings.DataTable.draggableAreaWidth))
+                                                //primary title
+                                                Row(
+                                                    modifier = Modifier.weight(1f),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
                                                     Text(
-                                                        text = column.secondaryText,
-                                                        style = MaterialTheme.typography.caption,
+                                                        text = column.title,
+                                                        style = MaterialTheme.typography.subtitle2,
+                                                        fontWeight = FontWeight.Bold,
                                                         maxLines = 1,
                                                         overflow = TextOverflow.Ellipsis
                                                     )
+                                                    //secondary title
+                                                    if (column.secondaryText.isNotEmpty()) {
+                                                        Text(
+                                                            text = column.secondaryText,
+                                                            style = MaterialTheme.typography.caption,
+                                                            maxLines = 1,
+                                                            overflow = TextOverflow.Ellipsis
+                                                        )
+                                                    }
                                                 }
-                                            }
 
-                                            headerStateIcons?.let { hsi ->
-                                                hsi(column)
-                                                if (LocalLayoutDirection.current == LayoutDirection.Ltr)
-                                                    Spacer(modifier = Modifier.width(UiSettings.DataTable.draggableAreaWidth))
-                                            }
+                                                headerStateIcons?.let { hsi ->
+                                                    hsi(column)
+                                                    if (LocalLayoutDirection.current == LayoutDirection.Ltr)
+                                                        Spacer(modifier = Modifier.width(UiSettings.DataTable.draggableAreaWidth))
+                                                }
 
+
+                                            }
 
                                         }
+                                        //column resize area:
+                                        Box(
+                                            modifier =
+                                            Modifier
+                                                .align(Alignment.CenterEnd)
+                                                .fillMaxHeight()
+                                                .width(UiSettings.DataTable.draggableAreaWidth)
+                                                .pointerHoverIcon(PointerIcon(Cursor(Cursor.E_RESIZE_CURSOR)))
+                                                .combinedClickable(onDoubleClick = {
+                                                    // reset to default width:
+                                                    columnWidths.remove(column)
+                                                }, onClick = {})
+                                                .draggable(
+                                                    state = rememberDraggableState { onDelta ->
+                                                        columnWidths[column] =
+                                                            (columnWidths[column] ?: when (column.width) {
+                                                                is ColumnWidth.Custom -> column.width.width
+                                                                ColumnWidth.Normal -> UiSettings.DataTable.columnDefaultWidthNormal
+                                                                ColumnWidth.Small -> UiSettings.DataTable.columnDefaultWidthSmall
+                                                                ColumnWidth.Wide -> UiSettings.DataTable.columnDefaultWidthWide
+                                                            }) + onDelta.dp
+                                                    },
+                                                    orientation = Orientation.Horizontal
+                                                )
+                                        )
+
+
+                                        if (showMenu)
+                                            headerMenu?.let { hm ->
+                                                DropdownMenu(
+                                                    modifier = Modifier.align(Alignment.BottomEnd),
+                                                    expanded = showMenu,
+                                                    onDismissRequest = { showMenu = false },
+                                                    content = { hm(column) }
+                                                )
+                                            }
 
                                     }
-                                    //column resize area:
-                                    Box(
-                                        modifier =
-                                        Modifier
-                                            .align(Alignment.CenterEnd)
-                                            .fillMaxHeight()
-                                            .width(UiSettings.DataTable.draggableAreaWidth)
-                                            .pointerHoverIcon(PointerIcon(Cursor(Cursor.E_RESIZE_CURSOR)))
-                                            .combinedClickable(onDoubleClick = {
-                                                // reset to default width:
-                                                columnWidths.remove(column)
-                                            }, onClick = {})
-                                            .draggable(
-                                                state = rememberDraggableState { onDelta ->
-                                                    columnWidths[column] =
-                                                        (columnWidths[column] ?: when (column.width) {
-                                                            is ColumnWidth.Custom -> column.width.width
-                                                            ColumnWidth.Normal -> UiSettings.DataTable.columnDefaultWidthNormal
-                                                            ColumnWidth.Small -> UiSettings.DataTable.columnDefaultWidthSmall
-                                                            ColumnWidth.Wide -> UiSettings.DataTable.columnDefaultWidthWide
-                                                        }) + onDelta.dp
-                                                },
-                                                orientation = Orientation.Horizontal
-                                            )
-                                    )
-
-
-                                    if (showMenu)
-                                        headerMenu?.let { hm ->
-                                            DropdownMenu(
-                                                modifier = Modifier.align(Alignment.BottomEnd),
-                                                expanded = showMenu,
-                                                onDismissRequest = { showMenu = false },
-                                                content = { hm(column) }
-                                            )
-                                        }
-
                                 }
                             }
                         }
                     }
                 }
             }
-        }
-        itemsIndexed(_items, key = { index, item -> mapper.getId(item) }) { index, item ->
-            RenderRow(
-                modifier = Modifier
-                    .onFocusChanged {
-                        if (it.hasFocus && selectionMode == SelectionMode.Single && (mapper.getId(item) !in selection)) {
-                            onSelectionChanged(items, false)
-                            onSelectionChanged(listOf(item), true)
-                        }
-                    }
-                    .animateItemPlacement(),
-                renderIndex = {
-                    firstItemIndex?.let { fii ->
-                        Text(
-                            modifier = Modifier.width(UiSettings.DataTable.additionalRowWidth),
-                            text = (fii + index).toString(),
-                            style = MaterialTheme.typography.caption,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                },
-                renderIndicator = indicators[mapper.getId(item)]?.let { indicator ->
-                    {
-                        Box(
-                            modifier = Modifier
-                                .matchParentSize()
-                                .background(
-                                    color = when (indicator) {
-                                        OperationIndicator.ChangedItem -> Color.Yellow
-                                        OperationIndicator.UpdatedSuccessfully -> Color.Green
-                                        OperationIndicator.UpdatedWithError -> Color.Red
-                                    }
-                                )
-                        )
-                    }
-
-                },
-                renderColumns = {
-                    for (column in mapper.columns) {
-                        //render cell:
-                        val cell = remember(mapper, item, column) {
-                            mapper.getCell(item, column)
-                        }
-
-                        Box(
-                            modifier = Modifier
-                                .width(
-                                    columnWidths[column] ?: when (column.width) {
-                                        is ColumnWidth.Custom -> column.width.width
-                                        ColumnWidth.Normal -> UiSettings.DataTable.columnDefaultWidthNormal
-                                        ColumnWidth.Small -> UiSettings.DataTable.columnDefaultWidthSmall
-                                        ColumnWidth.Wide -> UiSettings.DataTable.columnDefaultWidthWide
-                                    }
-                                )
-                                .padding(horizontal = UiSettings.DataTable.columnPadding)
-                                .clickable(enabled = onCellClicked != null) {
-                                    onCellClicked?.invoke(item, cell, column)
-                                },
-                            contentAlignment = when (column.alignment) {
-                                ColumnAlignment.Center -> Alignment.Center
-                                ColumnAlignment.End -> Alignment.CenterEnd
-                                ColumnAlignment.Start -> Alignment.CenterStart
+            itemsIndexed(_items, key = { index, item -> mapper.getId(item) }) { index, item ->
+                RenderRow(
+                    modifier = Modifier
+                        .onFocusChanged {
+                            if (it.hasFocus && selectionMode == SelectionMode.Single && (mapper.getId(item) !in selection)) {
+                                onSelectionChanged(items, false)
+                                onSelectionChanged(listOf(item), true)
                             }
-                        ) {
-                            CompositionLocalProvider(
-                                LocalLayoutDirection provides when (column.alignment) {
-                                    ColumnAlignment.Start,
-                                    ColumnAlignment.Center -> LayoutDirection.Ltr
+                        }
+                        .animateItemPlacement(),
+                    renderIndex = {
+                        firstItemIndex?.let { fii ->
+                            Text(
+                                modifier = Modifier.width(UiSettings.DataTable.additionalRowWidth),
+                                text = (fii + index).toString(),
+                                style = MaterialTheme.typography.caption,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    },
+                    renderIndicator = indicators[mapper.getId(item)]?.let { indicator ->
+                        {
+                            Box(
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .background(
+                                        color = when (indicator) {
+                                            OperationIndicator.ChangedItem -> Color.Yellow
+                                            OperationIndicator.UpdatedSuccessfully -> Color.Green
+                                            OperationIndicator.UpdatedWithError -> Color.Red
+                                        }
+                                    )
+                            )
+                        }
 
-                                    ColumnAlignment.End -> LayoutDirection.Rtl
+                    },
+                    renderColumns = {
+                        for (column in mapper.columns) {
+                            //render cell:
+                            val cell = remember(mapper, item, column) {
+                                mapper.getCell(item, column)
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .width(
+                                        columnWidths[column] ?: when (column.width) {
+                                            is ColumnWidth.Custom -> column.width.width
+                                            ColumnWidth.Normal -> UiSettings.DataTable.columnDefaultWidthNormal
+                                            ColumnWidth.Small -> UiSettings.DataTable.columnDefaultWidthSmall
+                                            ColumnWidth.Wide -> UiSettings.DataTable.columnDefaultWidthWide
+                                        }
+                                    )
+                                    .padding(horizontal = UiSettings.DataTable.columnPadding)
+                                    .clickable(enabled = onCellClicked != null) {
+                                        onCellClicked?.invoke(item, cell, column)
+                                    },
+                                contentAlignment = when (column.alignment) {
+                                    ColumnAlignment.Center -> Alignment.Center
+                                    ColumnAlignment.End -> Alignment.CenterEnd
+                                    ColumnAlignment.Start -> Alignment.CenterStart
                                 }
                             ) {
-                                RenderCell(
-                                    modifier =
-                                    Modifier.padding(all = UiSettings.DataTable.cellPadding),
-                                    cell = cell,
-                                    columnId = column,
-                                    onCellChanged = { changedCell ->
-                                        _items.replace(
-                                            mapper.updateItem(
-                                                item = item,
-                                                columnId = column,
-                                                cell = changedCell
-                                            )
-                                        ) {
-                                            mapper.getId(it) == mapper.getId(item)
-                                        }
+                                CompositionLocalProvider(
+                                    LocalLayoutDirection provides when (column.alignment) {
+                                        ColumnAlignment.Start,
+                                        ColumnAlignment.Center -> LayoutDirection.Ltr
+
+                                        ColumnAlignment.End -> LayoutDirection.Rtl
+                                    }
+                                ) {
+                                    RenderCell(
+                                        modifier =
+                                        Modifier.padding(all = UiSettings.DataTable.cellPadding),
+                                        cell = cell,
+                                        columnId = column,
+                                        onCellChanged = { changedCell ->
+                                            _items.replace(
+                                                mapper.updateItem(
+                                                    item = item,
+                                                    columnId = column,
+                                                    cell = changedCell
+                                                )
+                                            ) {
+                                                mapper.getId(it) == mapper.getId(item)
+                                            }
 //                                    onItemChanged?.invoke(mapper.updateItem(item, column, changedCell))
-                                    },
-                                    columnAlignment = column.alignment
+                                        },
+                                        columnAlignment = column.alignment
+                                    )
+                                }
+                            }
+                        }
+                    },
+                    renderSelectionControl =
+                    when (selectionMode) {
+                        SelectionMode.Multiple -> {
+                            {
+                                Checkbox(
+                                    checked = mapper.getId(item) in selection,
+                                    onCheckedChange = {
+                                        if (lastClickedIndex != -1 && isShiftPressed) {
+                                            onSelectionChanged(items.subList(lastClickedIndex, index - 1), it)
+                                        } else {
+                                            onSelectionChanged(listOf(item), it)
+                                        }
+                                        lastClickedIndex = index
+                                    }
                                 )
                             }
                         }
-                    }
-                },
-                renderSelectionControl =
-                when (selectionMode) {
-                    SelectionMode.Multiple -> {
-                        {
-                            Checkbox(
-                                checked = mapper.getId(item) in selection,
-                                onCheckedChange = {
-                                    if (lastClickedIndex != -1 && isShiftPressed) {
-                                        onSelectionChanged(items.subList(lastClickedIndex, index - 1), it)
-                                    } else {
-                                        onSelectionChanged(listOf(item), it)
+
+                        SelectionMode.Single -> {
+                            {
+                                RadioButton(
+                                    selected = mapper.getId(item) in selection,
+                                    onClick = {
+                                        val wasSelected = mapper.getId(item) in selection
+                                        onSelectionChanged(items, false)
+                                        onSelectionChanged(listOf(item), !wasSelected)
                                     }
-                                    lastClickedIndex = index
-                                }
-                            )
+                                )
+                            }
                         }
-                    }
 
-                    SelectionMode.Single -> {
+                        else -> null
+                    },
+                    renderDragHandle = if (isReorderable) {
                         {
-                            RadioButton(
-                                selected = mapper.getId(item) in selection,
-                                onClick = {
-                                    val wasSelected = mapper.getId(item) in selection
-                                    onSelectionChanged(items, false)
-                                    onSelectionChanged(listOf(item), !wasSelected)
+                            Column(
+                                modifier = Modifier
+                                    .width(UiSettings.DataTable.additionalRowWidth)
+                                    .height(UiSettings.DataTable.rowHeight),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Box(modifier = Modifier.weight(1f)) {
+                                    if (index > 0) {
+                                        Icon(
+                                            modifier = Modifier
+                                                .align(Alignment.Center)
+                                                .rotate(180f)
+                                                .clickable { _items.moveUp(index) },
+                                            imageVector = Icons.Rounded.ArrowDropDown,
+                                            contentDescription = "move up",
+                                            tint = MaterialTheme.colors.secondary
+                                        )
+                                    }
                                 }
-                            )
+                                Box(modifier = Modifier.weight(1f)) {
+                                    if (index < _items.size - 1)
+                                        Icon(
+                                            modifier = Modifier
+                                                .align(Alignment.Center)
+                                                .clickable { _items.moveDown(index) },
+                                            imageVector = Icons.Rounded.ArrowDropDown,
+                                            contentDescription = "move down",
+                                            tint = MaterialTheme.colors.secondary
+                                        )
+                                }
+                            }
                         }
-                    }
+                    } else null,
+                    onRowClicked = {
+                        if (selectionMode == SelectionMode.Single) {
+                            val wasSelected = mapper.getId(item) in selection
+                            onSelectionChanged(items, false)
+                            onSelectionChanged(listOf(item), !wasSelected)
+                        } else {
+                            onItemRowClicked?.invoke(item)
+                        }
+                    },
+                    tableWidth = tableWidth,
+                    isLastRow = index == _items.size - 1
+                )
+            }
 
-                    else -> null
-                },
-                renderDragHandle = if (isReorderable) {
-                    {
-                        Column(
-                            modifier = Modifier
-                                .width(UiSettings.DataTable.additionalRowWidth)
-                                .height(UiSettings.DataTable.rowHeight),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Box(modifier = Modifier.weight(1f)) {
-                                if (index > 0) {
-                                    Icon(
-                                        modifier = Modifier
-                                            .align(Alignment.Center)
-                                            .rotate(180f)
-                                            .clickable { _items.moveUp(index) },
-                                        imageVector = Icons.Rounded.ArrowDropDown,
-                                        contentDescription = "move up",
-                                        tint = MaterialTheme.colors.secondary
-                                    )
-                                }
-                            }
-                            Box(modifier = Modifier.weight(1f)) {
-                                if (index < _items.size - 1)
-                                    Icon(
-                                        modifier = Modifier
-                                            .align(Alignment.Center)
-                                            .clickable { _items.moveDown(index) },
-                                        imageVector = Icons.Rounded.ArrowDropDown,
-                                        contentDescription = "move down",
-                                        tint = MaterialTheme.colors.secondary
-                                    )
-                            }
-                        }
-                    }
-                } else null,
-                onRowClicked = {
-                    if (selectionMode == SelectionMode.Single) {
-                        val wasSelected = mapper.getId(item) in selection
-                        onSelectionChanged(items, false)
-                        onSelectionChanged(listOf(item), !wasSelected)
-                    } else {
-                        onItemRowClicked?.invoke(item)
-                    }
-                },
-                tableWidth = tableWidth,
-                isLastRow = index == _items.size - 1
-            )
+            footer?.let { f -> item { f() } }
         }
-
-        footer?.let { f -> item { f() } }
+        VerticalScrollbar(
+            modifier = Modifier.align(Alignment.CenterEnd),
+            adapter = rememberScrollbarAdapter(
+                scrollState = listState
+            )
+        )
+        HorizontalScrollbar(
+            modifier = Modifier.align(Alignment.BottomStart)
+                .fillMaxWidth()
+                .padding(end = 12.dp),
+            adapter = rememberScrollbarAdapter(scrollState = listState)
+        )
     }
-
 
     // debounce on items changing:
     LaunchedEffect(_items.toList(), items) {
@@ -569,7 +581,7 @@ private fun RenderRow(
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopStart)
-                        .height(1.dp)
+                        .height(UiSettings.DataTable.dividerHeight)
                         .width(
                             tableWidth + UiSettings.DataTable.additionalRowWidth
 //                                + (if (renderDragHandle != null) UiSettings.DataTable.additionalRowWidth else 0.dp)

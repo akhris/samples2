@@ -45,7 +45,7 @@ interface IEntityComponent<T : IEntity> {
 
 
     data class State<E : IEntity>(
-        val entities: EntitiesList<E> = EntitiesList.empty()
+        val entities: EntitiesList<E> = listOf()
     )
 
     val isReorderable: Boolean

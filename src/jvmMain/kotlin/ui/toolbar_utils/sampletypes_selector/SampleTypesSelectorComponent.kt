@@ -52,17 +52,12 @@ class SampleTypesSelectorComponent(
             }
 
             is Result.Success -> {
-                when (typesResult.value) {
-                    is EntitiesList.Grouped -> {}
-                    is EntitiesList.NotGrouped -> {
-                        val types = typesResult.value.items
-                        _state.reduce {
-                            it.copy(
-                                types = types,
-                                selectedType = if ((it.selectedType == null) or !types.contains(it.selectedType)) types.firstOrNull() else it.selectedType
-                            )
-                        }
-                    }
+                val types = typesResult.value.flatten()
+                _state.reduce {
+                    it.copy(
+                        types = types,
+                        selectedType = if ((it.selectedType == null) or !types.contains(it.selectedType)) types.firstOrNull() else it.selectedType
+                    )
                 }
             }
         }

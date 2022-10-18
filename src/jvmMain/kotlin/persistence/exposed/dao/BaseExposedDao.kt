@@ -39,11 +39,13 @@ abstract class BaseExposedDao<ENTITY : IEntity, EXP_ENTITY : UUIDEntity, TABLE :
                 getGroupedItems(specs)
             } else {
                 val query = getNotGroupedQuery(specs)
-                EntitiesList.NotGrouped(
-                    entityClass
+                listOf(GroupedItem(
+                    items = entityClass
                         .wrapRows(query)
                         .map { mapToEntity(it) }
-                )
+                ))
+
+
             }
 
         }
@@ -153,13 +155,13 @@ abstract class BaseExposedDao<ENTITY : IEntity, EXP_ENTITY : UUIDEntity, TABLE :
     }
 
 
-    private fun getGroupedItems(specs: List<ISpecification>): EntitiesList.Grouped<ENTITY> {
+    private fun getGroupedItems(specs: List<ISpecification>): EntitiesList<ENTITY> {
         // get entity column ID to group by from spec:
         val groupedBy = (specs.filterIsInstance<Specification.Grouped>().firstOrNull())?.groupingSpec?.columnId
-            ?: return EntitiesList.Grouped(listOf())
+            ?: return listOf()
 
         val column =
-            (table.columns.find { it.name == groupedBy.key } as? Column<Any?>) ?: return EntitiesList.Grouped(listOf())
+            (table.columns.find { it.name == groupedBy.key } as? Column<Any?>) ?: return listOf()
 
         val groupsKeys =
             table
@@ -188,7 +190,7 @@ abstract class BaseExposedDao<ENTITY : IEntity, EXP_ENTITY : UUIDEntity, TABLE :
                         items = it.second
                     )
                 }
-        return EntitiesList.Grouped(groupedItems)
+        return groupedItems
     }
 
     private fun getGroupsCount(specs: List<ISpecification>): Long {

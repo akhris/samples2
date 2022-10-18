@@ -1,11 +1,10 @@
 package ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material.Colors
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.darkColors
-import androidx.compose.material.lightColors
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.dp
 
 /*
 // Color theme for material3
@@ -128,6 +127,7 @@ fun AppTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable ()
         colors = if (darkTheme)
             darkColors(AppTheme.darkTheme)
         else lightColors(AppTheme.lightTheme),
-        content = content
+        content = content,
+        shapes = Shapes(medium = RoundedCornerShape(8.dp))
     )
 }

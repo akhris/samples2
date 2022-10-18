@@ -406,9 +406,7 @@ open class EntityComponent<T : IEntity>(
         when (entities) {
             is Result.Success -> {
                 _state.reduce {
-                    it.copy(
-                        entities = entities.value
-                    )
+                    it.copy(entities = entities.value)
                 }
             }
 

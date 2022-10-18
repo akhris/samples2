@@ -197,14 +197,11 @@ class MeasurementsEntityComponent(
     private suspend fun invalidateDataMapper() {
         val parameters = getParameters(GetEntities.Params.GetWithSpecification(Specification.QueryAll))
         if (parameters is Result.Success) {
-            (parameters.value as? EntitiesList.NotGrouped<Parameter>)?.let { params ->
-                updateDataMapper {
-                    (it as? MeasurementsDataMapper)?.let { mdm ->
-//                        mdm.parameters = params.items
-                        log("invalidating data mapper: $mdm with params: ${params.items}")
-                        mdm.copy(parameters = params.items)
-                    } ?: it
-                }
+            parameters.value.flatMap { it.items }
+            updateDataMapper {
+                (it as? MeasurementsDataMapper)?.let { mdm ->
+                    mdm.copy(parameters = parameters.value.flatMap { it.items })
+                } ?: it
             }
         }
     }
