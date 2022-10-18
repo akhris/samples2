@@ -7,6 +7,7 @@ import navigation.NavItem
 import ui.dialogs.add_sample_type_dialog.IAddSampleTypeDialogComponent
 import ui.screens.base_entity_screen.EntityComponentWithFab
 import ui.screens.base_entity_screen.IEntityComponent
+import ui.screens.preferences_screen.IPreferencesComponent
 import ui.screens.sample_details_screen.ISampleDetailsComponent
 import ui.toolbar_utils.sampletypes_selector.ISampleTypesSelector
 
@@ -17,6 +18,8 @@ interface IRootComponent {
     val toolbarUtilsStack: Value<ChildStack<*, ToolbarUtils>>
 
     val currentDestination: Value<NavItem>
+
+    val currentDBPath: Value<String>
 
     fun navigateTo(navItem: NavItem)
 
@@ -30,6 +33,7 @@ interface IRootComponent {
         class Samples(val component: EntityComponentWithFab<Sample>) : NavHost()
         class Measurements(val component: EntityComponentWithFab<Measurement>) : NavHost()
         class SampleDetails(val component: ISampleDetailsComponent) : NavHost()
+        class AppPreferences(val component: IPreferencesComponent) : NavHost()
     }
 
     sealed class Dialog {

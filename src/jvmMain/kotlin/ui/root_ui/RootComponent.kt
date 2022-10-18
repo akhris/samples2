@@ -13,12 +13,15 @@ import com.arkivanov.essenty.parcelable.Parcelize
 import domain.Sample
 import navigation.NavItem
 import org.kodein.di.DI
+import org.kodein.di.instance
+import settings.PreferencesManager
 import ui.dialogs.add_sample_type_dialog.AddSampleTypeDialogComponent
 import ui.screens.base_entity_screen.EntityComponent
 import ui.screens.base_entity_screen.entityComponents.MeasurementsEntityComponent
 import ui.screens.base_entity_screen.entityComponents.OperationsComponent
 import ui.screens.base_entity_screen.entityComponents.ParametersComponent
 import ui.screens.base_entity_screen.entityComponents.SamplesComponent
+import ui.screens.preferences_screen.PreferencesComponent
 import ui.screens.sample_details_screen.SampleDetailsComponent
 import ui.toolbar_utils.sampletypes_selector.SampleTypesSelectorComponent
 
@@ -30,9 +33,11 @@ class RootComponent(
     private val dialogNav = StackNavigation<DialogConfig>()
     private val navHostNav = StackNavigation<NavHostConfig>()
     private val toolbarUtilsNav = StackNavigation<ToolbarUtilsConfig>()
-
+    private val preferencesManager: PreferencesManager by di.instance()
     private val _currentDestination = MutableValue<NavItem>(NavItem.homeItem)
     override val currentDestination: Value<NavItem> = _currentDestination
+
+    override val currentDBPath: Value<String> = MutableValue(preferencesManager.getDatabaseFile())
 
     private val _navHostStack =
         childStack(
@@ -136,6 +141,13 @@ class RootComponent(
                         navigateTo(NavItem.SampleDetails(it))
                     })
             )
+
+            NavHostConfig.AppPreferences -> IRootComponent.NavHost.AppPreferences(
+                PreferencesComponent(
+                    di = di,
+                    componentContext = componentContext
+                )
+            )
         }
     }
 
@@ -164,7 +176,7 @@ class RootComponent(
             NavItem.Samples -> NavHostConfig.Samples
             NavItem.Workers -> NavHostConfig.Workers
             NavItem.OperationTypes -> NavHostConfig.OperationTypes
-            NavItem.AppSettings -> null
+            NavItem.AppSettings -> NavHostConfig.AppPreferences
             is NavItem.SampleDetails -> NavHostConfig.SampleDetails(navItem.sample)
         }
         if (newConf != null && newConf != _navHostStack.value.active.configuration) {
@@ -212,6 +224,9 @@ class RootComponent(
 
         @Parcelize
         object Measurements : NavHostConfig()
+
+        @Parcelize
+        object AppPreferences : NavHostConfig()
 
     }
 

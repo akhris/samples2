@@ -448,7 +448,9 @@ private fun <T : IEntity> ShowDataTableForGroup(
                 component.onEntitySelected(it)
             },
             utilitiesPanel = null,
-            footer = null,
+            footer = {
+                Spacer(modifier = Modifier.width(1.dp).height(bottomPanelHeight))
+            },
             headerMenu = { column ->
 
                 val sortingAsc = remember(sorting, column) {
@@ -527,12 +529,25 @@ private fun <T : IEntity> ShowDataTableForGroup(
             firstItemIndex = remember(pagingSpec) { ((pagingSpec.pageNumber - 1) * pagingSpec.itemsPerPage + 1).toInt() },
             isReorderable = remember(component) { component.isReorderable }
         )
+
+        var isHovered by remember { mutableStateOf(false) }
+        val showControl = remember(selectionMode, selectedEntities.toList()) {
+            selectionMode == SelectionMode.Multiple && selectedEntities.isNotEmpty()
+        }
+        val alpha by animateFloatAsState(if (isHovered || showControl) 1f else 0.2f)
+
+
         Surface(
-            modifier = Modifier.align(Alignment.BottomCenter).onSizeChanged { bottomPanelHeight = it.height.dp },
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .alpha(alpha)
+                .onSizeChanged { bottomPanelHeight = it.height.dp }
+                .onPointerEvent(PointerEventType.Enter) { isHovered = true }
+                .onPointerEvent(PointerEventType.Exit) { isHovered = false },
             shape = MaterialTheme.shapes.medium,
             elevation = 16.dp
         ) {
-            if (selectionMode == SelectionMode.Multiple && selectedEntities.isNotEmpty()) {
+            if (showControl) {
 
                 //show control buttons:
                 Column(
@@ -599,11 +614,9 @@ private fun <T : IEntity> ShowDataTableForGroup(
                 //show pagination control:
                 pagingSpec.totalItems?.let { ti ->
                     if (ti > pagingSpec.itemsPerPage) {
-                        var isHovered by remember { mutableStateOf(false) }
-                        val alpha by animateFloatAsState(if (isHovered) 1f else 0.1f)
+
                         Pagination(
-                            modifier = modifier.onPointerEvent(PointerEventType.Enter) { isHovered = true }
-                                .onPointerEvent(PointerEventType.Exit) { isHovered = false }.alpha(alpha),
+                            modifier = Modifier.alpha(alpha),
                             currentPage = pagingSpec.pageNumber.toInt(),
                             onPageChanged = { component.setPagingSpec(pagingSpec.copy(pageNumber = it.toLong())) },
                             rowsPerPage = pagingSpec.itemsPerPage.toInt(),

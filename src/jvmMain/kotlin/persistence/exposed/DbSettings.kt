@@ -7,6 +7,8 @@ import org.jetbrains.exposed.sql.addLogger
 import org.jetbrains.exposed.sql.transactions.transaction
 import persistence.exposed.dto.Tables
 import settings.AppFoldersManager
+import utils.log
+import java.lang.Exception
 import kotlin.io.path.pathString
 
 object DbSettings {
@@ -39,22 +41,34 @@ object DbSettings {
         db
     }
 
-    fun connectToDB(path: String): Database {
-        val db = Database.connect("jdbc:sqlite:${path}?foreign_keys=on", "org.sqlite.JDBC")
-        transaction {
-            addLogger(StdOutSqlLogger)
-            SchemaUtils.create(
-                Tables.SampleTypes,
-                Tables.Samples,
-                Tables.Parameters,
-                Tables.OperationTypes,
-                Tables.Places,
-                Tables.Workers,
-                Tables.Operations,
-                Tables.Units,
-                Tables.MeasurementResults,
-                Tables.Measurements
-            )
+    fun connectToDB(path: String): Database? {
+        log("connecting to database: $path")
+        val db by lazy {
+            val lDb = Database.connect("jdbc:sqlite:${path}?foreign_keys=on", "org.sqlite.JDBC")
+            log("database: $lDb")
+
+            transaction {
+                addLogger(StdOutSqlLogger)
+                try {
+                    SchemaUtils.createMissingTablesAndColumns(
+                        Tables.SampleTypes,
+                        Tables.Samples,
+                        Tables.Parameters,
+                        Tables.OperationTypes,
+                        Tables.Places,
+                        Tables.Workers,
+                        Tables.Operations,
+                        Tables.Units,
+                        Tables.MeasurementResults,
+                        Tables.Measurements
+                    )
+                    lDb
+                } catch (e: Exception) {
+                    log("catched exception:")
+                    log(e.localizedMessage)
+                    null
+                }
+            }
         }
         return db
     }

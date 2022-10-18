@@ -7,6 +7,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.window.WindowDraggableArea
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -19,12 +21,16 @@ import com.arkivanov.decompose.extensions.compose.jetbrains.stack.animation.fade
 import com.arkivanov.decompose.extensions.compose.jetbrains.stack.animation.slide
 import com.arkivanov.decompose.extensions.compose.jetbrains.stack.animation.stackAnimation
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
+import di.di
 import domain.SampleType
+import org.kodein.di.instance
+import settings.PreferencesManager
 import ui.SideNavigationPanel
 import ui.components.Tooltip
 import ui.dialogs.add_sample_type_dialog.AddSampleTypeDialogUi
 import ui.screens.base_entity_screen.BaseEntityUi
 import ui.screens.base_entity_screen.EntityUiwithFab
+import ui.screens.preferences_screen.PreferencesUi
 import ui.screens.sample_details_screen.SampleDetailsUi
 import ui.toolbar_utils.sampletypes_selector.SampleTypesSelectorUi
 
@@ -35,23 +41,27 @@ fun WindowScope.RootUi(
     isDarkTheme: Boolean,
     onThemeChanged: (isDark: Boolean) -> Unit,
     windowPlacement: WindowPlacement,
-    onWindowPlacementChange: (WindowPlacement) -> Unit
+    onWindowPlacementChange: (WindowPlacement) -> Unit,
+    onAppClose: () -> Unit
 ) {
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed, confirmStateChange = { false })
     val scaffoldState = rememberScaffoldState(drawerState = drawerState)
 
+    val currentDBPath by remember(component) { component.currentDBPath }.subscribeAsState()
 
     val navigationItem by remember(component) { component.currentDestination }.subscribeAsState()
 //    val sampleTypes by remember(component) { component.sampleTypes }.subscribeAsState()
     var selectedSampleType by remember { mutableStateOf<SampleType?>(null) }
 
+    var showAppClosePrompt by remember { mutableStateOf(false) }
 
     Scaffold(
         scaffoldState = scaffoldState,
         topBar = {
             WindowDraggableArea {
                 TopAppBar {
+                    Text(currentDBPath)
                     Spacer(modifier = Modifier.weight(1f))
                     Children(stack = component.toolbarUtilsStack) {
                         when (val child = it.instance) {
@@ -111,6 +121,17 @@ fun WindowScope.RootUi(
                             }, contentDescription = "fullscreen switcher"
                         )
                     }
+                    Tooltip(
+                        "Выйти из приложения"
+                    ) {
+                        Icon(
+                            modifier = Modifier
+                                .padding(horizontal = 8.dp).clickable {
+                                    showAppClosePrompt = true
+                                },
+                            imageVector = Icons.Rounded.Close, contentDescription = "close the app"
+                        )
+                    }
                 }
             }
         },
@@ -137,6 +158,7 @@ fun WindowScope.RootUi(
                                 is IRootComponent.NavHost.SampleDetails -> SampleDetailsUi(component = child.component)
                                 is IRootComponent.NavHost.Samples -> EntityUiwithFab(component = child.component)
                                 is IRootComponent.NavHost.Workers -> BaseEntityUi(component = child.component)
+                                is IRootComponent.NavHost.AppPreferences -> PreferencesUi(component = child.component)
                             }
                         }
                     }
@@ -154,5 +176,23 @@ fun WindowScope.RootUi(
         }
     }
 
+    if (showAppClosePrompt) {
+        AlertDialog(onDismissRequest = {
+            showAppClosePrompt = false
+        }, text = { Text(text = "Выйти из приложения?") },
+            confirmButton = {
+                Button(onClick = {
+                    onAppClose()
+                }) {
+                    Text("Выйти")
+                }
+            }, dismissButton = {
+                TextButton(onClick = {
+                    showAppClosePrompt = false
+                }) {
+                    Text("Отмена")
+                }
+            })
+    }
 
 }

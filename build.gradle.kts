@@ -51,7 +51,8 @@ kotlin {
                 implementation("org.slf4j:slf4j-simple:1.7.36")
 
                 //swaydb (for properties):
-                implementation("io.swaydb:swaydb_2.13:0.16.2")
+//                implementation("io.swaydb:swaydb_2.13:0.16.2")
+                implementation("com.russhwolf:multiplatform-settings:1.0.0-RC")
 
                 //for qualifiers
                 implementation("javax.inject:javax.inject:1")

@@ -470,12 +470,6 @@ fun <T> DataTable(
                 scrollState = listState
             )
         )
-        HorizontalScrollbar(
-            modifier = Modifier.align(Alignment.BottomStart)
-                .fillMaxWidth()
-                .padding(end = 12.dp),
-            adapter = rememberScrollbarAdapter(scrollState = listState)
-        )
     }
 
     // debounce on items changing:

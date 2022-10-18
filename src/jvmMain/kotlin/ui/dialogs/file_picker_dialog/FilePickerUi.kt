@@ -66,6 +66,7 @@ fun fileChooserDialog(
     fileChooser.currentDirectory = File(System.getProperty("user.dir"))
     fileChooser.dialogTitle = title
     fileChooser.fileSelectionMode = JFileChooser.FILES_ONLY
+    fileChooser.isFileHidingEnabled = false
     filters.forEach { fileChooser.addChoosableFileFilter(it) }
     fileChooser.isAcceptAllFileFilterUsed = false
     fileChooser.selectedFile = null
