@@ -1,18 +1,16 @@
 package ui.screens.preferences_screen
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.Icon
-import androidx.compose.material.ListItem
-import androidx.compose.material.Text
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
+import settings.PreferencesManager
 import ui.dialogs.file_picker_dialog.IFilePicker
 import ui.dialogs.file_picker_dialog.fileChooserDialog
 
@@ -29,9 +27,11 @@ fun PreferencesUi(component: IPreferencesComponent) {
 @Composable
 private fun PreferencesContent(prefs: List<PreferenceItem>, onPrefChanged: (PreferenceItem) -> Unit) {
 
-    Column {
-        prefs.forEach {
-            RenderPreferenceItem(it, onPrefChanged)
+    Surface(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            prefs.forEach {
+                RenderPreferenceItem(it, onPrefChanged)
+            }
         }
     }
 
@@ -39,8 +39,10 @@ private fun PreferencesContent(prefs: List<PreferenceItem>, onPrefChanged: (Pref
 
 @Composable
 private fun ColumnScope.RenderPreferenceItem(pref: PreferenceItem, onPrefChanged: (PreferenceItem) -> Unit) {
-    when (pref) {
-        is PreferenceItem.FilePreference -> RenderFilePreference(pref, onPrefChanged)
+    Card {
+        when (pref) {
+            is PreferenceItem.FilePreference -> RenderFilePreference(pref, onPrefChanged)
+        }
     }
 }
 
@@ -50,19 +52,26 @@ private fun ColumnScope.RenderFilePreference(
     filePref: PreferenceItem.FilePreference,
     onPrefChanged: (PreferenceItem) -> Unit
 ) {
-    ListItem(text = {
-        Text(text = filePref.path)
-    }, trailing = {
-        Icon(modifier = Modifier.clickable {
-            //open filepicker
-            val newFile = fileChooserDialog(
-                title = "Открыть файл базы данных",
-                pickerType = IFilePicker.PickerType.SaveFile
-            )
+    ListItem(
+        text = {
+            Text(text = filePref.path)
+        },
+        overlineText = {
+            Text(text = filePref.name)
+        },
+        trailing = {
+            Icon(modifier = Modifier.clickable {
+                //open filepicker
+                val newFile = fileChooserDialog(
+                    title = "Открыть файл базы данных",
+                    filters = listOf(PreferencesManager.samplesExtensionFilter),
+                    pickerType = IFilePicker.PickerType.SaveFile
+                )
 
-            if (newFile != null && filePref.path != newFile.path) {
-                onPrefChanged(filePref.copy(path = newFile.path))
-            }
-        }, painter = painterResource("vector/folder_black_24dp.svg"), contentDescription = "open folder")
-    })
+                if (newFile != null && filePref.path != newFile.path) {
+                    onPrefChanged(filePref.copy(path = newFile.path))
+                }
+            }, painter = painterResource("vector/folder_black_24dp.svg"), contentDescription = "open folder")
+        }
+    )
 }

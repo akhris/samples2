@@ -2,7 +2,6 @@ package ui.root_ui
 
 import LocalSamplesType
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.window.WindowDraggableArea
@@ -10,6 +9,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -21,8 +21,9 @@ import com.arkivanov.decompose.extensions.compose.jetbrains.stack.animation.fade
 import com.arkivanov.decompose.extensions.compose.jetbrains.stack.animation.slide
 import com.arkivanov.decompose.extensions.compose.jetbrains.stack.animation.stackAnimation
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
-import di.di
 import domain.SampleType
+import kotlinx.coroutines.flow.map
+import org.kodein.di.compose.rememberDI
 import org.kodein.di.instance
 import settings.PreferencesManager
 import ui.SideNavigationPanel
@@ -33,8 +34,11 @@ import ui.screens.base_entity_screen.EntityUiwithFab
 import ui.screens.preferences_screen.PreferencesUi
 import ui.screens.sample_details_screen.SampleDetailsUi
 import ui.toolbar_utils.sampletypes_selector.SampleTypesSelectorUi
+import utils.log
+import kotlin.io.path.Path
+import kotlin.io.path.nameWithoutExtension
 
-@OptIn(ExperimentalDecomposeApi::class, ExperimentalMaterialApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalDecomposeApi::class, ExperimentalMaterialApi::class)
 @Composable
 fun WindowScope.RootUi(
     component: IRootComponent,
@@ -48,7 +52,9 @@ fun WindowScope.RootUi(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed, confirmStateChange = { false })
     val scaffoldState = rememberScaffoldState(drawerState = drawerState)
 
-    val currentDBPath by remember(component) { component.currentDBPath }.subscribeAsState()
+    val prefsManager: PreferencesManager by rememberDI { instance() }
+    val currentDBFileName by
+    remember(prefsManager) { prefsManager.databaseFile.map { Path(it) } }.collectAsState(null)
 
     val navigationItem by remember(component) { component.currentDestination }.subscribeAsState()
 //    val sampleTypes by remember(component) { component.sampleTypes }.subscribeAsState()
@@ -61,7 +67,16 @@ fun WindowScope.RootUi(
         topBar = {
             WindowDraggableArea {
                 TopAppBar {
-                    Text(currentDBPath)
+                    currentDBFileName?.let {
+                        Tooltip(tip = it.toString(), title = "Текущий файл базы данных") {
+                            Text(
+                                modifier = Modifier.padding(8.dp),
+                                text = it.fileName.nameWithoutExtension,
+                                style = MaterialTheme.typography.caption
+                            )
+                        }
+                    }
+
                     Spacer(modifier = Modifier.weight(1f))
                     Children(stack = component.toolbarUtilsStack) {
                         when (val child = it.instance) {
@@ -147,20 +162,44 @@ fun WindowScope.RootUi(
                     Box(
                         modifier = Modifier.weight(1f)
                     ) {
+
+
                         Children(stack = component.navHostStack, animation = stackAnimation(fade())) {
                             when (val child = it.instance) {
-                                is IRootComponent.NavHost.Measurements -> EntityUiwithFab(component = child.component)
-                                is IRootComponent.NavHost.Norms -> BaseEntityUi(component = child.component)
+                                is IRootComponent.NavHost.Measurements -> ShowChildOrSamplesTypeHint {
+                                    EntityUiwithFab(
+                                        component = child.component
+                                    )
+                                }
+
+                                is IRootComponent.NavHost.Norms -> ShowChildOrSamplesTypeHint { BaseEntityUi(component = child.component) }
                                 is IRootComponent.NavHost.OperationTypes -> BaseEntityUi(component = child.component)
-                                is IRootComponent.NavHost.Operations -> EntityUiwithFab(component = child.component)
-                                is IRootComponent.NavHost.Parameters -> EntityUiwithFab(component = child.component)
+                                is IRootComponent.NavHost.Operations -> ShowChildOrSamplesTypeHint {
+                                    EntityUiwithFab(
+                                        component = child.component
+                                    )
+                                }
+
+                                is IRootComponent.NavHost.Parameters -> ShowChildOrSamplesTypeHint {
+                                    EntityUiwithFab(
+                                        component = child.component
+                                    )
+                                }
+
                                 is IRootComponent.NavHost.Places -> BaseEntityUi(component = child.component)
                                 is IRootComponent.NavHost.SampleDetails -> SampleDetailsUi(component = child.component)
-                                is IRootComponent.NavHost.Samples -> EntityUiwithFab(component = child.component)
+                                is IRootComponent.NavHost.Samples -> ShowChildOrSamplesTypeHint {
+                                    EntityUiwithFab(
+                                        component = child.component
+                                    )
+                                }
+
                                 is IRootComponent.NavHost.Workers -> BaseEntityUi(component = child.component)
                                 is IRootComponent.NavHost.AppPreferences -> PreferencesUi(component = child.component)
                             }
                         }
+
+
                     }
                 }
             }
@@ -195,4 +234,34 @@ fun WindowScope.RootUi(
             })
     }
 
+}
+
+@Composable
+private fun BoxScope.ShowChildOrSamplesTypeHint(childContent: @Composable () -> Unit) {
+    LocalSamplesType.current?.also {
+        //sample type is not null -> show child content:
+        childContent()
+    } ?: run {
+        //sample type is null -> show hint:
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Card {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+
+                    Icon(
+                        modifier = Modifier.size(64.dp),
+                        painter = painterResource("vector/category_black_24dp.svg"),
+                        contentDescription = "sample types"
+                    )
+
+                    Text("Выберите тип компонентов на верхней панели")
+
+                }
+
+            }
+        }
+    }
 }

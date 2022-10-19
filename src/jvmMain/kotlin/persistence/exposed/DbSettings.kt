@@ -41,36 +41,37 @@ object DbSettings {
         db
     }
 
-    fun connectToDB(path: String): Database? {
-        log("connecting to database: $path")
+    fun connectToDB(path: String): Database {
         val db by lazy {
-            val lDb = Database.connect("jdbc:sqlite:${path}?foreign_keys=on", "org.sqlite.JDBC")
-            log("database: $lDb")
-
-            transaction {
-                addLogger(StdOutSqlLogger)
-                try {
-                    SchemaUtils.createMissingTablesAndColumns(
-                        Tables.SampleTypes,
-                        Tables.Samples,
-                        Tables.Parameters,
-                        Tables.OperationTypes,
-                        Tables.Places,
-                        Tables.Workers,
-                        Tables.Operations,
-                        Tables.Units,
-                        Tables.MeasurementResults,
-                        Tables.Measurements
-                    )
-                    lDb
-                } catch (e: Exception) {
-                    log("catched exception:")
-                    log(e.localizedMessage)
-                    null
-                }
-            }
+            log("connecting to database: $path")
+            Database.connect("jdbc:sqlite:${path}?foreign_keys=on", "org.sqlite.JDBC")
         }
         return db
+    }
+
+    fun checkTables(database: Database): Boolean {
+        return transaction(database) {
+            addLogger(StdOutSqlLogger)
+            try {
+                SchemaUtils.createMissingTablesAndColumns(
+                    Tables.SampleTypes,
+                    Tables.Samples,
+                    Tables.Parameters,
+                    Tables.OperationTypes,
+                    Tables.Places,
+                    Tables.Workers,
+                    Tables.Operations,
+                    Tables.Units,
+                    Tables.MeasurementResults,
+                    Tables.Measurements
+                )
+                true
+            } catch (e: Exception) {
+                log("catched exception:")
+                log(e.localizedMessage)
+                false
+            }
+        }
     }
 }
 

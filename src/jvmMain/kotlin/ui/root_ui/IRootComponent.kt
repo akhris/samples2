@@ -19,7 +19,6 @@ interface IRootComponent {
 
     val currentDestination: Value<NavItem>
 
-    val currentDBPath: Value<String>
 
     fun navigateTo(navItem: NavItem)
 

@@ -10,11 +10,9 @@ import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import di.di
 import domain.SampleType
 import domain.application.baseUseCases.InsertEntity
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import org.jetbrains.exposed.sql.Database
+import org.kodein.di.compose.withDI
 import org.kodein.di.instance
 import persistence.exposed.DbSettings
 import settings.PreferencesManager
@@ -34,13 +32,9 @@ import javax.swing.JOptionPane.YES_NO_OPTION
 fun main() {
 
     //load settings from swaydb
-
     val prefs by di.instance<PreferencesManager>()
-    // check settings from swaydb and initiate Database
 
-
-    val db = connectToDatabase(preferencesManager = prefs) ?: return
-
+    val db = prefs.connectToDatabase()
 
     // Create the root component before starting Compose
     val lifecycle = LifecycleRegistry()
@@ -71,58 +65,33 @@ fun main() {
         Window(
             state = windowState,
             title = "Samples",
-            icon = painterResource("vector/memory_black_24dp.svg"),
+            icon = painterResource("vector/memory_white_48dp.svg"),
             onCloseRequest = ::exitApplication,
             undecorated = true
         ) {
 
-            AppTheme(darkTheme = isDark) {
-                RootUi(
-                    component = root,
-                    isDarkTheme = isDark,
-                    onThemeChanged = {
-                        isDark = it
-                        prefs.setIsDarkMode(it)
-                    },
-                    windowPlacement = windowState.placement,
-                    onWindowPlacementChange = { windowState.placement = it },
-                    onAppClose = {
-                        isAppOpen = false
-                    }
-                )
+            withDI(di) {
+                AppTheme(darkTheme = isDark) {
+                    RootUi(
+                        component = root,
+                        isDarkTheme = isDark,
+                        onThemeChanged = {
+                            isDark = it
+                            prefs.setIsDarkMode(it)
+                        },
+                        windowPlacement = windowState.placement,
+                        onWindowPlacementChange = { windowState.placement = it },
+                        onAppClose = {
+                            isAppOpen = false
+                        }
+                    )
+                }
             }
 
         }
     }
 }
 
-
-private fun connectToDatabase(dbFile: String? = null, preferencesManager: PreferencesManager): Database? {
-    val filePath = dbFile ?: preferencesManager.getDatabaseFile()
-    val db = DbSettings.connectToDB(filePath)
-    if (db != null) {
-        if (filePath != preferencesManager.getDatabaseFile()) {
-            preferencesManager.setDatabaseFile(filePath)
-        }
-        return db
-    }
-    //db==null, connection failed
-    //yes = 0, no = 1
-    val answer = JOptionPane.showConfirmDialog(
-        null,
-        "$filePath\n\nChoose another file?",
-        "Cannot connect to database.",
-        YES_NO_OPTION
-    )
-
-    if (answer == 0) {
-        val file = fileChooserDialog(title = "Выберите файл базы данных", pickerType = IFilePicker.PickerType.SaveFile)
-            ?: return null
-        return connectToDatabase(file.path, preferencesManager)
-    }
-
-    return null
-}
 
 private fun prepopulateDB() {
     val insertSampleType by di.instance<InsertEntity<SampleType>>()

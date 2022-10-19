@@ -62,8 +62,8 @@ fun <T> ListSelector(
                     Icon(
                         Icons.Rounded.AddCircle,
                         modifier = Modifier.padding(8.dp),
-                        contentDescription = "add new item",
-                        tint = MaterialTheme.colors.onPrimary.copy(alpha = 0.75f)
+                        contentDescription = "add new item"
+//                        tint = MaterialTheme.colors.onPrimary.copy(alpha = 0.75f)
                     )
                 }
             }

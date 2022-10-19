@@ -12,6 +12,7 @@ import domain.application.baseUseCases.RemoveEntity
 import kotlinx.coroutines.*
 import org.kodein.di.DI
 import org.kodein.di.instance
+import settings.PreferencesManager
 import utils.log
 
 class SampleTypesSelectorComponent(
@@ -22,6 +23,7 @@ class SampleTypesSelectorComponent(
     private val scope =
         CoroutineScope(Dispatchers.Default + SupervisorJob())
 
+    private val preferencesManager: PreferencesManager by di.instance()
 
     private val getSampleTypes: GetEntities<SampleType> by di.instance()
     private val removeSampleType: RemoveEntity<SampleType> by di.instance()
@@ -69,9 +71,9 @@ class SampleTypesSelectorComponent(
             scope.coroutineContext.cancelChildren()
         })
 
-        scope.launch {
-            invalidateSampleTypes()
-        }
+//        scope.launch {
+//            invalidateSampleTypes()
+//        }
 
         scope.launch {
             samplesCallback
@@ -90,6 +92,16 @@ class SampleTypesSelectorComponent(
                             invalidateSampleTypes()
                         }
                     }
+                }
+        }
+
+        scope.launch {
+            preferencesManager
+                .databaseFile
+                .collect {
+                    //database file changed -> invalidate sample types
+//                    delay(200)
+                    invalidateSampleTypes()
                 }
         }
     }

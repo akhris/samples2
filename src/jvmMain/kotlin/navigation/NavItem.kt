@@ -14,7 +14,7 @@ sealed class NavItem(val pathToIcon: String, val title: String) {
     )
 
     object Samples : NavItem(
-        pathToIcon = "vector/category_black_24dp.svg",
+        pathToIcon = "vector/storage_black_24dp.svg",
         title = "Образцы"
     )
 

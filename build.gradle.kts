@@ -31,8 +31,8 @@ kotlin {
                 implementation(compose.desktop.currentOs)
 
                 //dependency injection:
-                implementation("org.kodein.di:kodein-di:7.14.0")
-//                implementation("org.kodein.di:kodein-di-framework-compose:7.14.0")
+//                implementation("org.kodein.di:kodein-di:7.14.0")
+                implementation("org.kodein.di:kodein-di-framework-compose:7.14.0")
 
                 //decompose:
                 implementation("com.arkivanov.decompose:decompose:0.8.0")
@@ -53,6 +53,7 @@ kotlin {
                 //swaydb (for properties):
 //                implementation("io.swaydb:swaydb_2.13:0.16.2")
                 implementation("com.russhwolf:multiplatform-settings:1.0.0-RC")
+                implementation("com.russhwolf:multiplatform-settings-coroutines:1.0.0-RC")
 
                 //for qualifiers
                 implementation("javax.inject:javax.inject:1")

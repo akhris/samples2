@@ -24,6 +24,7 @@ import ui.screens.base_entity_screen.entityComponents.SamplesComponent
 import ui.screens.preferences_screen.PreferencesComponent
 import ui.screens.sample_details_screen.SampleDetailsComponent
 import ui.toolbar_utils.sampletypes_selector.SampleTypesSelectorComponent
+import kotlin.io.path.Path
 
 class RootComponent(
     private val di: DI,
@@ -36,8 +37,6 @@ class RootComponent(
     private val preferencesManager: PreferencesManager by di.instance()
     private val _currentDestination = MutableValue<NavItem>(NavItem.homeItem)
     override val currentDestination: Value<NavItem> = _currentDestination
-
-    override val currentDBPath: Value<String> = MutableValue(preferencesManager.getDatabaseFile())
 
     private val _navHostStack =
         childStack(

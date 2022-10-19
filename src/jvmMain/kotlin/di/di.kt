@@ -1,5 +1,6 @@
 package di
 
+import com.russhwolf.settings.ObservableSettings
 import com.russhwolf.settings.PreferencesSettings
 import com.russhwolf.settings.Settings
 import org.kodein.di.DI
@@ -9,14 +10,7 @@ import settings.PreferencesManager
 import java.util.prefs.Preferences
 
 val di = DI {
-    //settings:
-    bindSingleton<Settings> {
-        val delegate: Preferences = Preferences.userRoot()
-        PreferencesSettings(delegate)
-    }
-
-    bindSingleton { PreferencesManager(settings = instance()) }
-
+    import(preferencesModule)
 
     import(samplesModule)
     import(sampleTypesModule)

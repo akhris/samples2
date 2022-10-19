@@ -38,7 +38,12 @@ class PreferencesComponent(
 
     private fun invalidatePrefs() {
         val dbFilePref =
-            PreferenceItem.FilePreference(id = DB_FILE_PREFERENCE_ID, path = prefsManager.getDatabaseFile())
+            PreferenceItem.FilePreference(
+                id = DB_FILE_PREFERENCE_ID,
+                name = "Файл базы данных",
+                description = "База данных типа SQLite",
+                path = prefsManager.getDatabaseFile()
+            )
 
         _prefs.reduce {
             listOf(dbFilePref)
