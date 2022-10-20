@@ -3,6 +3,7 @@ package ui.root_ui
 import LocalSamplesType
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.window.WindowDraggableArea
 import androidx.compose.material.*
@@ -38,17 +39,17 @@ import utils.log
 import kotlin.io.path.Path
 import kotlin.io.path.nameWithoutExtension
 
-@OptIn(ExperimentalDecomposeApi::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalDecomposeApi::class, ExperimentalMaterialApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun WindowScope.RootUi(
     component: IRootComponent,
     isDarkTheme: Boolean,
     onThemeChanged: (isDark: Boolean) -> Unit,
     windowPlacement: WindowPlacement,
+    onMinimize: (() -> Unit)? = null,
     onWindowPlacementChange: (WindowPlacement) -> Unit,
     onAppClose: () -> Unit
 ) {
-
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed, confirmStateChange = { false })
     val scaffoldState = rememberScaffoldState(drawerState = drawerState)
 
@@ -65,7 +66,21 @@ fun WindowScope.RootUi(
     Scaffold(
         scaffoldState = scaffoldState,
         topBar = {
-            WindowDraggableArea {
+            WindowDraggableArea(modifier = Modifier.combinedClickable(onDoubleClick = {
+                when (windowPlacement) {
+                    WindowPlacement.Maximized -> {
+                        onWindowPlacementChange(WindowPlacement.Floating)
+                    }
+
+                    WindowPlacement.Floating -> {
+                        onWindowPlacementChange(WindowPlacement.Maximized)
+                    }
+
+                    else -> {}
+                }
+            }) {
+
+            }) {
                 TopAppBar {
                     currentDBFileName?.let {
                         Tooltip(tip = it.toString(), title = "Текущий файл базы данных") {
@@ -107,10 +122,24 @@ fun WindowScope.RootUi(
                             }, contentDescription = "light/dark theme switcher"
                         )
                     }
+                    if (windowPlacement != WindowPlacement.Fullscreen && onMinimize != null) {
+                        Tooltip(
+                            tip = "Свернуть окно"
+                        ) {
+                            Icon(
+                                modifier = Modifier
+                                    .padding(horizontal = 8.dp).clickable {
+                                        onMinimize()
+                                    },
+                                painter = painterResource("vector/minimize_black_24dp.svg"),
+                                contentDescription = "minimize window"
+                            )
+                        }
+                    }
                     Tooltip(
                         tip = when (windowPlacement) {
                             WindowPlacement.Floating,
-                            WindowPlacement.Maximized -> "Развернуть на весь экран"
+                            WindowPlacement.Maximized -> "Перейти в полноэкранный режим"
 
                             WindowPlacement.Fullscreen -> "Выйти из полноэкранного режима"
                         }

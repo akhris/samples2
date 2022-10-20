@@ -34,6 +34,7 @@ import ui.components.tables.*
 import ui.dialogs.BaseDialog
 import ui.dialogs.DatePickerDialog
 import ui.dialogs.TimePickerDialog
+import ui.dialogs.add_multiple_samples_dialog.AddMultipleSamplesUi
 import ui.dialogs.error_dialog.ErrorDialogUi
 import ui.dialogs.file_picker_dialog.FilePickerUi
 import ui.dialogs.list_picker_dialog.ListPickerDialogUi
@@ -340,6 +341,10 @@ fun <T : IEntity> BaseEntityUi(
 
             is IEntityComponent.Dialog.ListPickerDialog -> {
                 ListPickerDialogUi(component = dialog.component) { component.dismissDialog() }
+            }
+
+            is IEntityComponent.Dialog.AddMultipleSamplesDialog -> {
+                AddMultipleSamplesUi(component = dialog.component, onAdded = dialog.onAdd) { component.dismissDialog() }
             }
         }
     }

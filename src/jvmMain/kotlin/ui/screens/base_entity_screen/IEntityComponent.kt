@@ -4,6 +4,7 @@ import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
 import domain.*
 import ui.components.tables.IDataTableMapper
+import ui.dialogs.add_multiple_samples_dialog.IAddMultipleSamplesComponent
 import ui.screens.base_entity_screen.filter_dialog.IFilterEntityFieldComponent
 import ui.dialogs.error_dialog.IErrorDialogComponent
 import ui.dialogs.file_picker_dialog.IFilePicker
@@ -83,6 +84,8 @@ interface IEntityComponent<T : IEntity> {
 
     fun showPrompt(title: String, message: String, onYes: () -> Unit, onCancel: (() -> Unit)? = null)
 
+    fun showAddMultipleSamplesDialog(onAdd: (List<String>) -> Unit)
+
     sealed class Dialog {
         object None : Dialog()
         class EntityPicker<T : IEntity>(
@@ -102,6 +105,8 @@ interface IEntityComponent<T : IEntity> {
 
         class FilePickerDialog(val component: IFilePicker) : Dialog()
         class ListPickerDialog(val component: IListPickerDialogComponent) : Dialog()
+        class AddMultipleSamplesDialog(val component: IAddMultipleSamplesComponent, val onAdd: (List<String>) -> Unit) :
+            Dialog()
     }
 
 }

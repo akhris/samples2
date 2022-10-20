@@ -61,7 +61,6 @@ fun main() {
             return@application
 
 
-
         Window(
             state = windowState,
             title = "Samples",
@@ -81,6 +80,9 @@ fun main() {
                         },
                         windowPlacement = windowState.placement,
                         onWindowPlacementChange = { windowState.placement = it },
+                        onMinimize = {
+                            windowState.isMinimized = true
+                        },
                         onAppClose = {
                             isAppOpen = false
                         }

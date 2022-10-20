@@ -22,6 +22,7 @@ import org.kodein.di.instance
 import persistence.Column
 import ui.components.tables.Cell
 import ui.components.tables.IDataTableMapper
+import ui.dialogs.add_multiple_samples_dialog.AddMultipleSamplesComponent
 import ui.screens.base_entity_screen.filter_dialog.FilterEntityFieldComponent
 import ui.dialogs.error_dialog.ErrorDialogComponent
 import ui.dialogs.file_picker_dialog.FilePickerComponent
@@ -239,9 +240,13 @@ open class EntityComponent<T : IEntity>(
     override fun insertNewEntity(entity: T) {
         scope.launch {
             val result = insertEntity(InsertEntity.Insert(entity))
-            log(result)
         }
     }
+
+    protected suspend fun insertNewEntitySuspend(entity: T) {
+        insertEntity(InsertEntity.Insert(entity))
+    }
+
 
     override fun updateEntity(entity: T) {
         scope.launch {
@@ -486,6 +491,14 @@ open class EntityComponent<T : IEntity>(
                 )
             )
 
+            is DialogConfig.AddMultipleSamplesDialog -> IEntityComponent.Dialog.AddMultipleSamplesDialog(
+                component = AddMultipleSamplesComponent(
+                    di = di,
+                    componentContext = componentContext
+                ),
+                onAdd = config.onAdd
+            )
+
             DialogConfig.None -> IEntityComponent.Dialog.None
         }
     }
@@ -532,6 +545,12 @@ open class EntityComponent<T : IEntity>(
                 onYes = onYes,
                 onCancel = onCancel
             )
+        )
+    }
+
+    override fun showAddMultipleSamplesDialog(onAdd: (List<String>) -> Unit) {
+        dialogNav.replaceCurrent(
+            DialogConfig.AddMultipleSamplesDialog(onAdd)
         )
     }
 
@@ -623,6 +642,11 @@ open class EntityComponent<T : IEntity>(
         @Parcelize
         class PromptDialog(
             val title: String, val message: String, val onYes: () -> Unit, val onCancel: (() -> Unit)? = null
+        ) : DialogConfig()
+
+        @Parcelize
+        class AddMultipleSamplesDialog(
+            val onAdd: (List<String>) -> Unit
         ) : DialogConfig()
 
         @Parcelize

@@ -3,6 +3,9 @@ package ui.screens.base_entity_screen.entityComponents
 import com.arkivanov.decompose.ComponentContext
 import domain.Sample
 import domain.SampleType
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.launch
 import org.kodein.di.DI
 import ui.components.IconResource
 import ui.screens.base_entity_screen.EntityComponentWithFab
@@ -37,7 +40,20 @@ class SamplesComponent(
             }
 
             ACTION_ADD_MULTIPLE -> {
+                showAddMultipleSamplesDialog { ids ->
+                    (tag as? SampleType)?.let { st ->
+                        scope.launch {
+                            val inserts =
+                                ids.map { async { insertNewEntitySuspend(Sample(identifier = it, type = st)) } }
 
+                            inserts.awaitAll()
+                        }
+//
+//                        ids.forEach {
+//                            insertNewEntity(Sample(identifier = it, type = st))
+//                        }
+                    }
+                }
             }
         }
     }
