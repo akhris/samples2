@@ -47,7 +47,7 @@ fun BaseDialog(
             Surface(
                 shape = MaterialTheme.shapes.medium,
                 modifier = Modifier.border(
-                    color = MaterialTheme.colors.onSurface,
+                    color = MaterialTheme.colors.secondaryVariant,
                     width = remember { 2.dp },
                     shape = MaterialTheme.shapes.medium
                 )

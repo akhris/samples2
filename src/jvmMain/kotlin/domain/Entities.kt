@@ -37,6 +37,9 @@ data class Worker(
     val email: String = ""
 ) : IEntity {
     override fun toString() = "$name $surname"
+
+    fun formatName(): String =
+        "${name.firstOrNull()?.plus(". ") ?: ""}${middleName.firstOrNull()?.plus(". ") ?: ""}$surname"
 }
 
 
@@ -144,11 +147,13 @@ data class MeasurementResult(
 /**
  * Entity representing single measurement of the [sample].
  * [results] is a JSON serialized string like array of { parameterID: value}
+ * fixme: add [SampleType] here
  */
 @Serializable
 data class Measurement(
     override val id: String = UUID.randomUUID().toString(),
     val sample: Sample? = null,
+    val sampleType: SampleType? = null,
     @Serializable(with = LocalDateTimeSerializer::class)
     val dateTime: LocalDateTime? = null,
     val operator: Worker? = null,

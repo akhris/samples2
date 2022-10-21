@@ -5,6 +5,7 @@ import androidx.compose.foundation.gestures.rememberScrollableState
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -40,19 +41,24 @@ fun AddMultipleSamplesUi(
                 modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                TextField(value = idsStringTemp, onValueChange = { idsStringTemp = it }, label = {
-                    Text("ID")
-                }, trailingIcon = if (idsStringTemp.isNotEmpty()) {
-                    {
-                        Icon(modifier = Modifier.clickable {
-                            idsStringTemp = ""
-                        }, imageVector = Icons.Rounded.Clear, contentDescription = "clear ids text")
-                    }
-                } else null)
+                TextField(modifier = Modifier.fillMaxWidth(),
+                    value = idsStringTemp,
+                    onValueChange = { idsStringTemp = it },
+                    label = {
+                        Text("ID")
+                    },
+                    trailingIcon = if (idsStringTemp.isNotEmpty()) {
+                        {
+                            Icon(modifier = Modifier.clickable {
+                                idsStringTemp = ""
+                            }, imageVector = Icons.Rounded.Clear, contentDescription = "clear ids text")
+                        }
+                    } else null)
 
                 CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.caption) {
                     //show hint:
                     Text(
+                        modifier = Modifier.fillMaxWidth(),
                         text =
                         """Введите ID или диапазоны ID, разделенные запятыми или пробелами.
 Диапазоны могут содержать суффикс.
@@ -82,7 +88,7 @@ fun AddMultipleSamplesUi(
         },
         buttons = {
 
-        Button(enabled = state.parsedIDs.isNotEmpty(), onClick = {
+            Button(enabled = state.parsedIDs.isNotEmpty(), onClick = {
                 onAdded(state.parsedIDs)
                 onDismiss()
             }) {

@@ -38,7 +38,9 @@ fun <T> ListSelector(
     val rotation by animateFloatAsState(if (isMenuOpened) 180f else 0f)
 
     Box(modifier = modifier) {
-        Row(modifier = Modifier.align(Alignment.Center), verticalAlignment = Alignment.CenterVertically) {
+        Row(modifier = Modifier.align(Alignment.Center).clickable {
+            isMenuOpened = !isMenuOpened
+        }, verticalAlignment = Alignment.CenterVertically) {
             Text(
                 modifier = Modifier.padding(8.dp),
                 text = currentSelection?.let { itemName(it) } ?: "",

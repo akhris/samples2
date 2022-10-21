@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import ui.dialogs.BaseDialog
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun EditSampleTypeDialogUi(component: IEditSampleTypeDialogComponent, onDismiss: () -> Unit) {
 
@@ -20,6 +21,7 @@ fun EditSampleTypeDialogUi(component: IEditSampleTypeDialogComponent, onDismiss:
 
     var isError by remember { mutableStateOf(false) }
 
+    var showDeletePrompt by remember { mutableStateOf(false) }
 
     BaseDialog(
         onDismiss = onDismiss,
@@ -62,6 +64,33 @@ fun EditSampleTypeDialogUi(component: IEditSampleTypeDialogComponent, onDismiss:
                     onValueChange = { component.updateSampleTypeInCache(newSampleType.copy(description = it)) },
                     label = { Text("Описание") })
             }
+
+
+
+
+
+            if (showDeletePrompt) {
+                AlertDialog(onDismissRequest = {
+                    showDeletePrompt = false
+                }, title = {
+                    Text("Удалить тип образцов ${newSampleType.name}?")
+                }, dismissButton = {
+                    TextButton(onClick = {
+                        showDeletePrompt = false
+                    }) {
+                        Text("Отмена")
+                    }
+                }, confirmButton = {
+                    Button({
+                        component.removeSampleType()
+                        onDismiss()
+                    }) {
+                        Text("Удалить")
+                    }
+                })
+            }
+
+
         },
         buttons = {
             when (dialogType) {
@@ -82,8 +111,8 @@ fun EditSampleTypeDialogUi(component: IEditSampleTypeDialogComponent, onDismiss:
                 IEditSampleTypeDialogComponent.DialogType.Edit -> {
                     TextButton(
                         onClick = {
-                            component.removeSampleType()
-                            onDismiss()
+
+                            showDeletePrompt = true
                         }, content = { Text("Удалить", color = MaterialTheme.colors.error) })
 
                     Button(enabled = !isError && isChanged,
@@ -103,5 +132,6 @@ fun EditSampleTypeDialogUi(component: IEditSampleTypeDialogComponent, onDismiss:
 
         }
     )
+
 
 }

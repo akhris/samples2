@@ -4,17 +4,18 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class JSONMeasurement(
-    val sampleID: String,
-    val dateTime: String,
-    val operator: String,
-    val comment: String,
-    val conditions: String,
-    val results: List<JSONResult>
+    val sample: String?,
+    val type: String?,
+    val operator: String?,
+    val place: String?,
+    val dateTime: String?,
+    val comment: String?,
+    val conditions: String?,
+    val results: List<JSONMeasurementResult>
 )
 
 @Serializable
-data class JSONResult(
-    val parameterID: String,
-    val value: String,
-    val unit: String
+data class JSONMeasurementResult(
+    val parameter: String,
+    val value: String
 )

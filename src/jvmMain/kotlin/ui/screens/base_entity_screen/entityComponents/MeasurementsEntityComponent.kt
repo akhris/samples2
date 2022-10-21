@@ -7,18 +7,17 @@ import domain.application.baseUseCases.GetEntities
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.kodein.di.DI
 import org.kodein.di.instance
+import persistence.json.toJSONMeasurement
 import ui.components.IconResource
 import ui.components.tables.mappers.MeasurementsDataMapper
 import ui.dialogs.file_picker_dialog.IFilePicker
-import ui.dialogs.list_picker_dialog.ListPickerItem
-import ui.dialogs.list_picker_dialog.ListPickerMode
 import ui.screens.base_entity_screen.EntityComponentWithFab
 import ui.screens.base_entity_screen.FABParams
+import utils.JavaDesktopUtils
 import utils.log
 import java.io.File
 import javax.swing.filechooser.FileNameExtensionFilter
@@ -179,12 +178,15 @@ class MeasurementsEntityComponent(
         log("going to export to JSON file: $file measurements with count: ${items.size}")
         withContext(Dispatchers.IO) {
             val format = Json { prettyPrint = true }
-            val json = format.encodeToString(items)
+            val json = format.encodeToString(items.map { it.toJSONMeasurement() })
             file.writeText(text = json)
             showPrompt(
                 title = "Результаты экспорта",
                 message = "${items.size} результатов измерений записаны в файл $file\nОткрыть файл?",
-                {}
+                {
+                    //trying to open just saved file:
+                    JavaDesktopUtils.edit(file)
+                }
             )
         }
     }
