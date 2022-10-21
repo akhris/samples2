@@ -50,13 +50,13 @@ import java.time.temporal.TemporalAdjusters
  * 2. handles cells clicks/selection
  * 3. shows EntityPicker dialog
  */
-@OptIn(ExperimentalDecomposeApi::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalDecomposeApi::class)
 @Composable
 fun <T : IEntity> BaseEntityUi(
     modifier: Modifier = Modifier,
     component: IEntityComponent<T>,
-    selectionMode: SelectionMode? = SelectionMode.Multiple,
-    initialSelection: List<String> = listOf(),
+    selectionMode: SelectionMode? = remember { SelectionMode.Multiple },
+    initialSelection: List<String> = remember { listOf() },
     onSelectionChanged: ((List<T>) -> Unit)? = null
 ) {
     val state by remember(component) { component.state }.subscribeAsState()
@@ -104,64 +104,57 @@ fun <T : IEntity> BaseEntityUi(
                     },
                     content = {
                         BaseEntityUi(
-                            component = dialog.component,
-                            selectionMode = SelectionMode.Single,
-                            initialSelection = listOfNotNull(dialog.initialSelection?.id),
+                            component = remember(dialog) { dialog.component },
+                            selectionMode = remember { SelectionMode.Single },
+                            initialSelection = remember(dialog) { listOfNotNull(dialog.initialSelection?.id) },
                             onSelectionChanged = { s ->
                                 selection = s.firstOrNull()
-                                log("onSelectionChanged: $s, current selection: $selection")
                             }
                         )
                     },
                     buttons = {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
-                        ) {
-                            TextButton(onClick = { component.dismissDialog() }) {
-                                Text("Отмена")
-                            }
-                            TextButton(onClick = {
-                                sampleType?.let {
-                                    dialog.component.insertNewEntity(it)
-                                }
-                            }) {
-                                Text("Добавить")
-                            }
 
-                            TextButton(
-                                enabled = selection != null,
-                                onClick = {
-                                    dialog.component.showPrompt(
-                                        title = "Удалить объект?",
-                                        message = "$selection",
-                                        onYes = {
-                                            //do actual delete
-                                            selection?.let {
-                                                dialog.component.removeEntity(it)
-                                                selection = null
-                                            }
-
-                                        }
-                                    )
-                                },
-                                colors = ButtonDefaults.textButtonColors(
-                                    contentColor = MaterialTheme.colors.error,
-                                    disabledContentColor = MaterialTheme.colors.error.copy(alpha = 0.25f)
-                                )
-                            ) {
-                                Text("Удалить")
+                        TextButton(onClick = {
+                            sampleType?.let {
+                                dialog.component.insertNewEntity(it)
                             }
-
-                            Button(
-                                enabled = selection != null,
-                                onClick = {
-                                    dialog.onSelectionChanged(selection)
-                                    component.dismissDialog()
-                                }) {
-                                Text("Выбрать")
-                            }
+                        }) {
+                            Text("Добавить")
                         }
+
+                        TextButton(
+                            enabled = selection != null,
+                            onClick = {
+                                dialog.component.showPrompt(
+                                    title = "Удалить объект?",
+                                    message = "$selection",
+                                    onYes = {
+                                        //do actual delete
+                                        selection?.let {
+                                            dialog.component.removeEntity(it)
+                                            selection = null
+                                        }
+
+                                    }
+                                )
+                            },
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colors.error,
+                                disabledContentColor = MaterialTheme.colors.error.copy(alpha = 0.25f)
+                            )
+                        ) {
+                            Text("Удалить")
+                        }
+
+                        Button(
+                            enabled = selection != null,
+                            onClick = {
+                                dialog.onSelectionChanged(selection)
+                                component.dismissDialog()
+                            }) {
+                            Text("Выбрать")
+                        }
+
                     }
                 )
                 /*
@@ -366,8 +359,6 @@ private fun <T : IEntity> ShowDataTableForGroup(
 
     val selectedEntities = remember(initialSelection) { initialSelection.toSet().toMutableStateList() }
 
-    var bottomPanelHeight by remember { mutableStateOf(0.dp) }
-
     val pagingSpec by remember(component) { component.pagingSpec }.subscribeAsState()
 
     val mapper by remember(component) { component.dataMapper }.subscribeAsState()
@@ -389,6 +380,14 @@ private fun <T : IEntity> ShowDataTableForGroup(
 
     Box(modifier = modifier.fillMaxHeight()) {
         //parameters table:
+
+        var isHovered by remember { mutableStateOf(false) }
+        val showControl = remember(selectionMode, selectedEntities.toList()) {
+            selectionMode == SelectionMode.Multiple && selectedEntities.isNotEmpty()
+        }
+        val alpha by animateFloatAsState(if (isHovered || showControl) 1f else 0.4f)
+
+
         DataTable(
             modifier = modifier.horizontalScroll(state = rememberScrollState()),
             items = entities,
@@ -454,7 +453,91 @@ private fun <T : IEntity> ShowDataTableForGroup(
             },
             utilitiesPanel = null,
             footer = {
-                Spacer(modifier = Modifier.width(1.dp).height(bottomPanelHeight))
+                Surface(
+                    modifier = Modifier
+                        .alpha(alpha)
+                        .fillMaxWidth()
+                        .onPointerEvent(PointerEventType.Enter) { isHovered = true }
+                        .onPointerEvent(PointerEventType.Exit) { isHovered = false },
+                    elevation = 8.dp
+                ) {
+                    if (showControl) {
+                        //show control buttons:
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                            ) {
+                                Button(onClick = {
+                                    component.duplicateEntities(entities.filter { it.id in selectedEntities })
+                                }) {
+                                    Text(text = "Дублировать")
+                                }
+
+
+                                Button(onClick = {
+                                    component.shareEntities(entities.filter { it.id in selectedEntities })
+
+                                }) {
+                                    Text(text = "Отправить")
+                                }
+
+                                TextButton(
+                                    onClick = {
+                                        component.showPrompt(
+                                            title = "Удалить объекты?",
+                                            message = "${selectedEntities.toList()}?",
+                                            onYes = {
+                                                //do actual delete
+                                                selectedEntities.toList().forEach {
+                                                    component.removeEntity(it)
+                                                    selectedEntities.remove(it)
+                                                }
+                                            }
+                                        )
+                                    },
+                                    colors = ButtonDefaults.textButtonColors(
+                                        contentColor = MaterialTheme.colors.error,
+                                        disabledContentColor = MaterialTheme.colors.error.copy(alpha = 0.25f)
+                                    )
+                                ) {
+                                    Text(text = "Удалить", color = MaterialTheme.colors.error)
+                                    Icon(
+                                        Icons.Rounded.Delete,
+                                        contentDescription = "Удалить записи"
+                                    )
+                                }
+                            }
+                            Text(
+                                text = "(${selectedEntities.size} элемент${
+                                    when (selectedEntities.size % 10) {
+                                        1 -> ""
+                                        2, 3, 4 -> "a"
+                                        else -> "ов"
+                                    }
+                                })", style = MaterialTheme.typography.caption
+                            )
+                        }
+
+                    } else {
+//                show pagination control:
+                        pagingSpec.totalItems?.let { ti ->
+                            if (ti > pagingSpec.itemsPerPage) {
+                                Pagination(
+                                    currentPage = pagingSpec.pageNumber.toInt(),
+                                    onPageChanged = { component.setPagingSpec(pagingSpec.copy(pageNumber = it.toLong())) },
+                                    rowsPerPage = pagingSpec.itemsPerPage.toInt(),
+                                    onRowsPerPageChanged = { component.setPagingSpec(pagingSpec.copy(itemsPerPage = it.toLong())) },
+                                    maxItemsCount = ti
+                                )
+                            }
+                        }
+                    }
+                }
             },
             headerMenu = { column ->
 
@@ -535,103 +618,7 @@ private fun <T : IEntity> ShowDataTableForGroup(
             isReorderable = remember(component) { component.isReorderable }
         )
 
-        var isHovered by remember { mutableStateOf(false) }
-        val showControl = remember(selectionMode, selectedEntities.toList()) {
-            selectionMode == SelectionMode.Multiple && selectedEntities.isNotEmpty()
-        }
-        val alpha by animateFloatAsState(if (isHovered || showControl) 1f else 0.2f)
 
-
-        Surface(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .alpha(alpha)
-                .onSizeChanged { bottomPanelHeight = it.height.dp }
-                .onPointerEvent(PointerEventType.Enter) { isHovered = true }
-                .onPointerEvent(PointerEventType.Exit) { isHovered = false },
-            shape = MaterialTheme.shapes.medium,
-            elevation = 16.dp
-        ) {
-            if (showControl) {
-
-                //show control buttons:
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                    ) {
-                        Button(onClick = {
-                            component.duplicateEntities(entities.filter { it.id in selectedEntities })
-                        }) {
-                            Text(text = "Дублировать")
-                        }
-
-
-                        Button(onClick = {
-                            component.shareEntities(entities.filter { it.id in selectedEntities })
-
-                        }) {
-                            Text(text = "Отправить")
-                        }
-
-                        TextButton(
-                            onClick = {
-                                component.showPrompt(
-                                    title = "Удалить объекты?",
-                                    message = "${selectedEntities.toList()}?",
-                                    onYes = {
-                                        //do actual delete
-                                        selectedEntities.toList().forEach {
-                                            component.removeEntity(it)
-                                            selectedEntities.remove(it)
-                                        }
-                                    }
-                                )
-                            },
-                            colors = ButtonDefaults.textButtonColors(
-                                contentColor = MaterialTheme.colors.error,
-                                disabledContentColor = MaterialTheme.colors.error.copy(alpha = 0.25f)
-                            )
-                        ) {
-                            Text(text = "Удалить", color = MaterialTheme.colors.error)
-                            Icon(
-                                Icons.Rounded.Delete,
-                                contentDescription = "Удалить записи"
-                            )
-                        }
-                    }
-                    Text(
-                        text = "(${selectedEntities.size} элемент${
-                            when (selectedEntities.size % 10) {
-                                1 -> ""
-                                2, 3, 4 -> "a"
-                                else -> "ов"
-                            }
-                        })", style = MaterialTheme.typography.caption
-                    )
-                }
-
-            } else {
-                //show pagination control:
-                pagingSpec.totalItems?.let { ti ->
-                    if (ti > pagingSpec.itemsPerPage) {
-
-                        Pagination(
-                            modifier = Modifier.alpha(alpha),
-                            currentPage = pagingSpec.pageNumber.toInt(),
-                            onPageChanged = { component.setPagingSpec(pagingSpec.copy(pageNumber = it.toLong())) },
-                            rowsPerPage = pagingSpec.itemsPerPage.toInt(),
-                            onRowsPerPageChanged = { component.setPagingSpec(pagingSpec.copy(itemsPerPage = it.toLong())) },
-                            maxItemsCount = ti
-                        )
-                    }
-                }
-            }
-        }
     }
 
 

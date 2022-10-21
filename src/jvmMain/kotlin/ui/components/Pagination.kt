@@ -44,7 +44,7 @@ fun Pagination(
     Row(
         modifier = modifier.height(UiSettings.PaginationPanel.panelHeight).padding(vertical = 4.dp, horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
     ) {
         Text("Строк на странице")
         RowsPerPageControl(rowsPerPage, onRowsPerPageChanged)

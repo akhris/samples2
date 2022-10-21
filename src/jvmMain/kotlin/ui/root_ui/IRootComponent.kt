@@ -4,7 +4,7 @@ import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
 import domain.*
 import navigation.NavItem
-import ui.dialogs.add_sample_type_dialog.IAddSampleTypeDialogComponent
+import ui.dialogs.edit_sample_type_dialog.IEditSampleTypeDialogComponent
 import ui.screens.base_entity_screen.EntityComponentWithFab
 import ui.screens.base_entity_screen.IEntityComponent
 import ui.screens.preferences_screen.IPreferencesComponent
@@ -36,7 +36,7 @@ interface IRootComponent {
     }
 
     sealed class Dialog {
-        class AddSampleTypeDialog(val component: IAddSampleTypeDialogComponent) : Dialog()
+        class AddSampleTypeDialog(val component: IEditSampleTypeDialogComponent) : Dialog()
         object None : Dialog()
     }
 
@@ -44,7 +44,7 @@ interface IRootComponent {
         class SampleTypesSelector(val component: ISampleTypesSelector) : ToolbarUtils()
     }
 
-    fun showAddSampleTypeDialog()
+    fun showEditSampleTypeDialog(sampleType: SampleType? = null)
 
     fun dismissDialog()
 }

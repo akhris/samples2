@@ -10,8 +10,6 @@ interface ISampleTypesSelector {
 
     fun selectType(type: SampleType?)
 
-    fun removeSampleType(type: SampleType)
-
     data class State(
         val selectedType: SampleType? = null,
         val types: List<SampleType> = listOf()

@@ -11,11 +11,12 @@ import com.arkivanov.decompose.value.reduce
 import com.arkivanov.essenty.parcelable.Parcelable
 import com.arkivanov.essenty.parcelable.Parcelize
 import domain.Sample
+import domain.SampleType
 import navigation.NavItem
 import org.kodein.di.DI
 import org.kodein.di.instance
 import settings.PreferencesManager
-import ui.dialogs.add_sample_type_dialog.AddSampleTypeDialogComponent
+import ui.dialogs.edit_sample_type_dialog.EditSampleTypeDialogComponent
 import ui.screens.base_entity_screen.EntityComponent
 import ui.screens.base_entity_screen.entityComponents.MeasurementsEntityComponent
 import ui.screens.base_entity_screen.entityComponents.OperationsComponent
@@ -24,7 +25,6 @@ import ui.screens.base_entity_screen.entityComponents.SamplesComponent
 import ui.screens.preferences_screen.PreferencesComponent
 import ui.screens.sample_details_screen.SampleDetailsComponent
 import ui.toolbar_utils.sampletypes_selector.SampleTypesSelectorComponent
-import kotlin.io.path.Path
 
 class RootComponent(
     private val di: DI,
@@ -68,8 +68,8 @@ class RootComponent(
     override val dialogStack: Value<ChildStack<*, IRootComponent.Dialog>> = _dialogStack
     override val toolbarUtilsStack: Value<ChildStack<*, IRootComponent.ToolbarUtils>> = _toolbarUtilsStack
 
-    override fun showAddSampleTypeDialog() {
-        dialogNav.replaceCurrent(DialogConfig.AddSampleType)
+    override fun showEditSampleTypeDialog(sampleType: SampleType?) {
+        dialogNav.replaceCurrent(DialogConfig.AddSampleType(sampleType))
     }
 
     override fun dismissDialog() {
@@ -79,10 +79,11 @@ class RootComponent(
 
     private fun createChild(config: DialogConfig, componentContext: ComponentContext): IRootComponent.Dialog {
         return when (config) {
-            DialogConfig.AddSampleType -> IRootComponent.Dialog.AddSampleTypeDialog(
-                AddSampleTypeDialogComponent(
+            is DialogConfig.AddSampleType -> IRootComponent.Dialog.AddSampleTypeDialog(
+                EditSampleTypeDialogComponent(
                     di = di,
-                    componentContext = componentContext
+                    componentContext = componentContext,
+                    initialSampleType = config.sampleType
                 )
             )
 
@@ -188,7 +189,7 @@ class RootComponent(
     private sealed class DialogConfig : Parcelable {
 
         @Parcelize
-        object AddSampleType : DialogConfig()
+        class AddSampleType(val sampleType: SampleType? = null) : DialogConfig()
 
         @Parcelize
         object None : DialogConfig()

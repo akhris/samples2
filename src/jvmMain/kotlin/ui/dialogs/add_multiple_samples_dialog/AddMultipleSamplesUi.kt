@@ -81,10 +81,8 @@ fun AddMultipleSamplesUi(
             }
         },
         buttons = {
-            TextButton(onClick = onDismiss) {
-                Text("Отмена")
-            }
-            Button(enabled = state.parsedIDs.isNotEmpty(), onClick = {
+
+        Button(enabled = state.parsedIDs.isNotEmpty(), onClick = {
                 onAdded(state.parsedIDs)
                 onDismiss()
             }) {

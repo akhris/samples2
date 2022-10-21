@@ -28,6 +28,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
@@ -58,10 +59,10 @@ fun <T> DataTable(
     onItemChanged: ((T) -> Unit)? = null,
     onCellClicked: ((T, Cell, ColumnId) -> Unit)? = null,
     onItemRowClicked: ((T) -> Unit)? = null,
-    utilitiesPanel: @Composable() (BoxScope.() -> Unit)? = null,
-    footer: @Composable() (() -> Unit)? = null,
-    headerMenu: @Composable() (ColumnScope.(column: ColumnId) -> Unit)? = null,
-    headerStateIcons: @Composable() (RowScope.(column: ColumnId) -> Unit)? = null,
+    utilitiesPanel: @Composable (BoxScope.() -> Unit)? = null,
+    footer: @Composable (() -> Unit)? = null,
+    headerMenu: @Composable (ColumnScope.(column: ColumnId) -> Unit)? = null,
+    headerStateIcons: @Composable (RowScope.(column: ColumnId) -> Unit)? = null,
     firstItemIndex: Int? = null,
     isReorderable: Boolean = false
 ) {
@@ -94,6 +95,7 @@ fun <T> DataTable(
     var lastClickedIndex by remember(items) { mutableStateOf(-1) }
 
     Box {
+        var footerHeight by remember { mutableStateOf(0.dp) }
         LazyColumn(
             modifier = modifier
                 .onKeyEvent {
@@ -295,7 +297,8 @@ fun <T> DataTable(
                                 onSelectionChanged(listOf(item), true)
                             }
                         }
-                        .animateItemPlacement(),
+//                        .animateItemPlacement()
+                    ,
                     renderIndex = {
                         firstItemIndex?.let { fii ->
                             Text(
@@ -372,7 +375,6 @@ fun <T> DataTable(
                                             ) {
                                                 mapper.getId(it) == mapper.getId(item)
                                             }
-//                                    onItemChanged?.invoke(mapper.updateItem(item, column, changedCell))
                                         },
                                         columnAlignment = column.alignment
                                     )
@@ -462,14 +464,23 @@ fun <T> DataTable(
                 )
             }
 
-            footer?.let { f -> item { f() } }
+            item { Spacer(modifier = Modifier.height(footerHeight)) }
+//            footer?.let { f -> item { f() } }
         }
         VerticalScrollbar(
-            modifier = Modifier.align(Alignment.CenterEnd),
+            modifier = Modifier.padding(top = UiSettings.DataTable.headerRowHeight).align(Alignment.CenterEnd),
             adapter = rememberScrollbarAdapter(
                 scrollState = listState
             )
         )
+
+        footer?.let { f ->
+            Box(
+                modifier = Modifier.width(tableWidth + UiSettings.DataTable.additionalRowWidth * 2)
+                    .padding(start = UiSettings.DataTable.additionalRowWidth).align(Alignment.BottomStart)
+                    .onSizeChanged { footerHeight = it.height.dp }
+            ) { f() }
+        }
     }
 
     // debounce on items changing:
@@ -506,7 +517,7 @@ fun <T> DataTable(
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun RenderRow(
     modifier: Modifier = Modifier,
@@ -576,10 +587,7 @@ private fun RenderRow(
                     modifier = Modifier
                         .align(Alignment.TopStart)
                         .height(UiSettings.DataTable.dividerHeight)
-                        .width(
-                            tableWidth + UiSettings.DataTable.additionalRowWidth
-//                                + (if (renderDragHandle != null) UiSettings.DataTable.additionalRowWidth else 0.dp)
-                        )
+                        .width(tableWidth + UiSettings.DataTable.additionalRowWidth)
                         .background(color = UiSettings.DataTable.dividerColor())
                 )
             }
@@ -769,7 +777,7 @@ private fun BoxScope.RenderEntityCell(
                         modifier = Modifier.clickable {
                             //show factors list to choose from:
                             showFactorsList = true
-                        }.padding(horizontal = 2.dp),
+                        }.padding(8.dp),
                         style = getCellTextStyle()
                     )
 
@@ -804,19 +812,6 @@ private fun BoxScope.RenderEntityCell(
         else -> null
     }
 
-//
-//    when (cell.entityClass) {
-//        domain.Unit::class -> {
-//            RenderUnitCell(
-//                modifier = modifier,
-//                cell = cell,
-//                unit = cell.entity as? domain.Unit,
-//                factor = cell.tag as? Factor,
-//                onCellChanged = onCellChanged
-//            )
-//        }
-//
-//        else -> {
     DataTableEditTextField(
         modifier = modifier,
         value = cell.entity?.toString() ?: "",

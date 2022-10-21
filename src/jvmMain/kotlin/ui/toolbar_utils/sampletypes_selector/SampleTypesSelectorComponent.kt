@@ -39,13 +39,6 @@ class SampleTypesSelectorComponent(
         }
     }
 
-    override fun removeSampleType(type: SampleType) {
-        scope.launch {
-            removeSampleType(RemoveEntity.Remove(type))
-        }
-    }
-
-
     private suspend fun invalidateSampleTypes() {
         val typesResult = getSampleTypes(GetEntities.Params.GetWithSpecification(Specification.QueryAll))
         when (typesResult) {

@@ -15,7 +15,7 @@ import ui.components.ListSelector
 fun SampleTypesSelectorUi(
     component: ISampleTypesSelector,
     onSampleTypeSelected: (SampleType?) -> Unit,
-    onAddNewSampleTypeClick: () -> Unit
+    onEditSampleTypeClick: (SampleType?) -> Unit
 ) {
 
     val state by remember(component) { component.state }.subscribeAsState()
@@ -28,12 +28,15 @@ fun SampleTypesSelectorUi(
         modifier = Modifier.width(320.dp),
         currentSelection = state.selectedType,
         items = state.types,
-        onAddNewClicked = { onAddNewSampleTypeClick() },
-        onItemDelete = { component.removeSampleType(it) },
+        onAddNewClicked = { onEditSampleTypeClick(null) },
+        onItemEdit = {
+            onEditSampleTypeClick(it)
+        },
         onItemSelected = {
             component.selectType(it)
         },
         itemName = { it.name },
+        itemDescription = { it.description },
         title = "Тип образцов"
     )
 

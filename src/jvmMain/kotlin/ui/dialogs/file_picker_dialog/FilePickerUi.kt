@@ -17,7 +17,13 @@ import javax.swing.filechooser.FileSystemView
 fun FilePickerUi(component: IFilePicker, onDismiss: () -> Unit) {
     val state by remember(component) { component.state }.subscribeAsState()
     val file =
-        remember(state.title, state.fileFilters) { fileChooserDialog(state.title, state.fileFilters, state.pickerType) }
+        remember(state.title, state.fileFilters) {
+            fileChooserDialog(
+                title = state.title,
+                filters = state.fileFilters,
+                pickerType = state.pickerType
+            )
+        }
     LaunchedEffect(file) {
         file?.let { component.onFileSelected(it) }
         onDismiss()
@@ -60,17 +66,17 @@ fun FilePickerUi(component: IFilePicker, onDismiss: () -> Unit) {
 fun fileChooserDialog(
     title: String?,
     filters: List<FileNameExtensionFilter> = listOf(),
+    currentDirectory: File = File(System.getProperty("user.dir")),
     pickerType: IFilePicker.PickerType
 ): File? {
     val fileChooser = JFileChooser(FileSystemView.getFileSystemView())
-    fileChooser.currentDirectory = File(System.getProperty("user.dir"))
+    fileChooser.currentDirectory = currentDirectory
     fileChooser.dialogTitle = title
     fileChooser.fileSelectionMode = JFileChooser.FILES_ONLY
     fileChooser.isFileHidingEnabled = false
     filters.forEach { fileChooser.addChoosableFileFilter(it) }
     fileChooser.isAcceptAllFileFilterUsed = false
     fileChooser.selectedFile = null
-    fileChooser.currentDirectory = null
 
     val returnValue = when (pickerType) {
         IFilePicker.PickerType.OpenFile -> fileChooser.showOpenDialog(null)

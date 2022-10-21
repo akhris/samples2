@@ -95,9 +95,9 @@ fun DatePickerDialog(
         },
         buttons = {
 
-            TextButton(onClick = onDismiss, content = {
-                Text(text = "отмена".uppercase())
-            })
+//            TextButton(onClick = onDismiss, content = {
+//                Text(text = "отмена".uppercase())
+//            })
 
             TextButton(onClick = {
                 selectedDate?.let {

@@ -13,6 +13,9 @@ import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import settings.PreferencesManager
 import ui.dialogs.file_picker_dialog.IFilePicker
 import ui.dialogs.file_picker_dialog.fileChooserDialog
+import java.io.File
+import kotlin.io.path.Path
+
 
 @Composable
 fun PreferencesUi(component: IPreferencesComponent) {
@@ -64,6 +67,7 @@ private fun ColumnScope.RenderFilePreference(
                 //open filepicker
                 val newFile = fileChooserDialog(
                     title = "Открыть файл базы данных",
+                    currentDirectory = File(filePref.path).parentFile,
                     filters = listOf(PreferencesManager.samplesExtensionFilter),
                     pickerType = IFilePicker.PickerType.SaveFile
                 )
