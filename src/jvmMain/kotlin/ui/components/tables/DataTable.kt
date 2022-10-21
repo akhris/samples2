@@ -105,9 +105,7 @@ fun <T> DataTable(
             state = listState
         ) {
             stickyHeader {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     //render header:
                     //space for first item index if used:
                     firstItemIndex?.let {
@@ -465,10 +463,12 @@ fun <T> DataTable(
             }
 
             item { Spacer(modifier = Modifier.height(footerHeight)) }
-//            footer?.let { f -> item { f() } }
         }
         VerticalScrollbar(
-            modifier = Modifier.padding(top = UiSettings.DataTable.headerRowHeight).align(Alignment.CenterEnd),
+            modifier = Modifier
+                .padding(top = UiSettings.DataTable.headerRowHeight, start = 0.dp).align(Alignment.CenterEnd)
+//                .border(2.dp, Color.Yellow)
+            ,
             adapter = rememberScrollbarAdapter(
                 scrollState = listState
             )
@@ -476,9 +476,10 @@ fun <T> DataTable(
 
         footer?.let { f ->
             Box(
-                modifier = Modifier.width(tableWidth + UiSettings.DataTable.additionalRowWidth * 2)
+                modifier = Modifier.width(tableWidth + UiSettings.DataTable.additionalRowWidth)
                     .padding(start = UiSettings.DataTable.additionalRowWidth).align(Alignment.BottomStart)
                     .onSizeChanged { footerHeight = it.height.dp }
+//                    .border(2.dp, Color.Blue)
             ) { f() }
         }
     }

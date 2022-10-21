@@ -389,7 +389,9 @@ private fun <T : IEntity> ShowDataTableForGroup(
 
 
         DataTable(
-            modifier = modifier.horizontalScroll(state = rememberScrollState()),
+            modifier = modifier
+//                .horizontalScroll(state = rememberScrollState())
+            ,
             items = entities,
             selection = selectedEntities,
             onSelectionChanged = remember(entities) {

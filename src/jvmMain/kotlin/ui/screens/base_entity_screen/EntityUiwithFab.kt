@@ -29,21 +29,21 @@ fun <T : IEntity> EntityUiwithFab(
 
     Box(modifier = Modifier.fillMaxSize()) {
         BaseEntityUi(
-            modifier = Modifier.align(Alignment.TopCenter).padding(end = 48.dp),
+            modifier = Modifier.align(Alignment.TopCenter),
             component = component
         )
 
-        val items = component
-            .getFabParams()
-            .map {
-                MultiFabItem(icon = it.icon, identifier = it.id, label = it.label ?: "")
-            }
-
+        val fabItems = remember(component) {
+            component.getFabParams()
+                .map {
+                    MultiFabItem(icon = it.icon, identifier = it.id, label = it.label ?: "")
+                }
+        }
 
         MultiFloatingActionButton(
             modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
             fabIcon = IconResource.ImageVectorIcon(Icons.Rounded.Add),
-            items = items,
+            items = fabItems,
             toState = toState,
             stateChanged = { toState = it },
             onFabItemClicked = {
@@ -51,17 +51,6 @@ fun <T : IEntity> EntityUiwithFab(
                 toState = MultiFabState.COLLAPSED
             }
         )
-//
-//        FloatingActionButton(
-//            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
-//            onClick = {
-//                //add entity:
-//                sampleType?.let {
-//                    component.insertNewEntity(it)
-//                }
-//                //todo show add sample dialog
-//            },
-//            content = { Icon(Icons.Rounded.Add, contentDescription = "add parameter") })
     }
 
 }
