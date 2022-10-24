@@ -14,6 +14,11 @@ interface IBaseDao<ENTITY : IEntity> {
     suspend fun insert(entity: ENTITY)
 
     /**
+     * Batch insert Entities
+     */
+    suspend fun insert(entities: List<ENTITY>)
+
+    /**
      * Update Entity
      */
     suspend fun update(entity: ENTITY)

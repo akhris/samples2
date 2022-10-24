@@ -33,6 +33,13 @@ class BaseRepository<ENTITY : IEntity>(private val baseDao: IBaseDao<ENTITY>) : 
         repoCallbacks.onItemInserted(t)
     }
 
+    override suspend fun insert(t: List<ENTITY>) {
+        baseDao.insert(t)
+        t.lastOrNull()?.let {
+            repoCallbacks.onItemInserted(it)
+        }
+    }
+
     override suspend fun update(t: ENTITY) {
         baseDao.update(t)
         repoCallbacks.onItemUpdated(t)

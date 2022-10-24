@@ -1,4 +1,4 @@
-package persistence.json.serializers
+package persistence.export_import.json.serializers
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.PrimitiveKind

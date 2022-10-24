@@ -19,7 +19,7 @@ class ParametersDao : BaseExposedDao<Parameter, EntityParameter, Tables.Paramete
     entityClass = EntityParameter
 ) {
 
-    override fun insertStatement(entity: Parameter): Tables.Parameters.(InsertStatement<Number>) -> Unit = {
+    override fun insertStatement(entity: Parameter): Tables.Parameters.(InsertStatement<*>) -> Unit = {
         it[name] = entity.name
         it[description] = entity.description
         it[position] = entity.position

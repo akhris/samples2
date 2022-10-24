@@ -20,7 +20,7 @@ class PlacesDao : BaseExposedDao<Place, EntityPlace, Tables.Places>(
         it[table.roomNumber] = entity.roomNumber
     }
 
-    override fun insertStatement(entity: Place): Tables.Places.(InsertStatement<Number>) -> Unit = {
+    override fun insertStatement(entity: Place): Tables.Places.(InsertStatement<*>) -> Unit = {
         it[table.name] = entity.name
         it[table.description] = entity.description
         it[table.roomNumber] = entity.roomNumber

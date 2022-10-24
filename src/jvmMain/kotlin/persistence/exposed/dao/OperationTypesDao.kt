@@ -12,7 +12,7 @@ class OperationTypesDao : BaseExposedDao<OperationType, EntityOperationType, Tab
     entityClass = EntityOperationType
 ) {
 
-    override fun insertStatement(entity: OperationType): Tables.OperationTypes.(InsertStatement<Number>) -> Unit = {
+    override fun insertStatement(entity: OperationType): Tables.OperationTypes.(InsertStatement<*>) -> Unit = {
         it[table.name] = entity.name
         it[table.description] = entity.description
     }

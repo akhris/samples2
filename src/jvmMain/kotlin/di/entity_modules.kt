@@ -1,15 +1,16 @@
 package di
 
-import domain.IBaseDao
-import domain.IEntity
-import domain.IRepository
-import domain.IRepositoryCallback
+import domain.*
 import domain.application.baseUseCases.*
 import kotlinx.coroutines.Dispatchers
 import org.kodein.di.DI
 import org.kodein.di.DirectDI
 import org.kodein.di.bindSingleton
 import org.kodein.di.instance
+import persistence.export_import.json.application.ExportToJSON
+import persistence.export_import.json.application.ImportFromJSON
+import persistence.export_import.json.dto.JSONMeasurement
+import persistence.export_import.json.repositories.JSONMeasurementRepository
 import persistence.exposed.dao.*
 import persistence.repositories.BaseRepository
 import ui.components.tables.IDataTableMapper
@@ -36,6 +37,7 @@ inline fun <reified ENTITY : IEntity> getEntityModule(
     bindSingleton<UpdateEntity<ENTITY>> { UpdateEntity(repo = instance(), ioDispatcher = Dispatchers.IO) }
     bindSingleton<UpdateEntities<ENTITY>> { UpdateEntities(repo = instance(), ioDispatcher = Dispatchers.IO) }
     bindSingleton<InsertEntity<ENTITY>> { InsertEntity(repo = instance(), ioDispatcher = Dispatchers.IO) }
+    bindSingleton<InsertEntities<ENTITY>> { InsertEntities(repo = instance(), ioDispatcher = Dispatchers.IO) }
     bindSingleton<GetSlice<ENTITY>> { GetSlice(repo = instance(), ioDispatcher = Dispatchers.IO) }
     additionalBindings()
 }
@@ -78,7 +80,22 @@ val measurementsModule =
     getEntityModule(
         name = "measurements module",
         getDao = { MeasurementsDao() },
-        getDataMapper = { MeasurementsDataMapper() }
+        getDataMapper = { MeasurementsDataMapper() },
+        additionalBindings = {
+            bindSingleton<IExportImportRepository<Measurement, JSONMeasurement>> { JSONMeasurementRepository(instance()) }
+            bindSingleton<ExportToJSON<Measurement, JSONMeasurement>> {
+                ExportToJSON(
+                    repo = instance(),
+                    Dispatchers.IO
+                )
+            }
+            bindSingleton<ImportFromJSON<Measurement, JSONMeasurement>> {
+                ImportFromJSON(
+                    repo = instance(),
+                    Dispatchers.IO
+                )
+            }
+        }
     )
 
 val unitsModule =

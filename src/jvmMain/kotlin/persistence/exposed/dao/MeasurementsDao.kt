@@ -26,7 +26,7 @@ class MeasurementsDao : BaseExposedDao<Measurement, EntityMeasurement, Tables.Me
         it[table.dateTime] = entity.dateTime
     }
 
-    override fun insertStatement(entity: Measurement): Tables.Measurements.(InsertStatement<Number>) -> Unit = {
+    override fun insertStatement(entity: Measurement): Tables.Measurements.(InsertStatement<*>) -> Unit = {
         it[table.sample] = entity.sample?.id?.toUUID()
         it[table.operator] = entity.operator?.id?.toUUID()
         it[table.place] = entity.place?.id?.toUUID()

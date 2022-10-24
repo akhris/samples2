@@ -24,7 +24,7 @@ class WorkerDao : BaseExposedDao<Worker, EntityWorker, Tables.Workers>(
         it[table.room] = entity.place?.id?.toUUID()
     }
 
-    override fun insertStatement(entity: Worker): Tables.Workers.(InsertStatement<Number>) -> Unit = {
+    override fun insertStatement(entity: Worker): Tables.Workers.(InsertStatement<*>) -> Unit = {
         it[table.name] = entity.name
         it[table.surname] = entity.surname
         it[table.middleName] = entity.middleName

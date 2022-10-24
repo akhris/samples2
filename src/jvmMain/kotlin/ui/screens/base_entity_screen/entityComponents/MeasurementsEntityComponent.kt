@@ -11,7 +11,10 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.kodein.di.DI
 import org.kodein.di.instance
-import persistence.json.toJSONMeasurement
+import persistence.export_import.json.application.ExportToJSON
+import persistence.export_import.json.application.ImportFromJSON
+import persistence.export_import.json.dto.JSONMeasurement
+import persistence.export_import.json.toJSONMeasurement
 import ui.components.IconResource
 import ui.components.tables.mappers.MeasurementsDataMapper
 import ui.dialogs.file_picker_dialog.IFilePicker
@@ -30,6 +33,8 @@ class MeasurementsEntityComponent(
     private val parametersCallbacks: IRepositoryCallback<Parameter> by di.instance()
     private val getMeasurements: GetEntities<Measurement> by di.instance()
 
+    private val exportToJSON: ExportToJSON<Measurement, JSONMeasurement> by di.instance()
+    private val importFromJSON: ImportFromJSON<Measurement, JSONMeasurement> by di.instance()
 
     override fun getFabParams(): List<FABParams> = listOf(
         FABParams(
@@ -153,8 +158,22 @@ class MeasurementsEntityComponent(
     }
 
     private suspend fun importFromJSONFile(file: File) {
+        // TODO: //show import dialog to choose sample types, workers, e.t.c.
         //make actual read from JSON file
+        when (val imported = importFromJSON(ImportFromJSON.Params.ImportFromFile(file.toString()))) {
+            is Result.Failure -> {
+                showErrorDialog(
+                    title = "Error while importing from JSON file",
+                    caption = file.toString(),
+                    error = imported.throwable
+                )
+            }
 
+            is Result.Success -> {
+
+                log("imported json measurements: ${imported.value}")
+            }
+        }
     }
 
     private suspend fun importFromEXCELFile(file: File) {
@@ -176,18 +195,26 @@ class MeasurementsEntityComponent(
 
     private suspend fun exportToJSONFile(file: File, items: List<Measurement>) {
         log("going to export to JSON file: $file measurements with count: ${items.size}")
-        withContext(Dispatchers.IO) {
-            val format = Json { prettyPrint = true }
-            val json = format.encodeToString(items.map { it.toJSONMeasurement() })
-            file.writeText(text = json)
-            showPrompt(
-                title = "Результаты экспорта",
-                message = "${items.size} результатов измерений записаны в файл $file\nОткрыть файл?",
-                {
-                    //trying to open just saved file:
-                    JavaDesktopUtils.edit(file)
-                }
-            )
+        val result = exportToJSON(ExportToJSON.Params.ExportToFile(filePath = file.toString(), entities = items))
+        when (result) {
+            is Result.Failure -> {
+                showErrorDialog(
+                    title = "Error while exporting to JSON file",
+                    caption = file.toString(),
+                    error = result.throwable
+                )
+            }
+
+            is Result.Success -> {
+                showPrompt(
+                    title = "Результаты экспорта",
+                    message = "${items.size} результатов измерений записаны в файл $file\nОткрыть файл?",
+                    {
+                        //trying to open just saved file:
+                        JavaDesktopUtils.edit(file)
+                    }
+                )
+            }
         }
     }
 

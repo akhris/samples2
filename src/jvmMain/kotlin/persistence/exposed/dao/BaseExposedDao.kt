@@ -25,7 +25,7 @@ abstract class BaseExposedDao<ENTITY : IEntity, EXP_ENTITY : UUIDEntity, TABLE :
     abstract fun mapToEntity(expEntity: EXP_ENTITY): ENTITY
 
     protected abstract fun updateStatement(entity: ENTITY): TABLE.(UpdateStatement) -> Unit
-    protected abstract fun insertStatement(entity: ENTITY): TABLE.(InsertStatement<Number>) -> Unit
+    protected abstract fun insertStatement(entity: ENTITY): TABLE.(InsertStatement<*>) -> Unit
 
     protected open fun Transaction.doAfterUpdate(entity: ENTITY) {}
     protected open fun Transaction.doAfterInsert(entity: ENTITY) {}
@@ -124,6 +124,20 @@ abstract class BaseExposedDao<ENTITY : IEntity, EXP_ENTITY : UUIDEntity, TABLE :
         }
     }
 
+
+    override suspend fun insert(entities: List<ENTITY>) {
+//        val uuidTable = (table as? UUIDTable)?.also {
+//            log("cannot use batch insert with no-uuid table: $it")
+//        } ?: return
+//
+        newSuspendedTransaction {
+            addLogger(StdOutSqlLogger)
+            table.batchInsert(data = entities, shouldReturnGeneratedValues = false) { entity ->
+                this[this@BaseExposedDao.table.id] = entity.id.toUUID()
+                insertStatement(entity).invoke(this@BaseExposedDao.table, this@batchInsert)
+            }
+        }
+    }
 
     override suspend fun removeById(id: String) {
         newSuspendedTransaction {

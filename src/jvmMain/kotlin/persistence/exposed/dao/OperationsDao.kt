@@ -13,7 +13,7 @@ class OperationsDao : BaseExposedDao<Operation, EntityOperation, Tables.Operatio
     entityClass = EntityOperation
 ) {
 
-    override fun insertStatement(entity: Operation): Tables.Operations.(InsertStatement<Number>) -> Unit = {
+    override fun insertStatement(entity: Operation): Tables.Operations.(InsertStatement<*>) -> Unit = {
         it[table.sampleType] = entity.sampleType.id.toUUID()
         it[table.operationType] = entity.operationType?.id?.toUUID()
         it[table.sample] = entity.sample?.id?.toUUID()

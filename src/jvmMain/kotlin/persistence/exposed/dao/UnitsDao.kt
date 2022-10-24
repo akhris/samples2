@@ -18,7 +18,7 @@ class UnitsDao : BaseExposedDao<Unit, EntityUnit, Tables.Units>(
         it[table.isMultipliable] = entity.isMultipliable
     }
 
-    override fun insertStatement(entity: Unit): Tables.Units.(InsertStatement<Number>) -> kotlin.Unit = {
+    override fun insertStatement(entity: Unit): Tables.Units.(InsertStatement<*>) -> kotlin.Unit = {
         it[table.unit] = entity.unit
         it[table.isMultipliable] = entity.isMultipliable
     }

@@ -23,7 +23,7 @@ class SamplesDao : BaseExposedDao<Sample, EntitySample, Tables.Samples>(
         it[sampleType] = entity.type.id.toUUID()
     }
 
-    override fun insertStatement(entity: Sample): Tables.Samples.(InsertStatement<Number>) -> Unit = {
+    override fun insertStatement(entity: Sample): Tables.Samples.(InsertStatement<*>) -> Unit = {
         it[sampleID] = entity.identifier
         it[comment] = entity.comment
         it[orderID] = entity.orderID

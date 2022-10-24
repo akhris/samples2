@@ -20,7 +20,7 @@ open class RemoveEntity<ENTITY : IEntity>(
     override suspend fun run(params: Params): ENTITY {
         return when (params) {
             is Remove -> (params.entityToRemove as? ENTITY)?.let { remove(params.entityToRemove) }
-                ?: throw IllegalArgumentException("Entity to remove is not type of remove use case: $this")
+                ?: throw IllegalArgumentException("Entity to remove (${params.entityToRemove::class.simpleName}) is not type of remove use case: $this")
         }
     }
 

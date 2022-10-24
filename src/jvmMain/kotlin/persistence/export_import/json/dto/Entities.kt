@@ -1,6 +1,7 @@
-package persistence.json.dto
+package persistence.export_import.json.dto
 
 import kotlinx.serialization.Serializable
+
 
 @Serializable
 data class JSONMeasurement(

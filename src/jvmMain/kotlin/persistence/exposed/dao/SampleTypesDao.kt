@@ -19,7 +19,7 @@ class SampleTypesDao : BaseExposedDao<SampleType, EntitySampleType, Tables.Sampl
         it[description] = entity.description
     }
 
-    override fun insertStatement(entity: SampleType): Tables.SampleTypes.(InsertStatement<Number>) -> Unit = {
+    override fun insertStatement(entity: SampleType): Tables.SampleTypes.(InsertStatement<*>) -> Unit = {
         it[name] = entity.name
         it[description] = entity.description
     }

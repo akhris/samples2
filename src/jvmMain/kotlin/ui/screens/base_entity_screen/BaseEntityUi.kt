@@ -495,9 +495,9 @@ private fun <T : IEntity> ShowDataTableForGroup(
                                             message = "${selectedEntities.toList()}?",
                                             onYes = {
                                                 //do actual delete
-                                                selectedEntities.toList().forEach {
+                                                entities.filter { it.id in selectedEntities }.forEach {
                                                     component.removeEntity(it)
-                                                    selectedEntities.remove(it)
+                                                    selectedEntities.remove(it.id)
                                                 }
                                             }
                                         )

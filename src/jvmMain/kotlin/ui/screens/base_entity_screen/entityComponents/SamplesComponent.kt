@@ -3,10 +3,12 @@ package ui.screens.base_entity_screen.entityComponents
 import com.arkivanov.decompose.ComponentContext
 import domain.Sample
 import domain.SampleType
+import domain.application.baseUseCases.InsertEntities
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 import org.kodein.di.DI
+import org.kodein.di.instance
 import ui.components.IconResource
 import ui.screens.base_entity_screen.EntityComponentWithFab
 import ui.screens.base_entity_screen.FABParams
@@ -17,6 +19,9 @@ class SamplesComponent(
     componentContext: ComponentContext,
     private val onSampleSelected: (Sample) -> Unit
 ) : EntityComponentWithFab<Sample>(Sample::class, di, componentContext) {
+
+
+    private val insertEntities: InsertEntities<Sample> by di.instance()
 
     override fun getFabParams(): List<FABParams> = listOf(
         FABParams(
@@ -43,10 +48,14 @@ class SamplesComponent(
                 showAddMultipleSamplesDialog { ids ->
                     (tag as? SampleType)?.let { st ->
                         scope.launch {
-                            val inserts =
-                                ids.map { async { insertNewEntitySuspend(Sample(identifier = it, type = st)) } }
-
-                            inserts.awaitAll()
+                            val newEntities = ids.map { id ->
+                                Sample(identifier = id, type = st)
+                            }
+                            insertEntities(InsertEntities.Insert(newEntities))
+//                            val inserts =
+//                                ids.map { async { insertNewEntitySuspend(Sample(identifier = it, type = st)) } }
+//
+//                            inserts.awaitAll()
                         }
 //
 //                        ids.forEach {

@@ -1,10 +1,11 @@
-package persistence.json
+package persistence.export_import.json
 
 import domain.Measurement
 import domain.MeasurementResult
-import persistence.json.dto.JSONMeasurement
-import persistence.json.dto.JSONMeasurementResult
+import persistence.export_import.json.dto.JSONMeasurement
+import persistence.export_import.json.dto.JSONMeasurementResult
 import java.time.format.DateTimeFormatter
+
 
 fun Measurement.toJSONMeasurement(): JSONMeasurement {
     return JSONMeasurement(
@@ -15,11 +16,11 @@ fun Measurement.toJSONMeasurement(): JSONMeasurement {
         place = this.place?.roomNumber,
         comment = this.comment,
         conditions = this.conditions,
-        results = this.results.map { it.toJSONMesurementResult() }
+        results = this.results.map { it.toJSONMeasurementResult() }
     )
 }
 
-fun MeasurementResult.toJSONMesurementResult(): JSONMeasurementResult {
+fun MeasurementResult.toJSONMeasurementResult(): JSONMeasurementResult {
     return JSONMeasurementResult(
         parameter = this.parameter.name,
         value = this.value

@@ -10,7 +10,10 @@ import settings.PreferencesManager
 import java.util.prefs.Preferences
 
 val di = DI {
+
     import(preferencesModule)
+    import(persistenceModule)
+
 
     import(samplesModule)
     import(sampleTypesModule)
