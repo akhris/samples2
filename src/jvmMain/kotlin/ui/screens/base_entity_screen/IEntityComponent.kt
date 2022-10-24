@@ -8,6 +8,7 @@ import ui.dialogs.add_multiple_samples_dialog.IAddMultipleSamplesComponent
 import ui.screens.base_entity_screen.filter_dialog.IFilterEntityFieldComponent
 import ui.dialogs.error_dialog.IErrorDialogComponent
 import ui.dialogs.file_picker_dialog.IFilePicker
+import ui.dialogs.import_from_file.IImportFromFile
 import ui.dialogs.list_picker_dialog.IListPickerDialogComponent
 import ui.dialogs.list_picker_dialog.ListPickerItem
 import ui.dialogs.list_picker_dialog.ListPickerMode
@@ -43,7 +44,6 @@ interface IEntityComponent<T : IEntity> {
     fun setPagingSpec(spec: Specification.Paginated)
 
     fun shareEntities(entities: List<T>)
-
 
     data class State<E : IEntity>(
         val entities: EntitiesList<E> = listOf()
@@ -86,6 +86,8 @@ interface IEntityComponent<T : IEntity> {
 
     fun showAddMultipleSamplesDialog(onAdd: (List<String>) -> Unit)
 
+    fun showImportEntityDialog(entityClass: KClass<out IEntity>, filePath: String)
+
     sealed class Dialog {
         object None : Dialog()
         class EntityPicker<T : IEntity>(
@@ -107,6 +109,8 @@ interface IEntityComponent<T : IEntity> {
         class ListPickerDialog(val component: IListPickerDialogComponent) : Dialog()
         class AddMultipleSamplesDialog(val component: IAddMultipleSamplesComponent, val onAdd: (List<String>) -> Unit) :
             Dialog()
+
+        class ImportEntitiesDialog(val component: IImportFromFile) : Dialog()
     }
 
 }

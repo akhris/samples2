@@ -4,17 +4,12 @@ import com.arkivanov.decompose.ComponentContext
 import domain.*
 import domain.application.Result
 import domain.application.baseUseCases.GetEntities
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import org.kodein.di.DI
 import org.kodein.di.instance
 import persistence.export_import.json.application.ExportToJSON
 import persistence.export_import.json.application.ImportFromJSON
 import persistence.export_import.json.dto.JSONMeasurement
-import persistence.export_import.json.toJSONMeasurement
 import ui.components.IconResource
 import ui.components.tables.mappers.MeasurementsDataMapper
 import ui.dialogs.file_picker_dialog.IFilePicker
@@ -54,43 +49,13 @@ class MeasurementsEntityComponent(
         )
     )
 
-    private sealed class FileExtensions(val descr: String, vararg val extensions: String) {
-        object JSON : FileExtensions(descr = "JSON текстовые документы", "txt", "json")
-        object EXCEL : FileExtensions(descr = "Протоколы измерений в формате EXCEL", "xls", "xlsx")
-    }
 
-    private fun FileExtensions.toFileNameExtensionsFilter(): FileNameExtensionFilter =
-        FileNameExtensionFilter(descr, *extensions)
 
 
     override fun shareEntities(entities: List<Measurement>) {
 
         val saveAsExcelID = "save_as_excel"
         val saveAsJSONID = "save_as_json"
-
-
-//        // show dialog to pick sharing format:
-//        showItemsPickerDialog(
-//            title = "Отправить результаты измерений.", items = listOf(
-//                ListPickerItem(
-//                    id = saveAsJSONID,
-//                    title = "Сохранить в текстовом формате.",
-//                    caption = "В виде строки JSON"
-//                ),
-//                ListPickerItem(
-//                    id = saveAsExcelID,
-//                    title = "Сохранить в формате Excel.",
-//                    caption = "В виде таблицы MS Excel"
-//                )
-//            ),
-//            mode = ListPickerMode.SingleSelect(initialSelection = saveAsJSONID, onItemSelected = { selectedID ->
-//                log("selected item: $selectedID")
-//
-//
-//
-//            })
-//        )
-
 
         showFilePickerDialog(
             title = "Выберите файл для сохранения данных",
@@ -122,7 +87,9 @@ class MeasurementsEntityComponent(
                     fileFilters =
                     listOf(FileExtensions.JSON, FileExtensions.EXCEL)
                         .map { it.toFileNameExtensionsFilter() },
-                    onFileSelectedCallback = ::importFromFile,
+                    onFileSelectedCallback = {
+                        showImportEntityDialog(Measurement::class, filePath = it.path)
+                    },
                     pickerType = IFilePicker.PickerType.OpenFile
                 )
             }
@@ -146,39 +113,6 @@ class MeasurementsEntityComponent(
     }
 
 
-    private fun importFromFile(file: File) {
-        if (!checkFile(file, isOpen = true)) return
-        scope.launch {
-            when (file.extension) {
-                in FileExtensions.JSON.extensions -> importFromJSONFile(file)
-                in FileExtensions.EXCEL.extensions -> importFromEXCELFile(file)
-                else -> showErrorDialog(title = "Неподдерживаемый формат файла", error = FileSystemException(file))
-            }
-        }
-    }
-
-    private suspend fun importFromJSONFile(file: File) {
-        // TODO: //show import dialog to choose sample types, workers, e.t.c.
-        //make actual read from JSON file
-        when (val imported = importFromJSON(ImportFromJSON.Params.ImportFromFile(file.toString()))) {
-            is Result.Failure -> {
-                showErrorDialog(
-                    title = "Error while importing from JSON file",
-                    caption = file.toString(),
-                    error = imported.throwable
-                )
-            }
-
-            is Result.Success -> {
-
-                log("imported json measurements: ${imported.value}")
-            }
-        }
-    }
-
-    private suspend fun importFromEXCELFile(file: File) {
-        //make actual read from EXCEL file
-    }
 
 
     private fun exportToFile(file: File, measurements: List<Measurement>) {

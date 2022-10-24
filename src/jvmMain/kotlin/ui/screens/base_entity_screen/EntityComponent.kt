@@ -27,6 +27,7 @@ import ui.screens.base_entity_screen.filter_dialog.FilterEntityFieldComponent
 import ui.dialogs.error_dialog.ErrorDialogComponent
 import ui.dialogs.file_picker_dialog.FilePickerComponent
 import ui.dialogs.file_picker_dialog.IFilePicker
+import ui.dialogs.import_from_file.ImportFromFileComponent
 import ui.dialogs.list_picker_dialog.ListPickerDialogComponent
 import ui.dialogs.list_picker_dialog.ListPickerItem
 import ui.dialogs.list_picker_dialog.ListPickerMode
@@ -499,6 +500,15 @@ open class EntityComponent<T : IEntity>(
                 onAdd = config.onAdd
             )
 
+            is DialogConfig.ImportEntitiesDialog -> IEntityComponent.Dialog.ImportEntitiesDialog(
+                component = ImportFromFileComponent(
+                    entityClass = config.entityClass,
+                    filePath = config.filePath,
+                    di = di,
+                    componentContext = componentContext
+                )
+            )
+
             DialogConfig.None -> IEntityComponent.Dialog.None
         }
     }
@@ -551,6 +561,12 @@ open class EntityComponent<T : IEntity>(
     override fun showAddMultipleSamplesDialog(onAdd: (List<String>) -> Unit) {
         dialogNav.replaceCurrent(
             DialogConfig.AddMultipleSamplesDialog(onAdd)
+        )
+    }
+
+    override fun showImportEntityDialog(entityClass: KClass<out IEntity>, filePath: String) {
+        dialogNav.replaceCurrent(
+            DialogConfig.ImportEntitiesDialog(entityClass, filePath)
         )
     }
 
@@ -647,6 +663,12 @@ open class EntityComponent<T : IEntity>(
         @Parcelize
         class AddMultipleSamplesDialog(
             val onAdd: (List<String>) -> Unit
+        ) : DialogConfig()
+
+        @Parcelize
+        class ImportEntitiesDialog(
+            val entityClass: KClass<out IEntity>,
+            val filePath: String
         ) : DialogConfig()
 
         @Parcelize

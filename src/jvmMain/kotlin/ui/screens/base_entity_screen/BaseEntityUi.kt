@@ -37,6 +37,8 @@ import ui.dialogs.TimePickerDialog
 import ui.dialogs.add_multiple_samples_dialog.AddMultipleSamplesUi
 import ui.dialogs.error_dialog.ErrorDialogUi
 import ui.dialogs.file_picker_dialog.FilePickerUi
+import ui.dialogs.import_from_file.ImportFromFileComponent
+import ui.dialogs.import_from_file.ImportFromFileUi
 import ui.dialogs.list_picker_dialog.ListPickerDialogUi
 import ui.dialogs.prompt_dialog.PromptDialogUi
 import ui.screens.base_entity_screen.filter_dialog.FilterEntityFieldUi
@@ -338,6 +340,12 @@ fun <T : IEntity> BaseEntityUi(
 
             is IEntityComponent.Dialog.AddMultipleSamplesDialog -> {
                 AddMultipleSamplesUi(component = dialog.component, onAdded = dialog.onAdd) { component.dismissDialog() }
+            }
+
+            is IEntityComponent.Dialog.ImportEntitiesDialog -> {
+                ImportFromFileUi(component = dialog.component) {
+                    component.dismissDialog()
+                }
             }
         }
     }
