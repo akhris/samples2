@@ -5,6 +5,7 @@ import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.router.stack.replaceCurrent
+import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.parcelable.Parcelable
 import com.arkivanov.essenty.parcelable.Parcelize
@@ -15,57 +16,40 @@ import org.kodein.di.instance
 import persistence.export_import.json.application.ImportFromJSON
 import persistence.export_import.json.dto.JSONMeasurement
 import ui.dialogs.import_from_file.import_measurements.ImportMeasurementsComponent
+import ui.screens.base_entity_screen.EntityComponent
+import utils.log
 import kotlin.reflect.KClass
 
-class ImportFromFileComponent(
-    private val entityClass: KClass<out IEntity>,
+class ImportFromFileComponent<T : IEntity>(
+    private val entityClass: KClass<out T>,
     private val filePath: String,
     private val di: DI,
     componentContext: ComponentContext
-) : IImportFromFile, ComponentContext by componentContext {
+) : IImportFromFile<T>, ComponentContext by componentContext {
 
+    private val _state: MutableValue<IImportFromFile.State<T>> =
+        MutableValue(IImportFromFile.State(filePath = filePath))
 
-    private val dialogNav = StackNavigation<DialogConfig>()
+    override val state: Value<IImportFromFile.State<T>> = _state
 
-    private val _dialogStack = childStack(
-        source = dialogNav,
-        initialConfiguration = DialogConfig.None,
-//            handleBackButton = true,
-        childFactory = ::createChild,
-        key = "import entity dialog stack"
-    )
+    init {
+        log("initializing import from file component for ${entityClass.simpleName}")
+    }
 
-    override val dialogStack: Value<ChildStack<*, IImportFromFile.ImportEntity>> = _dialogStack
+    companion object {
+        inline operator fun <reified T : IEntity> invoke(
+            filePath: String,
+            di: DI,
+            componentContext: ComponentContext
+        ): ImportFromFileComponent<T> {
 
-    private fun createChild(config: DialogConfig, componentContext: ComponentContext): IImportFromFile.ImportEntity {
-        return when (config) {
-            DialogConfig.None -> IImportFromFile.ImportEntity.None
-            DialogConfig.Measurements -> IImportFromFile.ImportEntity.Measurements(
-                component = ImportMeasurementsComponent(
-                    filePath = filePath,
-                    di = di,
-                    componentContext = componentContext
-                )
+            return ImportFromFileComponent(
+                entityClass = T::class,
+                filePath = filePath,
+                di = di,
+                componentContext = componentContext
             )
         }
     }
 
-
-    @Parcelize
-    sealed class DialogConfig : Parcelable {
-        @Parcelize
-        object None : DialogConfig()
-
-        @Parcelize
-        object Measurements : DialogConfig()
-    }
-
-
-    init {
-        when (entityClass) {
-            Measurement::class -> {
-                dialogNav.replaceCurrent(DialogConfig.Measurements)
-            }
-        }
-    }
 }

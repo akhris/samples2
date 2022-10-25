@@ -110,7 +110,7 @@ interface IEntityComponent<T : IEntity> {
         class AddMultipleSamplesDialog(val component: IAddMultipleSamplesComponent, val onAdd: (List<String>) -> Unit) :
             Dialog()
 
-        class ImportEntitiesDialog(val component: IImportFromFile) : Dialog()
+        class ImportEntitiesDialog(val component: IImportFromFile<out IEntity>) : Dialog()
     }
 
 }

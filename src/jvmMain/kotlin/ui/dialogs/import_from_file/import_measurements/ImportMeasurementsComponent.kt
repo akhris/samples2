@@ -13,7 +13,11 @@ import persistence.export_import.json.application.ImportFromJSON
 import persistence.export_import.json.dto.JSONMeasurement
 import ui.screens.base_entity_screen.entityComponents.FileExtensions
 import utils.log
-import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.Path
+import kotlin.io.path.exists
+import kotlin.io.path.extension
+import kotlin.io.path.isDirectory
 
 class ImportMeasurementsComponent(
     private val filePath: String,
@@ -31,13 +35,14 @@ class ImportMeasurementsComponent(
     override val state: Value<IImportMeasurements.State> = _state
 
 
-    private fun checkFile(file: File, isOpen: Boolean): Boolean {
-        if (isOpen && !file.exists()) {
+    private fun checkFile(): Boolean {
+        val file = Path(filePath)
+        if (!file.exists()) {
 //            showErrorDialog(title = "Файл не существует", error = NoSuchFileException(file))
             return false
         }
 
-        if (file.isDirectory) {
+        if (file.isDirectory()) {
 //            showErrorDialog(
 //                title = "Выбранный путь является директорией",
 //                error = NoSuchFileException(file, reason = "Необходимо выбрать файл")
@@ -48,8 +53,10 @@ class ImportMeasurementsComponent(
     }
 
 
-    private fun importFromFile(file: File) {
-        if (!checkFile(file, isOpen = true)) return
+    private fun importFromFile() {
+        log("going to import measurements from file: $filePath")
+        val file = Path(filePath)
+        if (!checkFile()) return
         scope.launch {
             when (file.extension) {
                 in FileExtensions.JSON.extensions -> importFromJSONFile(file)
@@ -59,7 +66,7 @@ class ImportMeasurementsComponent(
         }
     }
 
-    private suspend fun importFromJSONFile(file: File) {
+    private suspend fun importFromJSONFile(file: Path) {
         // TODO: //show import dialog to choose sample types, workers, e.t.c.
         //make actual read from JSON file
         when (val imported = importFromJSON(ImportFromJSON.Params.ImportFromFile(file.toString()))) {
@@ -78,7 +85,7 @@ class ImportMeasurementsComponent(
         }
     }
 
-    private suspend fun importFromEXCELFile(file: File) {
+    private suspend fun importFromEXCELFile(file: Path) {
         //make actual read from EXCEL file
     }
 
@@ -91,6 +98,8 @@ class ImportMeasurementsComponent(
                 scope.coroutineContext.cancelChildren()
             })
 
+
+        importFromFile()
 
     }
 

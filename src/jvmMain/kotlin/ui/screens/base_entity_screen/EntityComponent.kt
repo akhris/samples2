@@ -514,6 +514,7 @@ open class EntityComponent<T : IEntity>(
     }
 
     override fun dismissDialog() {
+        log("dismissing dialog: ${_dialogStack.value.active.instance}")
         dialogNav.replaceCurrent(DialogConfig.None)
     }
 
@@ -565,6 +566,7 @@ open class EntityComponent<T : IEntity>(
     }
 
     override fun showImportEntityDialog(entityClass: KClass<out IEntity>, filePath: String) {
+        log("going to show import entity dialog for ${entityClass.simpleName}")
         dialogNav.replaceCurrent(
             DialogConfig.ImportEntitiesDialog(entityClass, filePath)
         )

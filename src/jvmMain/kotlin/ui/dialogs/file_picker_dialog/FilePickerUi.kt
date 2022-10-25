@@ -25,8 +25,8 @@ fun FilePickerUi(component: IFilePicker, onDismiss: () -> Unit) {
             )
         }
     LaunchedEffect(file) {
-        file?.let { component.onFileSelected(it) }
         onDismiss()
+        file?.let { component.onFileSelected(it) }
     }
 }
 
