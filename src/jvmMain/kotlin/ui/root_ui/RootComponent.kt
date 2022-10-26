@@ -34,7 +34,7 @@ class RootComponent(
     private val dialogNav = StackNavigation<DialogConfig>()
     private val navHostNav = StackNavigation<NavHostConfig>()
     private val toolbarUtilsNav = StackNavigation<ToolbarUtilsConfig>()
-    private val preferencesManager: PreferencesManager by di.instance()
+//    private val preferencesManager: PreferencesManager by di.instance()
     private val _currentDestination = MutableValue<NavItem>(NavItem.homeItem)
     override val currentDestination: Value<NavItem> = _currentDestination
 

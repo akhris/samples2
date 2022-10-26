@@ -9,19 +9,18 @@ import ui.dialogs.BaseDialog
 @Composable
 fun ImportMeasurementsUi(component: IImportMeasurements, onDismiss: () -> Unit) {
 
-
-    Dialog(
-        onCloseRequest = onDismiss,
-//        title = {
-//            Text(text = "Импорт данных измерений")
-//        },
+    BaseDialog(
+        onDismiss = onDismiss,
+        title = {
+            Text(text = "Импорт данных измерений")
+        },
         content = {
             Text("importing")
+        },
+        buttons = {
+            Button(onClick = {}) {
+                Text("Сохранить")
+            }
         }
-//        buttons = {
-//            Button(onClick = {}){
-//                Text("Сохранить")
-//            }
-//        }
     )
 }

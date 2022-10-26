@@ -12,12 +12,13 @@ import com.arkivanov.essenty.parcelable.Parcelize
 import domain.IEntity
 import domain.Measurement
 import org.kodein.di.DI
-import org.kodein.di.instance
-import persistence.export_import.json.application.ImportFromJSON
-import persistence.export_import.json.dto.JSONMeasurement
 import ui.dialogs.import_from_file.import_measurements.ImportMeasurementsComponent
-import ui.screens.base_entity_screen.EntityComponent
+import ui.screens.base_entity_screen.entityComponents.FileExtensions
 import utils.log
+import kotlin.io.path.Path
+import kotlin.io.path.exists
+import kotlin.io.path.extension
+import kotlin.io.path.isDirectory
 import kotlin.reflect.KClass
 
 class ImportFromFileComponent<T : IEntity>(
@@ -27,13 +28,76 @@ class ImportFromFileComponent<T : IEntity>(
     componentContext: ComponentContext
 ) : IImportFromFile<T>, ComponentContext by componentContext {
 
+
+    private val nav = StackNavigation<Config>()
+
+    private val _stack = childStack(
+        source = nav,
+        initialConfiguration = Config.None,
+        childFactory = ::createChild,
+        key = "import entity stack"
+    )
+
+    override val stack: Value<ChildStack<*, IImportFromFile.ImportDialog>> = _stack
+    private fun createChild(config: Config, componentContext: ComponentContext): IImportFromFile.ImportDialog {
+        return when (config) {
+            Config.Import -> {
+                when (entityClass) {
+                    Measurement::class -> IImportFromFile.ImportDialog.ImportMeasurementsDialog(
+                        ImportMeasurementsComponent(
+                            filePath = filePath, di = di, componentContext = componentContext
+                        )
+                    )
+
+                    else -> throw IllegalArgumentException("class $entityClass is not supported for import")
+                }
+            }
+
+            Config.None -> IImportFromFile.ImportDialog.None
+        }
+    }
+
     private val _state: MutableValue<IImportFromFile.State<T>> =
         MutableValue(IImportFromFile.State(filePath = filePath))
 
     override val state: Value<IImportFromFile.State<T>> = _state
 
+
+    @Parcelize
+    private sealed class Config : Parcelable {
+
+        @Parcelize
+        object Import : Config()
+
+        //todo add class ImportFromXLS, ...
+        @Parcelize
+        object None : Config()
+
+    }
+
+    private fun checkFile(): Boolean {
+        val file = Path(filePath)
+        return !(!file.exists() || file.isDirectory())
+
+    }
+
+    private fun initImportConfig() {
+        val file = Path(filePath)
+        if (!checkFile()) return
+        when (file.extension) {
+            in FileExtensions.JSON.extensions,
+            in FileExtensions.EXCEL.extensions -> {
+                nav.replaceCurrent(Config.Import)
+            }
+
+            else -> {
+                throw IllegalArgumentException("Cannot import from file with extension: ${file.extension}")
+            }
+        }
+    }
+
     init {
-        log("initializing import from file component for ${entityClass.simpleName}")
+        initImportConfig()
     }
 
     companion object {
