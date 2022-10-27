@@ -5,6 +5,7 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.statements.InsertStatement
 import org.jetbrains.exposed.sql.statements.UpdateStatement
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import persistence.exposed.dto.EntityMeasurement
 import persistence.exposed.dto.Tables
 import persistence.exposed.toMeasurement

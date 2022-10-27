@@ -39,3 +39,14 @@ fun <T> List<T>.replaceOrAdd(newValue: T, block: (T) -> Boolean): List<T> {
         replaced
     }
 }
+
+fun <T> List<T>.toFormattedList(delimiter: String = ", "): String {
+    val builder = StringBuilder()
+    forEachIndexed { index, s ->
+        builder.append(s)
+        if (index < size - 1) {
+            builder.append(delimiter)
+        }
+    }
+    return builder.toString()
+}

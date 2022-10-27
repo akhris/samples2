@@ -18,15 +18,12 @@ import org.kodein.di.instance
 import persistence.export_import.json.application.ImportFromJSON
 import persistence.export_import.json.dto.JSONMeasurement
 import persistence.export_import.json.dto.JSONMeasurementResult
-import persistence.export_import.json.serializers.LocalDateTimeSerializer
+import persistence.exposed.dto.Tables
 import ui.dialogs.edit_sample_type_dialog.EditSampleTypeDialogComponent
-import ui.dialogs.import_from_file.IImportFromFile
-import ui.dialogs.import_from_file.ImportFromFileComponent
 import ui.screens.base_entity_screen.entityComponents.FileExtensions
 import ui.utils.sampletypes_selector.SampleTypesSelectorComponent
 import utils.log
 import java.nio.file.Path
-import java.time.LocalDateTime
 import kotlin.io.path.Path
 import kotlin.io.path.exists
 import kotlin.io.path.extension
@@ -60,8 +57,6 @@ class ImportMeasurementsComponent(
     private val importFromJSON: ImportFromJSON<Measurement, JSONMeasurement> by di.instance()
 
     private val insertSample: InsertEntity<Sample> by di.instance()
-
-    private val _jsonMeasurements = MutableValue(listOf<JSONMeasurement>())
 
     private val _state = MutableValue(IImportMeasurements.State())
 
@@ -139,6 +134,11 @@ class ImportMeasurementsComponent(
         sampleTypesNav.pop()
     }
 
+    override fun saveMeasurementsToDB() {
+        //make actual saving to database:
+
+    }
+
     private suspend fun importFromJSONFile(file: Path) {
         // TODO: //show import dialog to choose sample types, workers, e.t.c.
         //make actual read from JSON file
@@ -152,8 +152,8 @@ class ImportMeasurementsComponent(
             }
 
             is Result.Success -> {
-                _jsonMeasurements.reduce {
-                    imported.value
+                _state.reduce {
+                    it.copy(JSONMeasurements = imported.value)
                 }
                 invalidateJSONMeasurements()
             }
@@ -161,11 +161,15 @@ class ImportMeasurementsComponent(
     }
 
     private suspend fun invalidateJSONMeasurements() {
-        val jsonMeasurements = _jsonMeasurements.value
+        val jsonMeasurements = _state.value.JSONMeasurements
         //1. try to determine sample type based on parameters set
         determineSampleType(jsonMeasurements)
-        //try to map JSONMeasurement:
 
+        determineSamples(jsonMeasurements)
+
+        determineWorkers(jsonMeasurements)
+
+        determinePlaces(jsonMeasurements)
 
 //        val mapped = jsonMeasurements.map { it.map() }
     }
@@ -190,6 +194,7 @@ class ImportMeasurementsComponent(
                 }
             }
         log("paramsFromDB:\n${paramsFromDB}")
+
         // 3. associate params set by its sample type from db:
         val associatedParams =
             paramsSet.groupBy { jsonParam ->
@@ -214,6 +219,111 @@ class ImportMeasurementsComponent(
             )
         }
 
+    }
+
+    private suspend fun determineWorkers(jsonMeasurements: List<JSONMeasurement>) {
+        // 1. get all unique Operators from json:
+        val operatorsSet = jsonMeasurements.mapNotNull {
+            it.operator
+        }.distinct()
+
+        // 2. get all Operators from db:
+        val operatorsFromDB =
+            when (val result = getOperators(GetEntities.Params.GetWithSpecification(Specification.QueryAll))) {
+                is Result.Failure -> {
+                    log("all operators was not loaded from database: ${result.throwable.localizedMessage}")
+                    listOf()
+                }
+
+                is Result.Success -> {
+                    result.value.flatten()
+                }
+            }
+
+        // 3. associate Operators set by its sample type from db:
+        val associatedOperators =
+            operatorsSet.groupBy { jsonOperator ->
+                operatorsFromDB.find { it.formatName().contains(jsonOperator) }
+            }
+
+        val workersToAdd = associatedOperators[null] ?: listOf()
+        _state.reduce {
+            it.copy(workersToAdd = workersToAdd)
+        }
+    }
+
+
+    private suspend fun determinePlaces(jsonMeasurements: List<JSONMeasurement>) {
+        // 1. get all unique Operators from json:
+        val placesSet = jsonMeasurements.mapNotNull {
+            it.place
+        }.distinct()
+
+        // 2. get all Operators from db:
+        val placesFromDB =
+            when (val result = getPlaces(GetEntities.Params.GetWithSpecification(Specification.QueryAll))) {
+                is Result.Failure -> {
+                    log("all places was not loaded from database: ${result.throwable.localizedMessage}")
+                    listOf()
+                }
+
+                is Result.Success -> {
+                    result.value.flatten()
+                }
+            }
+
+        // 3. associate Operators set by its sample type from db:
+        val associatedPlaces =
+            placesSet.groupBy { jsonPlace ->
+                placesFromDB.find { (it.name == jsonPlace) || (it.description == jsonPlace) || (it.roomNumber == jsonPlace) }
+            }
+
+        val placesToAdd = associatedPlaces[null] ?: listOf()
+        _state.reduce {
+            it.copy(placesToAdd = placesToAdd)
+        }
+    }
+
+    private suspend fun determineSamples(jsonMeasurements: List<JSONMeasurement>) {
+        // 1. get all unique Operators from json:
+        val samplesSet = jsonMeasurements.mapNotNull {
+            it.sample
+        }.distinct()
+
+        // 2. get all Operators from db:
+        val samplesFromDB =
+            when (val result = getSamples(
+                GetEntities.Params.GetWithSpecification(
+                    Specification.Filtered(
+                        listOf(
+                            FilterSpec.Values(
+                                columnName = Tables.Samples.sampleType.name,
+                                filteredValues = listOfNotNull(_state.value.selectedType?.id)
+                            )
+                        )
+                    )
+                )
+            )) {
+                is Result.Failure -> {
+                    log("all places was not loaded from database: ${result.throwable.localizedMessage}")
+                    listOf()
+                }
+
+                is Result.Success -> {
+                    result.value.flatten()
+                }
+            }
+
+        // 3. associate Operators set by its sample type from db:
+        val associatedSamples =
+            samplesSet.groupBy { jsonSample ->
+                samplesFromDB.find { it.identifier == jsonSample }
+            }
+
+        val samplesToAdd = associatedSamples[null] ?: listOf()
+        _state.reduce {
+            it.copy(samplesToAdd = samplesToAdd)
+        }
     }
 
     // map to measurement:
