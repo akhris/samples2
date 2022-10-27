@@ -1,4 +1,4 @@
-package ui.toolbar_utils.sampletypes_selector
+package ui.utils.sampletypes_selector
 
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable

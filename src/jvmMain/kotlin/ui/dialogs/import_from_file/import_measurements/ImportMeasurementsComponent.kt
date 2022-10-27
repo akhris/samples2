@@ -1,11 +1,13 @@
 package ui.dialogs.import_from_file.import_measurements
 
 import com.arkivanov.decompose.ComponentContext
-import com.arkivanov.decompose.router.stack.replaceCurrent
+import com.arkivanov.decompose.router.stack.*
 import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.decompose.value.reduce
 import com.arkivanov.essenty.lifecycle.subscribe
+import com.arkivanov.essenty.parcelable.Parcelable
+import com.arkivanov.essenty.parcelable.Parcelize
 import domain.*
 import domain.application.Result
 import domain.application.baseUseCases.GetEntities
@@ -17,8 +19,11 @@ import persistence.export_import.json.application.ImportFromJSON
 import persistence.export_import.json.dto.JSONMeasurement
 import persistence.export_import.json.dto.JSONMeasurementResult
 import persistence.export_import.json.serializers.LocalDateTimeSerializer
+import ui.dialogs.edit_sample_type_dialog.EditSampleTypeDialogComponent
+import ui.dialogs.import_from_file.IImportFromFile
 import ui.dialogs.import_from_file.ImportFromFileComponent
 import ui.screens.base_entity_screen.entityComponents.FileExtensions
+import ui.utils.sampletypes_selector.SampleTypesSelectorComponent
 import utils.log
 import java.nio.file.Path
 import java.time.LocalDateTime
@@ -36,6 +41,16 @@ class ImportMeasurementsComponent(
     private val scope =
         CoroutineScope(Dispatchers.Default + SupervisorJob())
 
+    private val sampleTypesNav = StackNavigation<TypesSelectorConfig>()
+
+    private val _typesStack = childStack(
+        source = sampleTypesNav,
+        initialConfiguration = TypesSelectorConfig.SampleTypesSelector,
+        childFactory = ::createChild,
+        key = "sample types selector"
+    )
+
+    override val sampleTypesStack: Value<ChildStack<*, IImportMeasurements.SampleTypesUtils>> = _typesStack
 
     private val getSampleTypes: GetEntities<SampleType> by di.instance()
     private val getSamples: GetEntities<Sample> by di.instance()
@@ -46,10 +61,32 @@ class ImportMeasurementsComponent(
 
     private val insertSample: InsertEntity<Sample> by di.instance()
 
+    private val _jsonMeasurements = MutableValue(listOf<JSONMeasurement>())
+
     private val _state = MutableValue(IImportMeasurements.State())
 
     override val state: Value<IImportMeasurements.State> = _state
 
+
+    private fun createChild(
+        config: TypesSelectorConfig,
+        componentContext: ComponentContext
+    ): IImportMeasurements.SampleTypesUtils {
+        return when (config) {
+            TypesSelectorConfig.SampleTypesSelector -> IImportMeasurements.SampleTypesUtils.SampleTypesSelector(
+                component = SampleTypesSelectorComponent(di = di, componentContext = componentContext)
+            )
+
+            is TypesSelectorConfig.EditSampleTypesDialog -> IImportMeasurements.SampleTypesUtils.EditSampleTypesDialog(
+                component = EditSampleTypeDialogComponent(
+                    di = di,
+                    componentContext = componentContext,
+                    initialSampleType = config.sampleType
+                )
+            )
+        }
+
+    }
 
     private fun checkFile(): Boolean {
         val file = Path(filePath)
@@ -69,25 +106,38 @@ class ImportMeasurementsComponent(
         }
     }
 
-    private fun importFromFile() {
+    private suspend fun importFromFile() {
         val file = Path(filePath)
         if (!checkFile()) return
         _state.reduce { it.copy(filePath = filePath) }
-        scope.launch {
-            invalidateSampleTypes()
 
-            when (file.extension) {
-                in FileExtensions.JSON.extensions -> {
-                    importFromJSONFile(file)
-                }
+        when (file.extension) {
+            in FileExtensions.JSON.extensions -> {
+                importFromJSONFile(file)
+            }
 
-                in FileExtensions.EXCEL.extensions -> {
-                    importFromEXCELFile(file)
-                }
+            in FileExtensions.EXCEL.extensions -> {
+                importFromEXCELFile(file)
             }
         }
     }
 
+    override fun selectSampleType(type: SampleType) {
+        _state.reduce {
+            it.copy(selectedType = type)
+        }
+        scope.launch {
+            invalidateJSONMeasurements()
+        }
+    }
+
+    override fun editSampleType(type: SampleType?) {
+        sampleTypesNav.push(TypesSelectorConfig.EditSampleTypesDialog(type))
+    }
+
+    override fun dismissEditSampleType() {
+        sampleTypesNav.pop()
+    }
 
     private suspend fun importFromJSONFile(file: Path) {
         // TODO: //show import dialog to choose sample types, workers, e.t.c.
@@ -102,19 +152,74 @@ class ImportMeasurementsComponent(
             }
 
             is Result.Success -> {
-                invalidateJSONMeasurements(imported.value)
+                _jsonMeasurements.reduce {
+                    imported.value
+                }
+                invalidateJSONMeasurements()
             }
         }
     }
 
-    private suspend fun invalidateJSONMeasurements(jsonMeasurements: List<JSONMeasurement>) {
-        //1. try to map JSONMeasurement:
-        val mapped = jsonMeasurements.map { it.map() }
+    private suspend fun invalidateJSONMeasurements() {
+        val jsonMeasurements = _jsonMeasurements.value
+        //1. try to determine sample type based on parameters set
+        determineSampleType(jsonMeasurements)
+        //try to map JSONMeasurement:
+
+
+//        val mapped = jsonMeasurements.map { it.map() }
+    }
+
+    private suspend fun determineSampleType(jsonMeasurements: List<JSONMeasurement>) {
+        // 1. get all unique parameters identifiers from json:
+        val paramsSet = jsonMeasurements.flatMap {
+            it.results.map { it.parameter }
+        }.distinct()
+        log("paramsSet:\n$paramsSet")
+
+        // 2. get all parameters from db:
+        val paramsFromDB =
+            when (val result = getParameters(GetEntities.Params.GetWithSpecification(Specification.QueryAll))) {
+                is Result.Failure -> {
+                    log("all parameters was not loaded from database: ${result.throwable.localizedMessage}")
+                    listOf()
+                }
+
+                is Result.Success -> {
+                    result.value.flatten()
+                }
+            }
+        log("paramsFromDB:\n${paramsFromDB}")
+        // 3. associate params set by its sample type from db:
+        val associatedParams =
+            paramsSet.groupBy { jsonParam ->
+                paramsFromDB.find { it.name == jsonParam }?.sampleType
+            }
+        log("associatedParams:\n${associatedParams}")
+
+        val determinedSampleType = _state.value.selectedType ?: associatedParams.maxByOrNull { it.value.size }?.key
+        log("determinedSampleType:\n${determinedSampleType}")
+
+        val parametersToAdd = if (determinedSampleType != null) {
+            paramsSet.minus((associatedParams[determinedSampleType] ?: listOf()).toSet())
+        } else {
+            paramsSet
+        }
+
+        log("parametersToAdd:\n${parametersToAdd}")
+        _state.reduce {
+            it.copy(
+                selectedType = determinedSampleType,
+                parametersToAdd = parametersToAdd
+            )
+        }
+
     }
 
     // map to measurement:
+    /*
     private suspend fun JSONMeasurement.map(): Measurement {
-        
+
         val sample = sample?.let { s ->
             when (val samples = getSamples(GetEntities.Params.GetWithSpecification(Specification.Search(s)))) {
                 is Result.Failure -> null
@@ -157,6 +262,8 @@ class ImportMeasurementsComponent(
         )
     }
 
+     */
+
     private suspend fun JSONMeasurementResult.map(): MeasurementResult? {
         val parameter =
             when (val params =
@@ -174,6 +281,14 @@ class ImportMeasurementsComponent(
         //make actual read from EXCEL file
     }
 
+    @Parcelize
+    private sealed class TypesSelectorConfig : Parcelable {
+        @Parcelize
+        object SampleTypesSelector : TypesSelectorConfig()
+
+        @Parcelize
+        class EditSampleTypesDialog(val sampleType: SampleType?) : TypesSelectorConfig()
+    }
 
     init {
 
@@ -183,8 +298,10 @@ class ImportMeasurementsComponent(
                 scope.coroutineContext.cancelChildren()
             })
 
-
-        importFromFile()
+        scope.launch {
+            invalidateSampleTypes()
+            importFromFile()
+        }
 
     }
 

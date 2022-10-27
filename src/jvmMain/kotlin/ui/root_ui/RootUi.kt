@@ -34,7 +34,7 @@ import ui.screens.base_entity_screen.BaseEntityUi
 import ui.screens.base_entity_screen.EntityUiwithFab
 import ui.screens.preferences_screen.PreferencesUi
 import ui.screens.sample_details_screen.SampleDetailsUi
-import ui.toolbar_utils.sampletypes_selector.SampleTypesSelectorUi
+import ui.utils.sampletypes_selector.SampleTypesSelectorUi
 import kotlin.io.path.Path
 import kotlin.io.path.nameWithoutExtension
 

@@ -24,7 +24,7 @@ import ui.screens.base_entity_screen.entityComponents.ParametersComponent
 import ui.screens.base_entity_screen.entityComponents.SamplesComponent
 import ui.screens.preferences_screen.PreferencesComponent
 import ui.screens.sample_details_screen.SampleDetailsComponent
-import ui.toolbar_utils.sampletypes_selector.SampleTypesSelectorComponent
+import ui.utils.sampletypes_selector.SampleTypesSelectorComponent
 
 class RootComponent(
     private val di: DI,

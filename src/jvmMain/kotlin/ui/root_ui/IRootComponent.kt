@@ -9,7 +9,7 @@ import ui.screens.base_entity_screen.EntityComponentWithFab
 import ui.screens.base_entity_screen.IEntityComponent
 import ui.screens.preferences_screen.IPreferencesComponent
 import ui.screens.sample_details_screen.ISampleDetailsComponent
-import ui.toolbar_utils.sampletypes_selector.ISampleTypesSelector
+import ui.utils.sampletypes_selector.ISampleTypesSelector
 
 interface IRootComponent {
 

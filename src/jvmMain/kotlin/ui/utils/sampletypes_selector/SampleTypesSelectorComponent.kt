@@ -1,4 +1,4 @@
-package ui.toolbar_utils.sampletypes_selector
+package ui.utils.sampletypes_selector
 
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.value.MutableValue
