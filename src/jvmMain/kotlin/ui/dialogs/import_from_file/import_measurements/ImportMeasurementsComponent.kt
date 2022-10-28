@@ -11,6 +11,7 @@ import com.arkivanov.essenty.parcelable.Parcelize
 import domain.*
 import domain.application.Result
 import domain.application.baseUseCases.GetEntities
+import domain.application.baseUseCases.InsertEntities
 import domain.application.baseUseCases.InsertEntity
 import kotlinx.coroutines.*
 import org.kodein.di.DI
@@ -23,7 +24,9 @@ import ui.dialogs.edit_sample_type_dialog.EditSampleTypeDialogComponent
 import ui.screens.base_entity_screen.entityComponents.FileExtensions
 import ui.utils.sampletypes_selector.SampleTypesSelectorComponent
 import utils.log
+import utils.toFormattedList
 import java.nio.file.Path
+import java.time.LocalDateTime
 import kotlin.io.path.Path
 import kotlin.io.path.exists
 import kotlin.io.path.extension
@@ -56,12 +59,21 @@ class ImportMeasurementsComponent(
     private val getParameters: GetEntities<Parameter> by di.instance()
     private val importFromJSON: ImportFromJSON<Measurement, JSONMeasurement> by di.instance()
 
-    private val insertSample: InsertEntity<Sample> by di.instance()
+    private val insertSamples: InsertEntities<Sample> by di.instance()
+    private val insertParameters: InsertEntities<Parameter> by di.instance()
+    private val insertOperators: InsertEntities<Worker> by di.instance()
+    private val insertPlaces: InsertEntities<Place> by di.instance()
+    private val insertMeasurements: InsertEntities<Measurement> by di.instance()
+
 
     private val _state = MutableValue(IImportMeasurements.State())
 
     override val state: Value<IImportMeasurements.State> = _state
 
+    private val _processingState =
+        MutableValue<IImportMeasurements.ProcessingState>(IImportMeasurements.ProcessingState.IDLE)
+
+    override val processingState: Value<IImportMeasurements.ProcessingState> = _processingState
 
     private fun createChild(
         config: TypesSelectorConfig,
@@ -126,6 +138,12 @@ class ImportMeasurementsComponent(
         }
     }
 
+    private fun setProgress(progress: Float?, caption: String) {
+        _processingState.reduce {
+            IImportMeasurements.ProcessingState.InProgress(progress = progress, caption = caption)
+        }
+    }
+
     override fun editSampleType(type: SampleType?) {
         sampleTypesNav.push(TypesSelectorConfig.EditSampleTypesDialog(type))
     }
@@ -134,13 +152,68 @@ class ImportMeasurementsComponent(
         sampleTypesNav.pop()
     }
 
-    override fun saveMeasurementsToDB() {
+    override fun storeImportedMeasurements() {
         //make actual saving to database:
+        //1. save all entities that are going to be saved:
+        scope.launch {
+
+            _state.value.apply {
+                val type = selectedType ?: return@launch
+                val samples = samplesToAdd.associateWith { Sample(identifier = it, type = type) }
+                val parameters = parametersToAdd.associateWith { Parameter(name = it, sampleType = type) }
+                val operators = workersToAdd.associateWith { Worker(surname = it) }
+                val places = placesToAdd.associateWith { Place(roomNumber = it) }
+
+//                log("going to insert in db:")
+//                log("samples:\n${samples.values.toList().toFormattedList()}")
+//                log("parameters:\n${parameters.values.toList().toFormattedList()}")
+//                log("operators:\n${operators.values.toList().toFormattedList()}")
+//                log("places:\n${places.values.toList().toFormattedList()}")
+
+                //insert them in database:
+                setProgress(progress = 0f, caption = "Импорт образцов...")
+                insertSamples(InsertEntities.Insert(samples.values.toList()))
+                delay(200L)
+                setProgress(progress = 0.25f, caption = "Импорт параметров...")
+                insertParameters(InsertEntities.Insert(parameters.values.toList()))
+                delay(200L)
+                setProgress(progress = 0.50f, caption = "Импорт операторов...")
+                insertOperators(InsertEntities.Insert(operators.values.toList()))
+                delay(200L)
+                setProgress(progress = 0.75f, caption = "Импорт мест...")
+                insertPlaces(InsertEntities.Insert(places.values.toList()))
+                delay(200L)
+                //map JSONResults to results:
+
+
+                //make list of domain measurements:
+                val measurements = JSONMeasurements
+                    .map {
+                        Measurement(
+                            sample = it.sample?.let { s -> samples[s] },
+                            sampleType = type,
+                            dateTime = it.dateTime?.let { dt -> LocalDateTime.parse(dt) },
+                            operator = it.operator?.let { o -> operators[o] },
+                            place = it.place?.let { p -> places[p] },
+                            comment = it.comment,
+                            conditions = it.conditions,
+                            results = it.results.mapNotNull { jsResult ->
+                                log("mapping jsResult: $jsResult")
+                                parameters[jsResult.parameter]?.let { p ->
+                                    MeasurementResult(parameter = p, value = jsResult.value)
+                                }
+                            }
+                        )
+                    }
+                setProgress(progress = 1f, caption = "Импорт измерений...")
+                insertMeasurements(InsertEntities.Insert(measurements))
+                _processingState.reduce { IImportMeasurements.ProcessingState.SuccessfullyImported }
+            }
+        }
 
     }
 
     private suspend fun importFromJSONFile(file: Path) {
-        // TODO: //show import dialog to choose sample types, workers, e.t.c.
         //make actual read from JSON file
         when (val imported = importFromJSON(ImportFromJSON.Params.ImportFromFile(file.toString()))) {
             is Result.Failure -> {
@@ -162,16 +235,13 @@ class ImportMeasurementsComponent(
 
     private suspend fun invalidateJSONMeasurements() {
         val jsonMeasurements = _state.value.JSONMeasurements
-        //1. try to determine sample type based on parameters set
-        determineSampleType(jsonMeasurements)
-
-        determineSamples(jsonMeasurements)
-
-        determineWorkers(jsonMeasurements)
-
-        determinePlaces(jsonMeasurements)
-
-//        val mapped = jsonMeasurements.map { it.map() }
+        //parallel running coroutines:
+        listOf(
+            scope.async(Dispatchers.IO) { determineSampleType(jsonMeasurements) },
+            scope.async(Dispatchers.IO) { determineSamples(jsonMeasurements) },
+            scope.async(Dispatchers.IO) { determineWorkers(jsonMeasurements) },
+            scope.async(Dispatchers.IO) { determinePlaces(jsonMeasurements) })
+            .awaitAll()
     }
 
     private suspend fun determineSampleType(jsonMeasurements: List<JSONMeasurement>) {

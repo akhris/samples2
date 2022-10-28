@@ -1,31 +1,34 @@
 package ui.dialogs.import_from_file.import_measurements
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Warning
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.rememberDialogState
+import androidx.compose.ui.zIndex
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.jetbrains.stack.Children
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
+import di.di
+import org.kodein.di.instance
 import persistence.export_import.json.dto.JSONMeasurement
+import settings.PreferencesManager
+import ui.UiSettings
 import ui.dialogs.BaseDialog
 import ui.dialogs.edit_sample_type_dialog.EditSampleTypeDialogUi
 import ui.theme.DialogSettings
+import ui.theme.md_theme_dark_outline
+import ui.theme.md_theme_light_outline
 import ui.utils.sampletypes_selector.SampleTypesSelectorUi
 import utils.DateTimeConverter
 import utils.toFormattedList
@@ -37,6 +40,8 @@ import kotlin.io.path.Path
 fun ImportMeasurementsUi(component: IImportMeasurements, onDismiss: () -> Unit) {
 
     val state by remember(component) { component.state }.subscribeAsState()
+
+    val processingState by remember(component) { component.processingState }.subscribeAsState()
 
     val dialogState = rememberDialogState(
         size = DpSize(
@@ -54,25 +59,66 @@ fun ImportMeasurementsUi(component: IImportMeasurements, onDismiss: () -> Unit) 
             }, modifier = Modifier.padding(16.dp))
         },
         content = {
-            Row {
-                Box(modifier = Modifier.weight(1f)) {
-                    ImportMeasurementsSettingsContent(
-                        component = component
-                    )
+            Box(contentAlignment = Alignment.Center) {
+                val inProgress = remember(processingState) {
+                    processingState as? IImportMeasurements.ProcessingState.InProgress
                 }
-                Box(modifier = Modifier.weight(1f)) {
-                    ImportMeasurementsListContent(
-                        component = component
-                    )
+                inProgress?.let {
+                    Column(
+                        modifier = Modifier.zIndex(10f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        //show caption
+                        if (it.caption.isNotEmpty()) {
+                            Text(text = it.caption)
+                        }
+                        //show process indicator
+                        it.progress?.let { p ->
+                            LinearProgressIndicator(
+                                modifier = Modifier.width(DialogSettings.defaultWideDialogWidth),
+                                progress = p
+                            )
+                        }
+
+                    }
+                }
+                val rowMod = remember(inProgress) {
+                    if (inProgress == null) {
+                        Modifier
+                    } else {
+                        Modifier.blur(UiSettings.Dialogs.backgroundBlur)
+                    }
+                }
+
+                Row(modifier = rowMod) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        ImportMeasurementsSettingsContent(
+                            component = component
+                        )
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        ImportMeasurementsListContent(
+                            component = component
+                        )
+                    }
                 }
             }
         },
         buttons = {
-            Button(onClick = {}) {
-                Text("Сохранить")
+            Button(onClick = {
+                component.storeImportedMeasurements()
+            }) {
+                Text("Импортировать")
             }
         }
     )
+
+    LaunchedEffect(processingState) {
+        if (processingState == IImportMeasurements.ProcessingState.SuccessfullyImported) {
+            onDismiss()
+        }
+    }
 }
 
 @OptIn(ExperimentalDecomposeApi::class, ExperimentalMaterialApi::class)
@@ -89,23 +135,28 @@ private fun BoxScope.ImportMeasurementsSettingsContent(
     val sampleTypesStack by remember(component) { component.sampleTypesStack }.subscribeAsState()
 
     Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Children(sampleTypesStack) {
-            when (val child = it.instance) {
-                is IImportMeasurements.SampleTypesUtils.SampleTypesSelector -> {
-                    SampleTypesSelectorUi(component = child.component, onSampleTypeSelected = {
-                        it?.let { component.selectSampleType(it) }
-                    }, onEditSampleTypeClick = {
-                        component.editSampleType(it)
-                    })
-                }
+        ListItem(overlineText = {
+            Text("Тип образцов")
+        },
+            text = {
+                Children(sampleTypesStack) {
+                    when (val child = it.instance) {
+                        is IImportMeasurements.SampleTypesUtils.SampleTypesSelector -> {
+                            SampleTypesSelectorUi(component = child.component, onSampleTypeSelected = {
+                                it?.let { component.selectSampleType(it) }
+                            }, onEditSampleTypeClick = {
+                                component.editSampleType(it)
+                            })
+                        }
 
-                is IImportMeasurements.SampleTypesUtils.EditSampleTypesDialog -> {
-                    EditSampleTypeDialogUi(
-                        component = child.component,
-                        onDismiss = { component.dismissEditSampleType() })
+                        is IImportMeasurements.SampleTypesUtils.EditSampleTypesDialog -> {
+                            EditSampleTypeDialogUi(
+                                component = child.component,
+                                onDismiss = { component.dismissEditSampleType() })
+                        }
+                    }
                 }
-            }
-        }
+            })
 
         if (samplesToAdd.isNotEmpty()) {
             ListItem(icon = {
@@ -162,6 +213,9 @@ private fun BoxScope.ImportMeasurementsSettingsContent(
 private fun BoxScope.ImportMeasurementsListContent(component: IImportMeasurements) {
     val state by remember(component) { component.state }.subscribeAsState()
     val measurements = remember(state) { state.JSONMeasurements }
+    val prefs by di.instance<PreferencesManager>()
+    val isDarkMode by remember(prefs) { prefs.isDarkMode }.collectAsState(false)
+
     LazyColumn(
         modifier = Modifier.fillMaxWidth().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -176,7 +230,15 @@ private fun BoxScope.ImportMeasurementsListContent(component: IImportMeasurement
         }
 
         itemsIndexed(measurements, key = { index, item -> index }) { index, item ->
-            Card {
+
+            //outlined card
+            Card(
+                elevation = 0.dp,
+                border = BorderStroke(
+                    width = 1.dp,
+                    color = if (isDarkMode) md_theme_dark_outline else md_theme_light_outline
+                )
+            ) {
                 renderJSONMEasurement(item)
             }
         }

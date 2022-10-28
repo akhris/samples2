@@ -2,6 +2,7 @@ package settings
 
 import com.russhwolf.settings.ExperimentalSettingsApi
 import com.russhwolf.settings.ObservableSettings
+import com.russhwolf.settings.coroutines.getBooleanFlow
 import com.russhwolf.settings.coroutines.getStringFlow
 import org.jetbrains.exposed.sql.Database
 import persistence.exposed.DbSettings
@@ -12,10 +13,13 @@ import javax.swing.JOptionPane
 import javax.swing.filechooser.FileNameExtensionFilter
 import kotlin.io.path.pathString
 
+@OptIn(ExperimentalSettingsApi::class)
 class PreferencesManager(val settings: ObservableSettings) {
 
-    @OptIn(ExperimentalSettingsApi::class)
+
     val databaseFile = settings.getStringFlow(KEY_DATABASE_FILE, getDefaultDatabaseFile())
+    val isDarkMode = settings.getBooleanFlow(KEY_IS_DARK_MODE, false)
+
     fun isDarkMode(): Boolean {
         return settings.getBoolean(KEY_IS_DARK_MODE, false)
     }

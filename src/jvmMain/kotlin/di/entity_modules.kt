@@ -34,6 +34,7 @@ inline fun <reified ENTITY : IEntity> getEntityModule(
     bindSingleton<GetItemsCount<ENTITY>> { GetItemsCount(repo = instance(), ioDispatcher = Dispatchers.IO) }
     bindSingleton<GetEntities<ENTITY>> { GetEntities(repo = instance(), ioDispatcher = Dispatchers.IO) }
     bindSingleton<RemoveEntity<ENTITY>> { RemoveEntity(repo = instance(), ioDispatcher = Dispatchers.IO) }
+    bindSingleton<RemoveEntities<ENTITY>> { RemoveEntities(repo = instance(), ioDispatcher = Dispatchers.IO) }
     bindSingleton<UpdateEntity<ENTITY>> { UpdateEntity(repo = instance(), ioDispatcher = Dispatchers.IO) }
     bindSingleton<UpdateEntities<ENTITY>> { UpdateEntities(repo = instance(), ioDispatcher = Dispatchers.IO) }
     bindSingleton<InsertEntity<ENTITY>> { InsertEntity(repo = instance(), ioDispatcher = Dispatchers.IO) }

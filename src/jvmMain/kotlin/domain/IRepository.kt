@@ -12,11 +12,13 @@ import kotlinx.coroutines.flow.SharedFlow
 interface IRepository<ENTITY : IEntity> {
     suspend fun getByID(id: String): ENTITY
     suspend fun remove(t: ENTITY)
+    suspend fun remove(t: List<ENTITY>)
     suspend fun update(t: ENTITY)
     suspend fun update(t: List<ENTITY>)
     suspend fun insert(t: ENTITY)
     suspend fun insert(t: List<ENTITY>)
-    suspend fun remove(specifications: List<ISpecification>)
+
+    //    suspend fun remove(specifications: List<ISpecification>)
     suspend fun query(specifications: List<ISpecification>): EntitiesList<ENTITY>
     suspend fun getItemsCount(specifications: List<ISpecification>): Long
     suspend fun getSlice(columnName: String): List<SliceResult>

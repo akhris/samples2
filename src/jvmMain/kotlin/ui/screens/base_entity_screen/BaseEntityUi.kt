@@ -2,9 +2,7 @@ package ui.screens.base_entity_screen
 
 import LocalSamplesType
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
@@ -16,7 +14,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.rememberDialogState
@@ -37,12 +34,12 @@ import ui.dialogs.TimePickerDialog
 import ui.dialogs.add_multiple_samples_dialog.AddMultipleSamplesUi
 import ui.dialogs.error_dialog.ErrorDialogUi
 import ui.dialogs.file_picker_dialog.FilePickerUi
-import ui.dialogs.import_from_file.ImportFromFileComponent
 import ui.dialogs.import_from_file.ImportFromFileUi
 import ui.dialogs.list_picker_dialog.ListPickerDialogUi
 import ui.dialogs.prompt_dialog.PromptDialogUi
 import ui.screens.base_entity_screen.filter_dialog.FilterEntityFieldUi
 import utils.log
+import utils.toFormattedList
 import java.time.LocalDateTime
 import java.time.temporal.TemporalAdjusters
 
@@ -133,7 +130,7 @@ fun <T : IEntity> BaseEntityUi(
                                     onYes = {
                                         //do actual delete
                                         selection?.let {
-                                            dialog.component.removeEntity(it)
+                                            dialog.component.removeEntites(listOf(it))
                                             selection = null
                                         }
 
@@ -498,13 +495,14 @@ private fun <T : IEntity> ShowDataTableForGroup(
 
                                 TextButton(
                                     onClick = {
+                                        val es = entities.filter { it.id in selectedEntities }
                                         component.showPrompt(
-                                            title = "Удалить объекты?",
-                                            message = "${selectedEntities.toList()}?",
+                                            title = "Удалить объекты (${es.size})?",
+                                            message = "${es.toFormattedList()}",
                                             onYes = {
                                                 //do actual delete
-                                                entities.filter { it.id in selectedEntities }.forEach {
-                                                    component.removeEntity(it)
+                                                component.removeEntites(es)
+                                                es.forEach {
                                                     selectedEntities.remove(it.id)
                                                 }
                                             }

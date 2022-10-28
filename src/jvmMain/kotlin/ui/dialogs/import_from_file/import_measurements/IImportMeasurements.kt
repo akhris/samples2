@@ -5,12 +5,13 @@ import com.arkivanov.decompose.value.Value
 import domain.*
 import persistence.export_import.json.dto.JSONMeasurement
 import ui.dialogs.edit_sample_type_dialog.IEditSampleTypeDialogComponent
-import ui.dialogs.import_from_file.IImportFromFile
 import ui.utils.sampletypes_selector.ISampleTypesSelector
 
 interface IImportMeasurements {
 
     val state: Value<State>
+
+    val processingState: Value<ProcessingState>
 
     val sampleTypesStack: Value<ChildStack<*, SampleTypesUtils>>
     fun selectSampleType(type: SampleType)
@@ -19,7 +20,7 @@ interface IImportMeasurements {
 
     fun dismissEditSampleType()
 
-    fun saveMeasurementsToDB()
+    fun storeImportedMeasurements()
 
     data class State(
         val filePath: String = "",
@@ -34,6 +35,18 @@ interface IImportMeasurements {
         val placesToAdd: List<String> = listOf(),
         val samplesToAdd: List<String> = listOf()
     )
+
+    sealed class ProcessingState {
+        object IDLE : ProcessingState()
+
+        /**
+         * [progress] - importing progress from 0.0f to 1.0f
+         * if [progress] is null -> show running progress indicator
+         */
+        class InProgress(val caption: String, val progress: Float?) : ProcessingState()
+
+        object SuccessfullyImported : ProcessingState()
+    }
 
     sealed class SampleTypesUtils {
         class SampleTypesSelector(val component: ISampleTypesSelector) : SampleTypesUtils()

@@ -67,6 +67,7 @@ object UiSettings {
     }
 
     object Dialogs {
+        val backgroundBlur: Dp = 16.dp
         val defaultWideDialogWidth = 480.dp
         val defaultWideDialogHeight = 640.dp
         val defaultAlertDialogWidth = 280.dp

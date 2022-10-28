@@ -53,6 +53,7 @@ fun main() {
                 Alignment.Center
             )
         )
+
         var isDark by remember(prefs) { mutableStateOf(prefs.isDarkMode()) }
 
 

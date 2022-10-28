@@ -28,6 +28,7 @@ import org.kodein.di.compose.rememberDI
 import org.kodein.di.instance
 import settings.PreferencesManager
 import ui.SideNavigationPanel
+import ui.UiSettings
 import ui.components.Tooltip
 import ui.dialogs.edit_sample_type_dialog.EditSampleTypeDialogUi
 import ui.screens.base_entity_screen.BaseEntityUi
@@ -244,9 +245,11 @@ fun WindowScope.RootUi(
     }
 
     if (showAppClosePrompt) {
-        AlertDialog(onDismissRequest = {
-            showAppClosePrompt = false
-        }, text = { Text(text = "Выйти из приложения?") },
+        AlertDialog(
+            modifier = Modifier.width(UiSettings.Dialogs.defaultAlertDialogWidth),
+            onDismissRequest = {
+                showAppClosePrompt = false
+            }, text = { Text(text = "Выйти из приложения?") },
             confirmButton = {
                 Button(onClick = {
                     onAppClose()

@@ -36,6 +36,11 @@ interface IBaseDao<ENTITY : IEntity> {
     suspend fun removeById(id: String)
 
     /**
+     * Batch remove entity by [ids]
+     */
+    suspend fun removeByIDs(ids: List<String>)
+
+    /**
      * Querying Entities using specs
      */
     suspend fun query(

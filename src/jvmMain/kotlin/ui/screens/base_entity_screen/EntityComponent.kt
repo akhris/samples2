@@ -120,18 +120,18 @@ open class EntityComponent<T : IEntity>(
         else -> throw IllegalArgumentException("unsupported type: $type")
     } as LazyDelegate<UpdateEntity<T>>
 
-    private val removeEntity: RemoveEntity<T> by when (type) {
-        Sample::class -> di.instance<RemoveEntity<Sample>>()
-        SampleType::class -> di.instance<RemoveEntity<SampleType>>()
-        Parameter::class -> di.instance<RemoveEntity<Parameter>>()
-        Operation::class -> di.instance<RemoveEntity<Operation>>()
-        OperationType::class -> di.instance<RemoveEntity<OperationType>>()
-        Worker::class -> di.instance<RemoveEntity<Worker>>()
-        Place::class -> di.instance<RemoveEntity<Place>>()
-        domain.Unit::class -> di.instance<RemoveEntity<domain.Unit>>()
-        Measurement::class -> di.instance<RemoveEntity<Measurement>>()
+    private val removeEntities: RemoveEntities<T> by when (type) {
+        Sample::class -> di.instance<RemoveEntities<Sample>>()
+        SampleType::class -> di.instance<RemoveEntities<SampleType>>()
+        Parameter::class -> di.instance<RemoveEntities<Parameter>>()
+        Operation::class -> di.instance<RemoveEntities<Operation>>()
+        OperationType::class -> di.instance<RemoveEntities<OperationType>>()
+        Worker::class -> di.instance<RemoveEntities<Worker>>()
+        Place::class -> di.instance<RemoveEntities<Place>>()
+        domain.Unit::class -> di.instance<RemoveEntities<domain.Unit>>()
+        Measurement::class -> di.instance<RemoveEntities<Measurement>>()
         else -> throw IllegalArgumentException("unsupported type: $type")
-    } as LazyDelegate<RemoveEntity<T>>
+    } as LazyDelegate<RemoveEntities<T>>
 
     private val updateEntities: UpdateEntities<T> by when (type) {
         Sample::class -> di.instance<UpdateEntities<Sample>>()
@@ -268,12 +268,12 @@ open class EntityComponent<T : IEntity>(
         }
     }
 
-    override fun removeEntity(entity: Any) {
+    override fun removeEntites(entites: List<Any>) {
         scope.launch {
-            when (val result = removeEntity.invoke(RemoveEntity.Remove(entity))) {
+            when (val result = removeEntities.invoke(RemoveEntities.Remove(entites))) {
                 is Result.Failure -> {
                     showErrorDialog(
-                        title = "Ошибка при удалении объекта: $entity",
+                        title = "Ошибка при удалении объекта: $entites",
                         caption = "тип данных: ${type.simpleName}",
                         error = result.throwable
                     )

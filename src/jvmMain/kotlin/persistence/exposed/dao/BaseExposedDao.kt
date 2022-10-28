@@ -148,6 +148,14 @@ abstract class BaseExposedDao<ENTITY : IEntity, EXP_ENTITY : UUIDEntity, TABLE :
         }
     }
 
+    override suspend fun removeByIDs(ids: List<String>) {
+        newSuspendedTransaction {
+            addLogger(StdOutSqlLogger)
+            table.deleteWhere { table.id inList ids.map { it.toUUID() } }
+            if (withCommit)
+                commit()
+        }
+    }
 
     private fun getNotGroupedQuery(specs: List<ISpecification>): Query {
         val query = table.selectAll()

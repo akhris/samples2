@@ -16,9 +16,9 @@ class BaseRepository<ENTITY : IEntity>(private val baseDao: IBaseDao<ENTITY>) : 
         )
     }
 
-    override suspend fun remove(specifications: List<ISpecification>) {
-        TODO("Not yet implemented")
-    }
+//    override suspend fun remove(specifications: List<ISpecification>) {
+//        TODO("Not yet implemented")
+//    }
 
     override suspend fun query(specifications: List<ISpecification>): EntitiesList<ENTITY> {
         return baseDao.query(specs = specifications)
@@ -57,6 +57,13 @@ class BaseRepository<ENTITY : IEntity>(private val baseDao: IBaseDao<ENTITY>) : 
     override suspend fun remove(t: ENTITY) {
         baseDao.removeById(t.id)
         repoCallbacks.onItemUpdated(t)
+    }
+
+    override suspend fun remove(t: List<ENTITY>) {
+        baseDao.removeByIDs(t.map { it.id })
+        t.firstOrNull()?.let {
+            repoCallbacks.onItemRemoved(it)
+        }
     }
 
     override suspend fun getSlice(columnName: String): List<SliceResult> {

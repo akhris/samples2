@@ -27,7 +27,7 @@ interface IEntityComponent<T : IEntity> {
     fun insertNewEntity(entity: T)
     fun insertNewEntity(sampleType: SampleType)
     fun updateEntity(entity: T)
-    fun removeEntity(entity: Any)
+    fun removeEntites(entites: List<Any>)
     fun setSampleType(sampleType: SampleType)
 
     fun duplicateEntities(entities: List<T>)
