@@ -16,7 +16,16 @@ class ParametersComponent(
 ) : EntityComponentWithFab<Parameter>(Parameter::class, di, componentContext) {
 
     override fun getFabParams(): List<FABParams> = listOf(
-        FABParams(id = ACTION_ADD_PARAMETER, icon = IconResource.ImageVectorIcon(Icons.Rounded.Add), label = "")
+        FABParams(
+            id = ACTION_ADD_PARAMETER,
+            icon = IconResource.ImageVectorIcon(Icons.Rounded.Add),
+            label = "Добавить параметр"
+        ),
+        FABParams(
+            id = ACTION_ADD_NORM_CONDITION,
+            icon = IconResource.PainterResourceIcon("vector/compare_arrows_black_24dp.svg"),
+            label = "Добавить столбец норм"
+        )
     )
 
     override fun invokeFABAction(id: String, tag: Any?) {
@@ -26,11 +35,16 @@ class ParametersComponent(
                     insertNewEntity(st)
                 }
             }
+
+            ACTION_ADD_NORM_CONDITION -> {
+                showPrompt(title = "Добавить столбец норм", "Запросить condition", {})
+            }
         }
     }
 
     companion object {
         private const val ACTION_ADD_PARAMETER = "id_add_parameter"
+        private const val ACTION_ADD_NORM_CONDITION = "id_add_norm_condition"
     }
 
 }

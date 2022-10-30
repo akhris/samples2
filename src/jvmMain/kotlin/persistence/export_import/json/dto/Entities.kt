@@ -18,5 +18,5 @@ data class JSONMeasurement(
 @Serializable
 data class JSONMeasurementResult(
     val parameter: String,
-    val value: String
+    val value: Double?
 )

@@ -42,6 +42,19 @@ object Tables {
         val factor = integer(name = "factor").nullable()
     }
 
+    object Norms : UUIDTable() {
+        val parameter = MeasurementResults.reference(
+            name = "parameter",
+            foreign = Parameters,
+            onDelete = ReferenceOption.CASCADE
+        )
+        val condition = text(name = "condition")
+        val notLess = double(name = "notLess").nullable()
+        val notMore = double(name = "notMore").nullable()
+        val average = double(name = "average").nullable()
+        val sNorm = text(name = "snorm").nullable()
+    }
+
     object Places : UUIDTable() {
         val name = text(name = "name").nullable()
         val roomNumber = text(name = "roomNumber")
@@ -97,6 +110,7 @@ object Tables {
     object MeasurementResults : IntIdTable() {
         val measurement = reference(name = "measurement", foreign = Measurements, onDelete = ReferenceOption.CASCADE)
         val parameter = reference(name = "parameter", foreign = Parameters, onDelete = ReferenceOption.CASCADE)
-        val value = text(name = "value").nullable()
+        val value = double(name = "value").nullable()
+        val sValue = text(name = "sValue").nullable()
     }
 }

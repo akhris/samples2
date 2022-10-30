@@ -24,6 +24,17 @@ fun EntitySample.toSample(): Sample {
     )
 }
 
+fun EntityNorm.toNorm(): Norm {
+    return Norm(
+        id = this.id.value.toString(),
+        condition = condition,
+        notLess = notLess,
+        notMore = notMore,
+        average = average,
+        sNorm = this.sNorm
+    )
+}
+
 fun EntityParameter.toParameter(): Parameter {
     return Parameter(
         id = this.id.value.toString(),
@@ -32,7 +43,8 @@ fun EntityParameter.toParameter(): Parameter {
         description = this.description ?: "",
         position = this.position,
         unit = this.unit?.toUnit(),
-        factor = this.factor?.let { Factor.parse(it) }
+        factor = this.factor?.let { Factor.parse(it) },
+        norms = this.norms.map { it.toNorm() }
     )
 }
 
@@ -84,7 +96,8 @@ fun EntityMeasurement.toMeasurement(): Measurement {
 fun EntityMeasurementResult.toMeasurementResult(): MeasurementResult {
     return MeasurementResult(
         parameter = this.parameter.toParameter(),
-        value = this.value ?: ""
+        value = this.value,
+        sValue = this.sValue
     )
 }
 

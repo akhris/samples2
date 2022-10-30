@@ -68,7 +68,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.0")
 
                 //reorderable compose lists:
-                implementation("org.burnoutcrew.composereorderable:reorderable:0.9.2")
+//                implementation("org.burnoutcrew.composereorderable:reorderable:0.9.2")
 
             }
         }

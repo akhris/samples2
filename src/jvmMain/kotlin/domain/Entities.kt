@@ -102,19 +102,8 @@ data class Parameter(
     val description: String = "",
     val position: Int? = null,
     val unit: Unit? = null,
-    val factor: Factor? = null
-) : IEntity {
-    override fun toString() = name
-}
-
-/**
- * Entity representing certain conditions at which measurements take place.
- * e.g.: temperature=85C, pressure = 3atm, e.t.c
- */
-data class Condition(
-    override val id: String = UUID.randomUUID().toString(),
-    val name: String = "",
-    val description: String = ""
+    val factor: Factor? = null,
+    val norms: List<Norm> = listOf()
 ) : IEntity {
     override fun toString() = name
 }
@@ -122,11 +111,14 @@ data class Condition(
 /**
  * Entity representing [parameter] norms for given [condition]
  */
+@Serializable
 data class Norm(
     override val id: String = UUID.randomUUID().toString(),
-    val parameter: Parameter,
-    val condition: Condition
-    // TODO: add values range for norm (min, max, avg)
+    val condition: String,
+    val notLess: Double? = null,
+    val notMore: Double? = null,
+    val average: Double? = null,
+    val sNorm: String? = null // preserved for non-numeric result values
 ) : IEntity
 
 @Serializable
@@ -141,7 +133,8 @@ data class Unit(
 @Serializable
 data class MeasurementResult(
     val parameter: Parameter,
-    val value: String
+    val value: Double?,
+    val sValue: String? = null // preserved for non-numeric result values
 )
 
 /**

@@ -2,6 +2,7 @@ package persistence.exposed.dto
 
 import org.jetbrains.exposed.dao.*
 import org.jetbrains.exposed.dao.id.EntityID
+import persistence.exposed.dto.EntityMeasurement.Companion.referrersOn
 import java.util.*
 
 class EntitySampleType(id: EntityID<UUID>) : UUIDEntity(id) {
@@ -21,6 +22,17 @@ class EntitySample(id: EntityID<UUID>) : UUIDEntity(id) {
     var orderID by Tables.Samples.orderID
 }
 
+class EntityNorm(id: EntityID<UUID>) : UUIDEntity(id) {
+    companion object : UUIDEntityClass<EntityNorm>(Tables.Norms)
+
+//    val parameter by EntityParameter referencedOn Tables.Norms.parameter
+    val condition by Tables.Norms.condition
+    val notLess by Tables.Norms.notLess
+    val notMore by Tables.Norms.notMore
+    val average by Tables.Norms.average
+    val sNorm by Tables.Norms.sNorm
+}
+
 class EntityParameter(id: EntityID<UUID>) : UUIDEntity(id) {
     companion object : UUIDEntityClass<EntityParameter>(Tables.Parameters)
 
@@ -30,6 +42,7 @@ class EntityParameter(id: EntityID<UUID>) : UUIDEntity(id) {
     val position by Tables.Parameters.position
     val unit by EntityUnit optionalReferencedOn Tables.Parameters.unit
     val factor by Tables.Parameters.factor
+    val norms by EntityNorm referrersOn Tables.Norms.parameter
 }
 
 class EntityPlace(id: EntityID<UUID>) : UUIDEntity(id) {
@@ -73,9 +86,10 @@ class EntityOperation(id: EntityID<UUID>) : UUIDEntity(id) {
 class EntityMeasurementResult(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<EntityMeasurementResult>(Tables.MeasurementResults)
 
-    val measurement by EntityMeasurement referencedOn Tables.MeasurementResults.measurement
+//    val measurement by EntityMeasurement referencedOn Tables.MeasurementResults.measurement
     val parameter by EntityParameter referencedOn Tables.MeasurementResults.parameter
     val value by Tables.MeasurementResults.value
+    val sValue by Tables.MeasurementResults.sValue
 }
 
 class EntityMeasurement(id: EntityID<UUID>) : UUIDEntity(id) {

@@ -26,7 +26,7 @@ data class MeasurementsDataMapper(val parameters: List<Parameter> = listOf()) : 
         return when (val col = requireColumn(columnId)) {
             Column.Sample -> {
                 (cell as? Cell.EntityCell)?.let {
-                        item.copy(sample = it.entity as? Sample)
+                    item.copy(sample = it.entity as? Sample)
                 }
             }
 
@@ -61,8 +61,9 @@ data class MeasurementsDataMapper(val parameters: List<Parameter> = listOf()) : 
             is Column.Result -> {
                 (cell as? Cell.EditTextCell)?.let { textCell ->
                     val changedResult =
-                        item.results.find { res -> res.parameter.id == col.parameter.id }?.copy(value = textCell.value)
-                            ?: MeasurementResult(parameter = col.parameter, value = textCell.value)
+                        item.results.find { res -> res.parameter.id == col.parameter.id }
+                            ?.copy(value = textCell.value.toDoubleOrNull())
+                            ?: MeasurementResult(parameter = col.parameter, value = textCell.value.toDoubleOrNull())
 
 
                     item.copy(results = item.results.replaceOrAdd(changedResult) {
@@ -83,7 +84,9 @@ data class MeasurementsDataMapper(val parameters: List<Parameter> = listOf()) : 
             Column.Operator -> Cell.EntityCell(entity = item.operator, Worker::class)
             Column.Place -> Cell.EntityCell(entity = item.place, Place::class)
             is Column.Result -> {
-                Cell.EditTextCell(value = item.results.find { it.parameter.id == col.parameter.id }?.value ?: "")
+                Cell.EditTextCell(
+                    value = item.results.find { it.parameter.id == col.parameter.id }?.value?.toString() ?: ""
+                )
             }
         }
     }
@@ -114,7 +117,7 @@ data class MeasurementsDataMapper(val parameters: List<Parameter> = listOf()) : 
         class Result(val parameter: Parameter) :
             Column(
                 ColumnId(
-                    parameter.id,
+                    key = parameter.id,
                     title = parameter.name,
                     width = ColumnWidth.Small,
                     secondaryText = parameter.unit?.unit?.let { unit: String ->
