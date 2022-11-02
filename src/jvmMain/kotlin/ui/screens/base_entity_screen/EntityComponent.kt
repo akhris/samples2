@@ -28,6 +28,7 @@ import ui.dialogs.error_dialog.ErrorDialogComponent
 import ui.dialogs.file_picker_dialog.FilePickerComponent
 import ui.dialogs.file_picker_dialog.IFilePicker
 import ui.dialogs.import_from_file.ImportFromFileComponent
+import ui.dialogs.input_text_dialog.InputTextDialogComponent
 import ui.dialogs.list_picker_dialog.ListPickerDialogComponent
 import ui.dialogs.list_picker_dialog.ListPickerItem
 import ui.dialogs.list_picker_dialog.ListPickerMode
@@ -81,7 +82,7 @@ open class EntityComponent<T : IEntity>(
         else -> false
     }
 
-    private val getEntities: GetEntities<T> by when (type) {
+    protected val getEntities: GetEntities<T> by when (type) {
         Sample::class -> di.instance<GetEntities<Sample>>()
         SampleType::class -> di.instance<GetEntities<SampleType>>()
         Parameter::class -> di.instance<GetEntities<Parameter>>()
@@ -94,7 +95,7 @@ open class EntityComponent<T : IEntity>(
         else -> throw IllegalArgumentException("unsupported type: $type")
     } as LazyDelegate<GetEntities<T>>
 
-    private val insertEntity: InsertEntity<T> by when (type) {
+    protected val insertEntity: InsertEntity<T> by when (type) {
         Sample::class -> di.instance<InsertEntity<Sample>>()
         SampleType::class -> di.instance<InsertEntity<SampleType>>()
         Parameter::class -> di.instance<InsertEntity<Parameter>>()
@@ -107,7 +108,7 @@ open class EntityComponent<T : IEntity>(
         else -> throw IllegalArgumentException("unsupported type: $type")
     } as LazyDelegate<InsertEntity<T>>
 
-    private val updateEntity: UpdateEntity<T> by when (type) {
+    protected val updateEntity: UpdateEntity<T> by when (type) {
         Sample::class -> di.instance<UpdateEntity<Sample>>()
         SampleType::class -> di.instance<UpdateEntity<SampleType>>()
         Parameter::class -> di.instance<UpdateEntity<Parameter>>()
@@ -120,7 +121,7 @@ open class EntityComponent<T : IEntity>(
         else -> throw IllegalArgumentException("unsupported type: $type")
     } as LazyDelegate<UpdateEntity<T>>
 
-    private val removeEntities: RemoveEntities<T> by when (type) {
+    protected val removeEntities: RemoveEntities<T> by when (type) {
         Sample::class -> di.instance<RemoveEntities<Sample>>()
         SampleType::class -> di.instance<RemoveEntities<SampleType>>()
         Parameter::class -> di.instance<RemoveEntities<Parameter>>()
@@ -133,7 +134,7 @@ open class EntityComponent<T : IEntity>(
         else -> throw IllegalArgumentException("unsupported type: $type")
     } as LazyDelegate<RemoveEntities<T>>
 
-    private val updateEntities: UpdateEntities<T> by when (type) {
+    protected val updateEntities: UpdateEntities<T> by when (type) {
         Sample::class -> di.instance<UpdateEntities<Sample>>()
         SampleType::class -> di.instance<UpdateEntities<SampleType>>()
         Parameter::class -> di.instance<UpdateEntities<Parameter>>()
@@ -146,7 +147,7 @@ open class EntityComponent<T : IEntity>(
         else -> throw IllegalArgumentException("unsupported type: $type")
     } as LazyDelegate<UpdateEntities<T>>
 
-    private val getItemsCount: GetItemsCount<T> by when (type) {
+    protected val getItemsCount: GetItemsCount<T> by when (type) {
         Sample::class -> di.instance<GetItemsCount<Sample>>()
         SampleType::class -> di.instance<GetItemsCount<SampleType>>()
         Parameter::class -> di.instance<GetItemsCount<Parameter>>()
@@ -414,6 +415,7 @@ open class EntityComponent<T : IEntity>(
                 _state.reduce {
                     it.copy(entities = entities.value)
                 }
+                doAfterEntitiesInvalidate(entities.value)
             }
 
             is Result.Failure -> {
@@ -424,6 +426,10 @@ open class EntityComponent<T : IEntity>(
                 )
             }
         }
+    }
+
+    protected open suspend fun doAfterEntitiesInvalidate(value: EntitiesList<T>) {
+
     }
 
     private fun createChild(config: DialogConfig, componentContext: ComponentContext): IEntityComponent.Dialog {
@@ -509,6 +515,16 @@ open class EntityComponent<T : IEntity>(
                 )
             )
 
+            is DialogConfig.InputTextDialog -> IEntityComponent.Dialog.InputTextDialog(
+                InputTextDialogComponent(
+                    title = config.title,
+                    caption = config.message,
+                    doOnConfirm = config.onYes,
+                    di = di,
+                    componentContext = componentContext
+                )
+            )
+
             DialogConfig.None -> IEntityComponent.Dialog.None
         }
     }
@@ -555,6 +571,16 @@ open class EntityComponent<T : IEntity>(
                 message = message,
                 onYes = onYes,
                 onCancel = onCancel
+            )
+        )
+    }
+
+    override fun showInputTextDialog(title: String, caption: String, onYes: (String) -> Unit) {
+        dialogNav.replaceCurrent(
+            DialogConfig.InputTextDialog(
+                title = title,
+                message = caption,
+                onYes = onYes
             )
         )
     }
@@ -661,6 +687,12 @@ open class EntityComponent<T : IEntity>(
         class PromptDialog(
             val title: String, val message: String, val onYes: () -> Unit, val onCancel: (() -> Unit)? = null
         ) : DialogConfig()
+
+        @Parcelize
+        class InputTextDialog(
+            val title: String, val message: String, val onYes: (String) -> Unit
+        ) : DialogConfig()
+
 
         @Parcelize
         class AddMultipleSamplesDialog(

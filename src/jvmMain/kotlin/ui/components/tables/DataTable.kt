@@ -625,6 +625,9 @@ private fun BoxScope.RenderCell(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Text(text = columnId.title, style = MaterialTheme.typography.h4)
+                        if (columnId.secondaryText.isNotEmpty()) {
+                            Text(text = columnId.secondaryText, style = MaterialTheme.typography.subtitle2)
+                        }
                         Text(text = cell.toString(), style = MaterialTheme.typography.body1)
                     }
                 }

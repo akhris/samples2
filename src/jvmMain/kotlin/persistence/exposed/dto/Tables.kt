@@ -43,7 +43,7 @@ object Tables {
     }
 
     object Norms : UUIDTable() {
-        val parameter = MeasurementResults.reference(
+        val parameter = reference(
             name = "parameter",
             foreign = Parameters,
             onDelete = ReferenceOption.CASCADE

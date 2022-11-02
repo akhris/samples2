@@ -26,7 +26,6 @@ class MeasurementsEntityComponent(
 ) : EntityComponentWithFab<Measurement>(type = Measurement::class, di = di, componentContext = componentContext) {
     private val getParameters: GetEntities<Parameter> by di.instance()
     private val parametersCallbacks: IRepositoryCallback<Parameter> by di.instance()
-    private val getMeasurements: GetEntities<Measurement> by di.instance()
 
     private val exportToJSON: ExportToJSON<Measurement, JSONMeasurement> by di.instance()
     private val importFromJSON: ImportFromJSON<Measurement, JSONMeasurement> by di.instance()

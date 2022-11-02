@@ -9,6 +9,7 @@ import ui.screens.base_entity_screen.filter_dialog.IFilterEntityFieldComponent
 import ui.dialogs.error_dialog.IErrorDialogComponent
 import ui.dialogs.file_picker_dialog.IFilePicker
 import ui.dialogs.import_from_file.IImportFromFile
+import ui.dialogs.input_text_dialog.IInputTextDialog
 import ui.dialogs.list_picker_dialog.IListPickerDialogComponent
 import ui.dialogs.list_picker_dialog.ListPickerItem
 import ui.dialogs.list_picker_dialog.ListPickerMode
@@ -84,6 +85,8 @@ interface IEntityComponent<T : IEntity> {
 
     fun showPrompt(title: String, message: String, onYes: () -> Unit, onCancel: (() -> Unit)? = null)
 
+    fun showInputTextDialog(title: String, caption: String, onYes: (String) -> Unit)
+
     fun showAddMultipleSamplesDialog(onAdd: (List<String>) -> Unit)
 
     fun showImportEntityDialog(entityClass: KClass<out IEntity>, filePath: String)
@@ -111,6 +114,8 @@ interface IEntityComponent<T : IEntity> {
             Dialog()
 
         class ImportEntitiesDialog(val component: IImportFromFile<out IEntity>) : Dialog()
+
+        class InputTextDialog(val component: IInputTextDialog) : Dialog()
     }
 
 }

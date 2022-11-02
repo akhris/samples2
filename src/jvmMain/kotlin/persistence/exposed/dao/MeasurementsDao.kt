@@ -85,6 +85,7 @@ class MeasurementsDao : BaseExposedDao<Measurement, EntityMeasurement, Tables.Me
     }
 
     override fun Transaction.doAfterInsert(entity: Measurement) {
+
         entity
             .results
             .forEach { mr ->
