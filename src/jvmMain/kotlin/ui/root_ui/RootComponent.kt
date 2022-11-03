@@ -34,7 +34,8 @@ class RootComponent(
     private val dialogNav = StackNavigation<DialogConfig>()
     private val navHostNav = StackNavigation<NavHostConfig>()
     private val toolbarUtilsNav = StackNavigation<ToolbarUtilsConfig>()
-//    private val preferencesManager: PreferencesManager by di.instance()
+
+    //    private val preferencesManager: PreferencesManager by di.instance()
     private val _currentDestination = MutableValue<NavItem>(NavItem.homeItem)
     override val currentDestination: Value<NavItem> = _currentDestination
 
@@ -90,6 +91,7 @@ class RootComponent(
             DialogConfig.None -> IRootComponent.Dialog.None
         }
     }
+
 
     private fun createChild(config: NavHostConfig, componentContext: ComponentContext): IRootComponent.NavHost {
         return when (config) {
@@ -186,7 +188,7 @@ class RootComponent(
     }
 
     @Parcelize
-    private sealed class DialogConfig : Parcelable {
+    sealed class DialogConfig : Parcelable {
 
         @Parcelize
         class AddSampleType(val sampleType: SampleType? = null) : DialogConfig()

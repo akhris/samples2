@@ -7,6 +7,7 @@ import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.router.stack.replaceCurrent
 import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
+import com.arkivanov.decompose.value.operator.map
 import com.arkivanov.decompose.value.reduce
 import com.arkivanov.essenty.lifecycle.subscribe
 import com.arkivanov.essenty.parcelable.Parcelable
@@ -33,6 +34,8 @@ import ui.dialogs.list_picker_dialog.ListPickerDialogComponent
 import ui.dialogs.list_picker_dialog.ListPickerItem
 import ui.dialogs.list_picker_dialog.ListPickerMode
 import ui.dialogs.prompt_dialog.PromptDialogComponent
+import ui.root_ui.IRootComponent
+import ui.root_ui.RootComponent
 import utils.DateTimeConverter
 import utils.log
 import utils.replaceOrAdd
@@ -64,7 +67,6 @@ open class EntityComponent<T : IEntity>(
     override val filterSpec: Value<Specification.Filtered> = _filterSpec
 
     private val dialogNav = StackNavigation<DialogConfig>()
-
 
     private val _dialogStack =
         childStack(

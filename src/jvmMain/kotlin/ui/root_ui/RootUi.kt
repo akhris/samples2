@@ -12,6 +12,7 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPlacement
@@ -63,7 +64,26 @@ fun WindowScope.RootUi(
 
     var showAppClosePrompt by remember { mutableStateOf(false) }
 
+    var isDialogShowing by remember { mutableStateOf(false) }
+
+    val currentDialog by remember(component) { component.dialogStack }.subscribeAsState()
+
+    LaunchedEffect(currentDialog) {
+        isDialogShowing = when (currentDialog.active.instance) {
+            is IRootComponent.Dialog.AddSampleTypeDialog -> true
+            IRootComponent.Dialog.None -> false
+        }
+    }
+
+    val modifier = remember(isDialogShowing) {
+        when (isDialogShowing) {
+            true -> Modifier.blur(radius = UiSettings.Dialogs.backgroundBlur)
+            false -> Modifier
+        }
+    }
+
     Scaffold(
+        modifier = modifier,
         scaffoldState = scaffoldState,
         topBar = {
             WindowDraggableArea(modifier = Modifier.combinedClickable(onDoubleClick = {
@@ -181,6 +201,7 @@ fun WindowScope.RootUi(
         },
         content = {
 
+
             CompositionLocalProvider(LocalSamplesType provides selectedSampleType) {
                 Row {
                     SideNavigationPanel(
@@ -192,39 +213,48 @@ fun WindowScope.RootUi(
                         modifier = Modifier.weight(1f)
                     ) {
 
-
-                        Children(stack = component.navHostStack, animation = stackAnimation(fade())) {
-                            when (val child = it.instance) {
-                                is IRootComponent.NavHost.Measurements -> ShowChildOrSamplesTypeHint {
-                                    EntityUiwithFab(
-                                        component = child.component
-                                    )
+                        remember {
+                            object : IDialogHandler {
+                                override fun setShowingDialog(isShowing: Boolean) {
+                                    isDialogShowing = isShowing
                                 }
+                            }
+                        }.apply {
+                            Children(stack = component.navHostStack, animation = stackAnimation(fade())) {
+                                when (val child = it.instance) {
+                                    is IRootComponent.NavHost.Measurements -> ShowChildOrSamplesTypeHint {
+                                        EntityUiwithFab(component = child.component)
+                                    }
 
-                                is IRootComponent.NavHost.Norms -> ShowChildOrSamplesTypeHint { BaseEntityUi(component = child.component) }
-                                is IRootComponent.NavHost.OperationTypes -> BaseEntityUi(component = child.component)
-                                is IRootComponent.NavHost.Operations -> ShowChildOrSamplesTypeHint {
-                                    EntityUiwithFab(
-                                        component = child.component
-                                    )
+                                    is IRootComponent.NavHost.Norms -> ShowChildOrSamplesTypeHint {
+                                        BaseEntityUi(component = child.component)
+                                    }
+
+                                    is IRootComponent.NavHost.OperationTypes -> BaseEntityUi(component = child.component)
+
+                                    is IRootComponent.NavHost.Operations -> ShowChildOrSamplesTypeHint {
+                                        EntityUiwithFab(
+                                            component = child.component
+                                        )
+                                    }
+
+                                    is IRootComponent.NavHost.Parameters -> ShowChildOrSamplesTypeHint {
+                                        EntityUiwithFab(
+                                            component = child.component
+                                        )
+                                    }
+
+                                    is IRootComponent.NavHost.Places -> BaseEntityUi(component = child.component)
+                                    is IRootComponent.NavHost.SampleDetails -> SampleDetailsUi(component = child.component)
+                                    is IRootComponent.NavHost.Samples -> ShowChildOrSamplesTypeHint {
+                                        EntityUiwithFab(
+                                            component = child.component
+                                        )
+                                    }
+
+                                    is IRootComponent.NavHost.Workers -> BaseEntityUi(component = child.component)
+                                    is IRootComponent.NavHost.AppPreferences -> PreferencesUi(component = child.component)
                                 }
-
-                                is IRootComponent.NavHost.Parameters -> ShowChildOrSamplesTypeHint {
-                                    EntityUiwithFab(
-                                        component = child.component
-                                    )
-                                }
-
-                                is IRootComponent.NavHost.Places -> BaseEntityUi(component = child.component)
-                                is IRootComponent.NavHost.SampleDetails -> SampleDetailsUi(component = child.component)
-                                is IRootComponent.NavHost.Samples -> ShowChildOrSamplesTypeHint {
-                                    EntityUiwithFab(
-                                        component = child.component
-                                    )
-                                }
-
-                                is IRootComponent.NavHost.Workers -> BaseEntityUi(component = child.component)
-                                is IRootComponent.NavHost.AppPreferences -> PreferencesUi(component = child.component)
                             }
                         }
 
@@ -263,6 +293,10 @@ fun WindowScope.RootUi(
                     Text("Отмена")
                 }
             })
+    }
+
+    LaunchedEffect(showAppClosePrompt) {
+        isDialogShowing = showAppClosePrompt
     }
 
 }

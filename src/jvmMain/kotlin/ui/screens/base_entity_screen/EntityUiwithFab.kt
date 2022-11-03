@@ -15,13 +15,15 @@ import ui.components.IconResource
 import ui.components.multiFAB.MultiFabItem
 import ui.components.multiFAB.MultiFabState
 import ui.components.multiFAB.MultiFloatingActionButton
+import ui.root_ui.IDialogHandler
 
 /**
  * Wrapper of BaseEntityUi with FloatingActionButton which adds single entity to the table
  */
 @Composable
-fun <T : IEntity> EntityUiwithFab(
-    component: EntityComponentWithFab<T>
+fun <T : IEntity> IDialogHandler.EntityUiwithFab(
+    component: EntityComponentWithFab<T>,
+    onDialogShowing: ((isDialogShowing: Boolean) -> Unit)? = null
 ) {
 
     val sampleType = LocalSamplesType.current
@@ -30,7 +32,8 @@ fun <T : IEntity> EntityUiwithFab(
     Box(modifier = Modifier.fillMaxSize()) {
         BaseEntityUi(
             modifier = Modifier.align(Alignment.TopCenter),
-            component = component
+            component = component,
+            onDialogShowing = onDialogShowing
         )
 
         val fabItems = remember(component) {

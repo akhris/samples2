@@ -95,7 +95,10 @@ fun <T> ListSelector(
                         }
                     }, trailing = if (isHover) {
                         {
-                            IconButton(onClick = { onItemEdit(item) }) {
+                            IconButton(onClick = {
+                                isMenuOpened = false
+                                onItemEdit(item)
+                            }) {
                                 Icon(
                                     imageVector = Icons.Rounded.Edit,
                                     contentDescription = "edit ${itemName(item)}"
