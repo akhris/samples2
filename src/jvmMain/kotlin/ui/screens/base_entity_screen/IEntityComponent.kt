@@ -3,6 +3,7 @@ package ui.screens.base_entity_screen
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
 import domain.*
+import kotlinx.coroutines.flow.StateFlow
 import ui.components.tables.IDataTableMapper
 import ui.dialogs.add_multiple_samples_dialog.IAddMultipleSamplesComponent
 import ui.screens.base_entity_screen.filter_dialog.IFilterEntityFieldComponent
@@ -19,11 +20,11 @@ import javax.swing.filechooser.FileNameExtensionFilter
 import kotlin.reflect.KClass
 
 interface IEntityComponent<T : IEntity> {
-    val state: Value<State<T>>
+    val state: StateFlow<State<T>>
 
-    val pagingSpec: Value<Specification.Paginated>
+    val pagingSpec: StateFlow<Specification.Paginated>
 
-    val filterSpec: Value<Specification.Filtered>
+    val filterSpec: StateFlow<Specification.Filtered>
 
     fun insertNewEntity(entity: T)
     fun insertNewEntity(sampleType: SampleType)
@@ -33,7 +34,7 @@ interface IEntityComponent<T : IEntity> {
 
     fun duplicateEntities(entities: List<T>)
 
-    val dataMapper: Value<IDataTableMapper<T>>
+    val dataMapper: StateFlow<IDataTableMapper<T>>
 
     fun setQuerySpec(spec: Specification)
     fun resetQuerySpec(spec: Specification)

@@ -38,8 +38,8 @@ kotlin {
                 implementation("org.kodein.di:kodein-di-framework-compose:7.14.0")
 
                 //decompose:
-                implementation("com.arkivanov.decompose:decompose:0.8.0")
-                implementation("com.arkivanov.decompose:extensions-compose-jetbrains:0.8.0")
+                implementation("com.arkivanov.decompose:decompose:1.0.0-beta-02")
+                implementation("com.arkivanov.decompose:extensions-compose-jetbrains:1.0.0-beta-02")
 
                 //    exposed:
                 implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
@@ -48,7 +48,7 @@ kotlin {
                 implementation("org.jetbrains.exposed:exposed-java-time:$exposedVersion")
 
                 //sqlite driver:
-                implementation("org.xerial:sqlite-jdbc:3.39.2.0")
+                implementation("org.xerial:sqlite-jdbc:3.40.0.0")
 
                 //logger:
                 implementation("org.slf4j:slf4j-simple:1.7.36")
@@ -65,7 +65,7 @@ kotlin {
                 implementation("io.github.evanrupert:excelkt:1.0.2")
 
                 //kotlin json serialization
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
 
                 //reorderable compose lists:
 //                implementation("org.burnoutcrew.composereorderable:reorderable:0.9.2")

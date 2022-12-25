@@ -1,15 +1,15 @@
 package ui.utils.sampletypes_selector
 
 import com.arkivanov.decompose.ComponentContext
-import com.arkivanov.decompose.value.MutableValue
-import com.arkivanov.decompose.value.Value
-import com.arkivanov.decompose.value.reduce
 import com.arkivanov.essenty.lifecycle.subscribe
 import domain.*
 import domain.application.Result
 import domain.application.baseUseCases.GetEntities
 import domain.application.baseUseCases.RemoveEntity
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import org.kodein.di.DI
 import org.kodein.di.instance
 import settings.PreferencesManager
@@ -29,12 +29,15 @@ class SampleTypesSelectorComponent(
     private val removeSampleType: RemoveEntity<SampleType> by di.instance()
     private val samplesCallback: IRepositoryCallback<SampleType> by di.instance()
 
-    private val _state = MutableValue(ISampleTypesSelector.State())
+//    private val _state = MutableValue(ISampleTypesSelector.State())
 
-    override val state: Value<ISampleTypesSelector.State> = _state
+    private val _state = MutableStateFlow(ISampleTypesSelector.State())
+    override val state: StateFlow<ISampleTypesSelector.State> = _state
+
+//    override val state: Value<ISampleTypesSelector.State> = _state
 
     override fun selectType(type: SampleType?) {
-        _state.reduce {
+        _state.update {
             it.copy(selectedType = type)
         }
     }
@@ -48,12 +51,14 @@ class SampleTypesSelectorComponent(
 
             is Result.Success -> {
                 val types = typesResult.value.flatten()
-                _state.reduce {
+
+                _state.update {
                     it.copy(
                         types = types,
                         selectedType = if ((it.selectedType == null) or !types.contains(it.selectedType)) types.firstOrNull() else it.selectedType
                     )
                 }
+
             }
         }
     }
@@ -75,7 +80,7 @@ class SampleTypesSelectorComponent(
                     when (result) {
                         is RepoResult.ItemInserted -> {
                             invalidateSampleTypes()
-                            _state.reduce {
+                            _state.update {
                                 it.copy(selectedType = it.selectedType)
                             }
                         }

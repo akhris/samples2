@@ -1,10 +1,7 @@
 package ui.utils.sampletypes_selector
 
 import androidx.compose.foundation.layout.width
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
@@ -18,7 +15,7 @@ fun SampleTypesSelectorUi(
     onEditSampleTypeClick: (SampleType?) -> Unit
 ) {
 
-    val state by remember(component) { component.state }.subscribeAsState()
+    val state by remember(component) { component.state }.collectAsState()
 
     LaunchedEffect(state.selectedType) {
         onSampleTypeSelected(state.selectedType)

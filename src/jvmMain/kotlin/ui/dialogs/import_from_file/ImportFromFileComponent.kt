@@ -8,7 +8,7 @@ import com.arkivanov.decompose.router.stack.replaceCurrent
 import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.parcelable.Parcelable
-import com.arkivanov.essenty.parcelable.Parcelize
+//import com.arkivanov.essenty.parcelable.Parcelize
 import domain.IEntity
 import domain.Measurement
 import org.kodein.di.DI
@@ -63,14 +63,14 @@ class ImportFromFileComponent<T : IEntity>(
     override val state: Value<IImportFromFile.State<T>> = _state
 
 
-    @Parcelize
+//    @Parcelize
     private sealed class Config : Parcelable {
 
-        @Parcelize
+//        @Parcelize
         object Import : Config()
 
         //todo add class ImportFromXLS, ...
-        @Parcelize
+//        @Parcelize
         object None : Config()
 
     }

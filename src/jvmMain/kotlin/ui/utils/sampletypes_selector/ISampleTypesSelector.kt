@@ -2,11 +2,12 @@ package ui.utils.sampletypes_selector
 
 import com.arkivanov.decompose.value.Value
 import domain.SampleType
+import kotlinx.coroutines.flow.StateFlow
 
 interface ISampleTypesSelector {
 
 
-    val state: Value<State>
+    val state: StateFlow<State>
 
     fun selectType(type: SampleType?)
 

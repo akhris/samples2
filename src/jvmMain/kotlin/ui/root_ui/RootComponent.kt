@@ -9,7 +9,7 @@ import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.decompose.value.reduce
 import com.arkivanov.essenty.parcelable.Parcelable
-import com.arkivanov.essenty.parcelable.Parcelize
+//import com.arkivanov.essenty.parcelable.Parcelize
 import domain.Sample
 import domain.SampleType
 import navigation.NavItem
@@ -187,52 +187,52 @@ class RootComponent(
         }
     }
 
-    @Parcelize
+//    @Parcelize
     sealed class DialogConfig : Parcelable {
 
-        @Parcelize
+//        @Parcelize
         class AddSampleType(val sampleType: SampleType? = null) : DialogConfig()
 
-        @Parcelize
+//        @Parcelize
         object None : DialogConfig()
 
     }
 
-    @Parcelize
+//    @Parcelize
     private sealed class NavHostConfig : Parcelable {
-        @Parcelize
+//        @Parcelize
         object Places : NavHostConfig()
 
-        @Parcelize
+//        @Parcelize
         object Workers : NavHostConfig()
 
-        @Parcelize
+//        @Parcelize
         object Norms : NavHostConfig()
 
-        @Parcelize
+//        @Parcelize
         object Parameters : NavHostConfig()
 
-        @Parcelize
+//        @Parcelize
         object Operations : NavHostConfig()
 
-        @Parcelize
+//        @Parcelize
         object OperationTypes : NavHostConfig()
 
-        @Parcelize
+//        @Parcelize
         data class SampleDetails(val sample: Sample) : NavHostConfig()
 
-        @Parcelize
+//        @Parcelize
         object Samples : NavHostConfig()
 
-        @Parcelize
+//        @Parcelize
         object Measurements : NavHostConfig()
 
-        @Parcelize
+//        @Parcelize
         object AppPreferences : NavHostConfig()
 
     }
 
-    @Parcelize
+//    @Parcelize
     private sealed class ToolbarUtilsConfig : Parcelable {
         object SampleTypesSelector : ToolbarUtilsConfig()
     }

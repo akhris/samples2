@@ -61,7 +61,7 @@ fun <T : IEntity> IDialogHandler.BaseEntityUi(
     onSelectionChanged: ((List<T>) -> Unit)? = null,
     onDialogShowing: ((isDialogShowing: Boolean) -> Unit)? = null
 ) {
-    val state by remember(component) { component.state }.subscribeAsState()
+    val state by remember(component) { component.state }.collectAsState()
 
     val sampleType = LocalSamplesType.current
 
@@ -250,11 +250,11 @@ private fun <T : IEntity> ShowDataTableForGroup(
 
     val selectedEntities = remember(initialSelection) { initialSelection.toSet().toMutableStateList() }
 
-    val pagingSpec by remember(component) { component.pagingSpec }.subscribeAsState()
+    val pagingSpec by remember(component) { component.pagingSpec }.collectAsState()
 
-    val mapper by remember(component) { component.dataMapper }.subscribeAsState()
+    val mapper by remember(component) { component.dataMapper }.collectAsState()
 
-    val filterSpec by remember(component) { component.filterSpec }.subscribeAsState()
+    val filterSpec by remember(component) { component.filterSpec }.collectAsState()
 
     val filters = remember(filterSpec) {
         filterSpec.filters.associateBy { it.columnName }.toList().toMutableStateMap()
@@ -268,6 +268,7 @@ private fun <T : IEntity> ShowDataTableForGroup(
             component.setQuerySpec(Specification.Sorted(s.first, s.second))
         }
     }
+
 
     Box(modifier = modifier.fillMaxHeight()) {
         //parameters table:

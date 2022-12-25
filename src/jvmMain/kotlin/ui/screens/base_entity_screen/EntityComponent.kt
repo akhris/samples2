@@ -5,18 +5,18 @@ import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.router.stack.replaceCurrent
-import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
-import com.arkivanov.decompose.value.operator.map
-import com.arkivanov.decompose.value.reduce
 import com.arkivanov.essenty.lifecycle.subscribe
 import com.arkivanov.essenty.parcelable.Parcelable
-import com.arkivanov.essenty.parcelable.Parcelize
+//import com.arkivanov.essenty.parcelable.Parcelize
 import domain.*
 import domain.application.Result
 import domain.application.baseUseCases.*
 import io.github.evanrupert.excelkt.workbook
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import org.kodein.di.DI
 import org.kodein.di.LazyDelegate
 import org.kodein.di.instance
@@ -34,8 +34,6 @@ import ui.dialogs.list_picker_dialog.ListPickerDialogComponent
 import ui.dialogs.list_picker_dialog.ListPickerItem
 import ui.dialogs.list_picker_dialog.ListPickerMode
 import ui.dialogs.prompt_dialog.PromptDialogComponent
-import ui.root_ui.IRootComponent
-import ui.root_ui.RootComponent
 import utils.DateTimeConverter
 import utils.log
 import utils.replaceOrAdd
@@ -56,15 +54,15 @@ open class EntityComponent<T : IEntity>(
     protected val scope =
         CoroutineScope(Dispatchers.Default + SupervisorJob())
 
-    private val _spec = MutableValue<Specification>(Specification.QueryAll)
-    private val _pagingSpec = MutableValue<Specification.Paginated>(Specification.Paginated(1L, 25L, null))
-    private val _filterSpec = MutableValue<Specification.Filtered>(initialFilterSpec)
+    private val _spec = MutableStateFlow<Specification>(Specification.QueryAll)
+    private val _pagingSpec = MutableStateFlow<Specification.Paginated>(Specification.Paginated(1L, 25L, null))
+    private val _filterSpec = MutableStateFlow<Specification.Filtered>(initialFilterSpec)
 
-    private val _sampleTypeFilterSpec = MutableValue(Specification.Filtered())
+    private val _sampleTypeFilterSpec = MutableStateFlow(Specification.Filtered())
 
-    override val pagingSpec: Value<Specification.Paginated> = _pagingSpec
+    override val pagingSpec: StateFlow<Specification.Paginated> = _pagingSpec
 
-    override val filterSpec: Value<Specification.Filtered> = _filterSpec
+    override val filterSpec: StateFlow<Specification.Filtered> = _filterSpec
 
     private val dialogNav = StackNavigation<DialogConfig>()
 
@@ -189,15 +187,15 @@ open class EntityComponent<T : IEntity>(
     } as LazyDelegate<IDataTableMapper<T>>
 
 
-    private val _mutableDataMapper = MutableValue<IDataTableMapper<T>>(_dataMapper)
+    private val _mutableDataMapper = MutableStateFlow<IDataTableMapper<T>>(_dataMapper)
 
-    override val dataMapper: Value<IDataTableMapper<T>> = _mutableDataMapper
+    override val dataMapper: StateFlow<IDataTableMapper<T>> = _mutableDataMapper
 
-    private val _state = MutableValue(IEntityComponent.State<T>())
-    override val state: Value<IEntityComponent.State<T>> = _state
+    private val _state = MutableStateFlow(IEntityComponent.State<T>())
+    override val state: StateFlow<IEntityComponent.State<T>> = _state
 
     protected fun updateDataMapper(reducer: (IDataTableMapper<T>) -> IDataTableMapper<T>) {
-        _mutableDataMapper.reduce(reducer)
+        _mutableDataMapper.update(reducer)
     }
 
     override fun onEntitySelected(entity: T) {
@@ -205,7 +203,7 @@ open class EntityComponent<T : IEntity>(
     }
 
     override fun setSampleType(sampleType: SampleType) {
-        _sampleTypeFilterSpec.reduce {
+        _sampleTypeFilterSpec.update {
             it.copy(
                 filters = listOf(
                     FilterSpec.Values(
@@ -318,7 +316,7 @@ open class EntityComponent<T : IEntity>(
     }
 
     override fun setQuerySpec(spec: Specification) {
-        _spec.reduce {
+        _spec.update {
             spec
         }
         scope.launch {
@@ -328,7 +326,7 @@ open class EntityComponent<T : IEntity>(
     }
 
     override fun setPagingSpec(spec: Specification.Paginated) {
-        _pagingSpec.reduce {
+        _pagingSpec.update {
             spec
         }
         scope.launch {
@@ -342,7 +340,7 @@ open class EntityComponent<T : IEntity>(
 
 
     override fun addFilter(filterSpec: FilterSpec) {
-        _filterSpec.reduce {
+        _filterSpec.update {
             it.copy(filters = it.filters.replaceOrAdd(filterSpec) {
                 it.columnName == filterSpec.columnName
             })
@@ -354,7 +352,7 @@ open class EntityComponent<T : IEntity>(
     }
 
     override fun removeFilter(filterSpec: FilterSpec) {
-        _filterSpec.reduce { spec: Specification.Filtered ->
+        _filterSpec.update { spec: Specification.Filtered ->
             spec.copy(filters = spec.filters.filter { it.columnName != filterSpec.columnName })
         }
         scope.launch {
@@ -414,7 +412,7 @@ open class EntityComponent<T : IEntity>(
 
         when (entities) {
             is Result.Success -> {
-                _state.reduce {
+                _state.update {
                     it.copy(entities = entities.value)
                 }
                 doAfterEntitiesInvalidate(entities.value)
@@ -618,7 +616,7 @@ open class EntityComponent<T : IEntity>(
             }
 
             is Result.Success -> {
-                _pagingSpec.reduce {
+                _pagingSpec.update {
                     it.copy(totalItems = itemsCount.value)
                 }
             }
@@ -665,12 +663,12 @@ open class EntityComponent<T : IEntity>(
 
     }
 
-    @Parcelize
+//    @Parcelize
     private sealed class DialogConfig : Parcelable {
-        @Parcelize
+//        @Parcelize
         object None : DialogConfig()
 
-        @Parcelize
+//        @Parcelize
         class EntityPickerDialog(
             val entity: IEntity?,
             val entityClass: KClass<out IEntity>,
@@ -678,36 +676,36 @@ open class EntityComponent<T : IEntity>(
             val columnName: String
         ) : DialogConfig()
 
-        @Parcelize
+//        @Parcelize
         class FieldFilterDialog(val initialSpec: FilterSpec) : DialogConfig()
 
-        @Parcelize
+//        @Parcelize
         class RepoErrorDialog(val title: String = "", val caption: String = "", val error: Throwable? = null) :
             DialogConfig()
 
-        @Parcelize
+//        @Parcelize
         class PromptDialog(
             val title: String, val message: String, val onYes: () -> Unit, val onCancel: (() -> Unit)? = null
         ) : DialogConfig()
 
-        @Parcelize
+//        @Parcelize
         class InputTextDialog(
             val title: String, val message: String, val onYes: (String) -> Unit
         ) : DialogConfig()
 
 
-        @Parcelize
+//        @Parcelize
         class AddMultipleSamplesDialog(
             val onAdd: (List<String>) -> Unit
         ) : DialogConfig()
 
-        @Parcelize
+//        @Parcelize
         class ImportEntitiesDialog(
             val entityClass: KClass<out IEntity>,
             val filePath: String
         ) : DialogConfig()
 
-        @Parcelize
+//        @Parcelize
         class FilePickerDialog(
             val title: String,
             val fileFilters: List<FileNameExtensionFilter> = listOf(),
@@ -715,7 +713,7 @@ open class EntityComponent<T : IEntity>(
             val pickerType: IFilePicker.PickerType
         ) : DialogConfig()
 
-        @Parcelize
+//        @Parcelize
         class ListPickerDialog(
             val title: String,
             val items: List<ListPickerItem> = listOf(),

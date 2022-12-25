@@ -7,7 +7,7 @@ import com.arkivanov.decompose.value.Value
 import com.arkivanov.decompose.value.reduce
 import com.arkivanov.essenty.lifecycle.subscribe
 import com.arkivanov.essenty.parcelable.Parcelable
-import com.arkivanov.essenty.parcelable.Parcelize
+//import com.arkivanov.essenty.parcelable.Parcelize
 import domain.*
 import domain.application.Result
 import domain.application.baseUseCases.GetEntities
@@ -461,12 +461,12 @@ class ImportMeasurementsComponent(
         //make actual read from EXCEL file
     }
 
-    @Parcelize
+//    @Parcelize
     private sealed class TypesSelectorConfig : Parcelable {
-        @Parcelize
+//        @Parcelize
         object SampleTypesSelector : TypesSelectorConfig()
 
-        @Parcelize
+//        @Parcelize
         class EditSampleTypesDialog(val sampleType: SampleType?) : TypesSelectorConfig()
     }
 
